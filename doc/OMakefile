@@ -1,0 +1,13 @@
+# Target
+Target		= dreml
+
+# Sub-documents
+Parts[] =
+	tex/brainstorming
+	tex/ere-submatch
+	tex/nfa
+	tex/submatch
+
+%.tex: %.bib
+
+latex-document ()

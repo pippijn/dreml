@@ -1,0 +1,311 @@
+\section{Extended regular expression submatching}
+\label{ere-submatch}
+
+The definition of partial derivatives from \cite{pd-pat} has been combined
+with the extended regular expression operators as defined in \cite{pd-ere}. We
+amend the regular expression syntax from Sulzmann and Lu with additional
+boolean operators for extended regular expressions.
+
+Words:
+
+\begin{tabular}{lrll}
+   $w$	& $::=$	& $\varepsilon$		& Empty word	\\
+	& $|$	& $l \in \Sigma$	& Letters	\\
+	& $|$	& $lw$			& Concatenation	\\
+\end{tabular}
+
+Extended regular expressions:
+
+\begin{tabular}{lrll}
+   $r$		& $::=$	& $r+r$				& Choice		\\
+		& $|$	& $(r,r)$			& Concatenation		\\
+		& $|$	& $r_e \cap r_e$		& Intersection		\\
+        	& $|$	& $\neg r_e$			& Negation		\\
+        	& $|$	& $r_e^n$			& Repetition		\\
+		& $|$	& $r^*$				& Kleene star		\\
+		& $|$	& $\varepsilon$			& Empty word		\\
+		& $|$	& $\phi$			& Empty language	\\
+		& $|$	& $l \in Sigma$			& Letters		\\
+\end{tabular}
+
+Extended patterns:
+
+\begin{tabular}{lrll}
+   $p$		& $::=$	& $(x:r)$			& Variables Base	\\
+		& $|$	& $(x:p)$			& Variables Group	\\
+		& $|$	& $p+p$				& Choice		\\
+		& $|$	& $(p,p)$			& Concatenation		\\
+		& $|$	& $p_e \cap p_e$		& Intersection		\\
+        	& $|$	& $p_e^n$			& Repetition		\\
+		& $|$	& $p^*$				& Kleene star		\\
+\end{tabular}
+
+
+Pattern and expression repetition in the form $r^n$ is essentially the same as
+concatenating the same pattern or expression $n$ times. However, in a pattern,
+this would cause variable binding clashes. For example, when expanding
+$(x:a)^2$ to $(x:a)(x:a)$, the variable $a$ appears twice. Since this is not
+allowed in patterns, the definition of partial derivatives incorporates direct
+support for this form.
+
+The negation of patterns is not defined, because it is undecidable in general
+which part of a non-match should be assigned to which pattern variable. The
+assignment is decidable if and only if every sub-pattern always consumes the
+complete input, but for these patterns, their negation can be pushed into the
+pattern. For variables base, $\neg(x:p) \equiv (x:\neg p)$, and for pattern
+intersection, by De Morgan's law $\neg((x:p_1) \cap (y:p_2)) \equiv (x:\neg
+p_1) + (y:\neg p_2)$. Variable assignment can not be decided for other
+patterns. E.g. when matching the string ``ccc'' with the pattern
+$\neg((x:a)(y:b))$, it is impossible to decide which part of the string should
+be assigned to $x$ and which to $y$. Therefore, we do not define pattern
+negation, at all.
+
+In the remainder of this paper, we will use the term ``regular expression''
+for extended regular expressions, and refer to their instances as $r$ instead
+of $r_e$.  Analogously, the term ``pattern'' is used for ``extended pattern''
+and $p$ is an instance.
+
+Environments:
+
+\begin{tabular}{lrll}
+   $\Gamma$	& $::=$	& $\{x:w\}$			& Variable binding	\\
+		& $|$	& $\Gamma \uplus \Gamma$	& Ordered multi-set of
+							  variable bindings	\\
+\end{tabular}
+
+Language:
+
+\begin{tabular}{lll}
+   $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
+   $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
+   $L(r^*)$		& $=$	&
+      $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
+      \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
+   $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
+   $L(\phi)$		& $=$	& $\{\}$						\\
+   $L(l)$		& $=$	& $\{l\}$						\\
+   $L(r_1 \cap r_2)$	& $=$	& TODO					\\
+   $L(\neg r)$		& $=$	& TODO					\\
+\end{tabular}
+
+The variable environments are the same as in \cite{pd-pat}, the language
+definition has been extended with the definitions from \cite{pd-ere}.
+
+
+\subsection{Sets of expression sets}
+
+\cite{pd-ere} describes a way to break the derivative of a regular expression
+into a union of derivated terms. This union is equivalent to the choice
+operator $+$ on the resulting terms. The article defines a representation of a
+partial derivative as a set of expression sets in which the expression sets
+represent the intersection of terms, and the sets of expression sets represent
+their union.
+
+\subsubsection{Sets of pattern sets}
+
+The partial derivative operations are defined on extended regular expressions
+and result in sets of expression sets. Pattern partial derivatives as defined
+in \cite{pd-pat} result in a list of pairs containing the derivated term as
+well as a transition function $x \mapsto l$ recording the fact that the letter
+$l$ has been consumed by a pattern under a variable $x$. This function must be
+recorded in the set of pattern sets, as well. Since the equivalent of a
+derivated term is the expression set $\mathcal{E}$, we define the set of
+pattern sets as: $\{ (\{ p \}, x \mapsto l) \}$, the set of pairs containing
+an expression set and the associated transition function.
+
+
+\subsubsection{Conversions}
+
+We can define translations from the above extended regular expression syntax
+to the sets of sets representation. Let $\mathbb{E}$ be a set of expression
+sets, $\mathcal{E}$ an expression set, and $r$ an expression, then we can
+define the following operators:
+
+Expression set from regular expression: $\cdot\uparrow :: r \to \mathcal{E}$
+
+\begin{tabular}{lll}
+   $(r_1 \cap r_2)\uparrow$	& $=$	& $r_1\uparrow \cup r_2\uparrow$	\\
+   $r\uparrow$			& $=$	& $\{r\}$				\\
+\end{tabular}
+
+Set of expression sets from regular expression: $\cdot\Uparrow :: r \to \mathbb{E}$
+
+\begin{tabular}{lll}
+   $(r_1 + r_2)\Uparrow$	& $=$	& $r_1\Uparrow \cup r_2\Uparrow$	\\
+   $r\Uparrow$			& $=$	& $\{r\uparrow\}$			\\
+\end{tabular}
+
+The operation is not defined on empty sets, thus the set of expression sets
+representing the empty language expression must be the set containing the set
+with the empty language symbol: $\{\{\phi\}\}$.
+
+The inverse operation, translating a set of expression sets back to a regular
+expression, can be defined analogously.
+
+Regular expression from expression set: $\cdot\downarrow :: \mathcal{E} \to r$
+
+\begin{tabular}{lll}
+   $\{r\}\downarrow$			& $=$	& $r$					\\
+   $(\{r\} \cup \mathcal{E})\downarrow$	& $=$	& $r \cap \mathcal{E}\downarrow$	\\
+\end{tabular}
+
+Regular expression from a set of expression sets: $\cdot\Downarrow :: \mathbb{E} \to r$
+
+\begin{tabular}{lll}
+   $\{r\}\Downarrow$			& $=$	& $r\downarrow$			\\
+   $(\{r\} \cup \mathbb{E})\Downarrow$	& $=$	& $r + \mathbb{E}\Downarrow$	\\
+\end{tabular}
+
+The operators $\downarrow$ and $\uparrow$ can be defined analogously for
+patterns to construct pattern sets and reconstruct the pattern from them.
+However, it should be noted that in order to break a pattern or expression
+into a set of pattern or expression sets, the highest level operator must be
+choice or intersection. In particular, a pattern group $(x:p)$ at the highest
+level of the syntax tree makes it impossible to break a pattern into pieces.
+
+TODO: can patterns/expressions inside a variable base/group be split, anyway?
+
+Furthermore, $\Downarrow$ and $\Uparrow$ can be defined for sets of pattern
+sets. TODO: need to keep the transition function
+
+
+\subsubsection{Operators on sets of pattern sets}
+
+Caron et al. define several operators on sets of expression sets and use them
+to define the partial derivative of an extended regular expression. We define
+these operators in the syntax used in \cite{pd-pat}.
+
+\begin{tabular}{lll}
+   $\mathbb{E} \circledcdot r_2$
+      & $=$
+      & $\{ \{ (r_1, r_2) | r_1 \in \mathcal{E} \} | \mathcal{E} \in \mathbb{E} \}$
+      \\
+
+   $\mathbb{E}_1 \circledcap \mathbb{E}_2$
+      & $=$
+      & $\{
+           \mathcal{E}_1 \cup \mathcal{E}_2
+           | \mathcal{E}_1 \in \mathbb{E}_1, \mathcal{E}_2 \in \mathbb{E}_2
+        \}$
+      \\
+
+   $\circledneg\mathbb{E}$
+      & $=$
+      & $\{ \{ \neg r | r \in \mathcal{E} \} | \mathcal{E} \in \mathbb{E} \}$
+      \\
+\end{tabular}
+
+We can recognise that these operators are essentially distributive laws
+defined on sets of expression sets. E.g. the $\circledcdot$ operator
+concatenates an expression to every expression in every set in the expression
+set $\mathbb{E}$, the $\circledneg$ operator negates every expression in the
+set.
+
+The expression set operators must be defined for pattern derivatives, but
+since pattern derivatives carry a transition function $f$, these must be
+sensibly combined in the set operators.
+
+\begin{tabular}{lll}
+   $\mathbb{D} \circledcdot_{mod} p_2$
+      & $=$
+      & $\{ (\{ (p_1, p_2) | p_1 \in \mathcal{P} \}, f \circ mod) | (\mathcal{P}, f) \in \mathbb{D} \}$
+      \\
+
+   $\mathbb{D}_1 \circledcap \mathbb{D}_2$
+      & $=$
+      & $\{
+           (\mathcal{E}_1 \cup \mathcal{E}_2, f_1 \circ f_2)
+           | (\mathcal{E}_1, f_1) \in \mathbb{D}_1, (\mathcal{E}_2, f_2) \in \mathbb{D}_2
+        \}$
+      \\
+\end{tabular}
+
+In $\circledcdot$, the $mod$ function can modify the environment before
+passing it to the transition function.  The operator $\circledneg$ is not
+defined for sets of pattern sets, since there is no negation for patterns.
+
+
+\subsection{Pattern partial derivatives}
+
+In definition 2 of \cite{pd-ere}, the partial derivative of a regular
+expression $\dda(r)$ is defined. We repeat the definition here, with one
+modification, and with the addition of expression repetition.
+
+\[\textbf{(1)} \dda(\phi) = \dda(\varepsilon) = \dda(b) = \{\{ \phi \}\},\]
+\[\textbf{(2)} \dda(a) = \{\{ \varepsilon \}\},\]
+\[\textbf{(3)} \dda(r_1 + r_2) = \dda(r_1) \cup \dda(r_2),\]
+\[\textbf{(4)} \dda(r^*) = \dda(r) \circledcdot r^*,\]
+\[\textbf{(5)} \dda((r_1, r_2)) =
+    \begin{cases}
+       \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\Downarrow) \\
+       \dda(r_1) \circledcdot r_2 \cup \dda(r_2) & \text{otherwise}
+    \end{cases}
+\]
+\[\textbf{(6)} \dda(r_1 \cap r_2) = \dda(r_1) \circledcap \dda(r_2)\]
+\[\textbf{(7)} \dda(r^n) =
+    \begin{cases}
+       \dda(r) & \text{if } n = 1 \\
+       \dda((r, r^{n-1})) & \text{otherwise}
+    \end{cases}
+\]
+\[\textbf{(8)} \dda(\neg r) = \circledneg (\dda(r)),\]
+
+Caron et al. define \textbf{(1)} as $\dda(b) = \emptyset$, but this yields
+incorrect results when combined with negation. Consider for example the
+regular expression $\neg b$, which matches anything that is not a `b', such as
+``a''.  The partial derivative over `a' according to \cite{pd-ere} would be
+constructed as follows:
+
+\[\dda(\neg b)
+   =_{\textbf{(8)}} \circledneg \dda(b)
+   =_{\textbf{(1)}} \circledneg (\emptyset)
+   = \emptyset
+\]
+
+The correct partial derivative is $\dda(\neg b) = \{\{\Sigma\}\}$. With our
+definition, we construct the partial derivative as follows, considering that
+the negation of the empty language is the complete alphabet $\Sigma$:
+
+\[\dda(\neg b)
+   =_{\textbf{(8)}} \circledneg \dda(b)
+   =_{\textbf{(1)}} \circledneg (\{\{\phi\}\})
+   = \{\{\neg\phi\}\}
+   = \{\{\Sigma\}\}
+\]
+
+We define the partial derivative of an extended pattern expression using the
+operators $\circledcdot$ and $\circledcap$, omitting negation.
+
+\[\textbf{(1)} \dda(x:r)
+   = \{ (\{ \mathcal{E}\downarrow \}, update(x,a)) | \mathcal{E} \in \dda(r) \},\]
+\[\textbf{(2)} \dda(x:p)
+   = \{ (\{ (x:p'\downarrow) \}, update(x,a) \circ f) | (p', f) \in \dda(p) \},\]
+\[\textbf{(3)} \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2),\]
+\[\textbf{(4)} \dda(p^*) = \dda(p) \circledcdot_{iterate_{fv(p)}} p^*,\]
+\[\textbf{(5)} \dda((p_1, p_2)) =
+    \begin{cases}
+       \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\Downarrow) \\
+       \dda(r_1) \circledcdot_{id} p_2 \cup \dda(p_2) & \text{otherwise}
+    \end{cases}
+\]
+\[\textbf{(6)} \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
+\[\textbf{(7)} \dda(p^n) =
+    \begin{cases}
+       \{ (p', f \circ iterate_{fv(p)}) | (p', f) \in \dda(p) \} & \text{if } n = 1 \\
+       \dda(p) \circledcdot_{iterate_{fv(p)}} p^{n-1} & \text{otherwise}
+    \end{cases}
+\]
+
+In \textbf{(5)}, the identity function is given as modifier to the
+$\circledcdot$ operator, keeping the environment as is before passing it to
+the transition function. The $iterate_{fv(p)}$ function can modify the
+environment for the two iterating patterns $p^*$ and $p^n$. It can choose to
+keep only the last match or all matches, by renaming past recorded match
+variables. This function is described in more detail in section 5.1 of
+\cite{pd-pat}. The $fv(p)$ function finds all free variables used in the
+pattern, and is defined in section 3.1 of the same paper.
+
+
+
+
+% vim:tw=78

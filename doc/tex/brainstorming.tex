@@ -1,0 +1,24 @@
+\section{Brainstorming}
+
+$2^{n-1}$ results from \texttt{(x:a*)*} but can be reduced to
+http://oeis.org/A088314, because the results are essentially one possible
+partition of the input length $n$. One result sets is then just another
+representation of one set of parts of a partition of $n$.
+
+Reduction is quite expensive, needs to make sure that new results are not
+already in the result set.
+
+
+Partial derivatives with sets of expression sets:
+
+\begin{verbatim}
+   (x:ab)(y:ac) \ a ->
+     (x:b)(y:ac){x+=a}
+
+   (x:ab)|(y:ac) \ a ->
+     (x:b){x+=a}
+     (y:c){y+=a}
+\end{verbatim}
+
+
+% vim:tw=78
