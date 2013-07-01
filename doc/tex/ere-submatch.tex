@@ -1,3 +1,13 @@
+\newcommand\esetOfRe{\uparrow}
+\newcommand\esetsOfRe{\Uparrow}
+\newcommand\reOfEset{\downarrow}
+\newcommand\reOfEsets{\Downarrow}
+\newcommand\eset{\mathcal{E}}
+\newcommand\esets{\mathbb{E}}
+\newcommand\pset{\mathcal{P}}
+\newcommand\psets{\mathbb{P}}
+
+
 \section{Extended regular expression submatching}
 \label{ere-submatch}
 
@@ -78,14 +88,14 @@ Language:
 \begin{tabular}{lll}
    $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
    $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
+   $L(r_1 \cap r_2)$	& $=$	& $(r_1) \cap L(r_2)$					\\
+   $L(\neg r)$		& $=$	& $\{\Sigma^*\} \setminus L(r)$				\\
    $L(r^*)$		& $=$	&
       $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
       \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
    $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
    $L(\phi)$		& $=$	& $\{\}$						\\
    $L(l)$		& $=$	& $\{l\}$						\\
-   $L(r_1 \cap r_2)$	& $=$	& TODO					\\
-   $L(\neg r)$		& $=$	& TODO					\\
 \end{tabular}
 
 The variable environments are the same as in \cite{pd-pat}, the language
@@ -101,6 +111,11 @@ partial derivative as a set of expression sets in which the expression sets
 represent the intersection of terms, and the sets of expression sets represent
 their union.
 
+\begin{tabular}{lll}
+   $\esets$	& $=$ & $\{\eset_1, \eset_2, \dots, \eset_n\}$ \\
+   $\eset$	& $=$ & $\{r_1, r_2, \dots, r_n\}$ \\
+\end{tabular}
+
 \subsubsection{Sets of pattern sets}
 
 The partial derivative operations are defined on extended regular expressions
@@ -109,30 +124,35 @@ in \cite{pd-pat} result in a list of pairs containing the derivated term as
 well as a transition function $x \mapsto l$ recording the fact that the letter
 $l$ has been consumed by a pattern under a variable $x$. This function must be
 recorded in the set of pattern sets, as well. Since the equivalent of a
-derivated term is the expression set $\mathcal{E}$, we define the set of
-pattern sets as: $\{ (\{ p \}, x \mapsto l) \}$, the set of pairs containing
+derivated term is the expression set $\eset$, we define the set of
+pattern sets as: $\{ (\{ p \}, x \to l) \}$, the set of pairs containing
 an expression set and the associated transition function.
+
+\begin{tabular}{lll}
+   $\psets$	& $=$ & $\{\pset_1, \pset_2, \dots, \pset_n\}$ \\
+   $\pset$	& $=$ & $(\{r_1, r_2, \dots, r_n\}, x \to l)$ \\
+\end{tabular}
 
 
 \subsubsection{Conversions}
 
 We can define translations from the above extended regular expression syntax
-to the sets of sets representation. Let $\mathbb{E}$ be a set of expression
-sets, $\mathcal{E}$ an expression set, and $r$ an expression, then we can
+to the sets of sets representation. Let $\esets$ be a set of expression
+sets, $\eset$ an expression set, and $r$ an expression, then we can
 define the following operators:
 
-Expression set from regular expression: $\cdot\uparrow :: r \to \mathcal{E}$
+Expression set from regular expression: $\cdot\esetOfRe :: r \to \eset$
 
 \begin{tabular}{lll}
-   $(r_1 \cap r_2)\uparrow$	& $=$	& $r_1\uparrow \cup r_2\uparrow$	\\
-   $r\uparrow$			& $=$	& $\{r\}$				\\
+   $(r_1 \cap r_2)\esetOfRe$	& $=$	& $r_1\esetOfRe \cup r_2\esetOfRe$	\\
+   $r\esetOfRe$			& $=$	& $\{r\}$				\\
 \end{tabular}
 
-Set of expression sets from regular expression: $\cdot\Uparrow :: r \to \mathbb{E}$
+Set of expression sets from regular expression: $\cdot\esetsOfRe :: r \to \esets$
 
 \begin{tabular}{lll}
-   $(r_1 + r_2)\Uparrow$	& $=$	& $r_1\Uparrow \cup r_2\Uparrow$	\\
-   $r\Uparrow$			& $=$	& $\{r\uparrow\}$			\\
+   $(r_1 + r_2)\esetsOfRe$	& $=$	& $r_1\esetsOfRe \cup r_2\esetsOfRe$	\\
+   $r\esetsOfRe$		& $=$	& $\{r\esetOfRe\}$			\\
 \end{tabular}
 
 The operation is not defined on empty sets, thus the set of expression sets
@@ -142,21 +162,21 @@ with the empty language symbol: $\{\{\phi\}\}$.
 The inverse operation, translating a set of expression sets back to a regular
 expression, can be defined analogously.
 
-Regular expression from expression set: $\cdot\downarrow :: \mathcal{E} \to r$
+Regular expression from expression set: $\cdot\reOfEset :: \eset \to r$
 
 \begin{tabular}{lll}
-   $\{r\}\downarrow$			& $=$	& $r$					\\
-   $(\{r\} \cup \mathcal{E})\downarrow$	& $=$	& $r \cap \mathcal{E}\downarrow$	\\
+   $\{r\}\reOfEset$			& $=$	& $r$				\\
+   $(\{r\} \cup \eset)\reOfEset$	& $=$	& $r \cap \eset\reOfEset$	\\
 \end{tabular}
 
-Regular expression from a set of expression sets: $\cdot\Downarrow :: \mathbb{E} \to r$
+Regular expression from a set of expression sets: $\cdot\reOfEsets :: \esets \to r$
 
 \begin{tabular}{lll}
-   $\{r\}\Downarrow$			& $=$	& $r\downarrow$			\\
-   $(\{r\} \cup \mathbb{E})\Downarrow$	& $=$	& $r + \mathbb{E}\Downarrow$	\\
+   $\{\eset\}\reOfEsets$		& $=$	& $\eset\reOfEset$		\\
+   $(\{\eset\} \cup \esets)\reOfEsets$	& $=$	& $r + \esets\reOfEsets$	\\
 \end{tabular}
 
-The operators $\downarrow$ and $\uparrow$ can be defined analogously for
+The operators $\esetOfRe$ and $\reOfEset$ can be defined analogously for
 patterns to construct pattern sets and reconstruct the pattern from them.
 However, it should be noted that in order to break a pattern or expression
 into a set of pattern or expression sets, the highest level operator must be
@@ -165,8 +185,13 @@ level of the syntax tree makes it impossible to break a pattern into pieces.
 
 TODO: can patterns/expressions inside a variable base/group be split, anyway?
 
-Furthermore, $\Downarrow$ and $\Uparrow$ can be defined for sets of pattern
-sets. TODO: need to keep the transition function
+We do not define $\esetsOfRe$ and $\reOfEsets$ for sets of pattern sets, and
+there is no need for them, but the final pattern derivative as set of patterns
+with transition functions can be obtained from a pattern using the function
+$\mathit{patDeriv}$.
+
+\[\mathit{patDeriv}(p, l)
+   = \{ (\pset\reOfEset, f) | (\pset, f) \in \dd{l}(p) \}\]
 
 
 \subsubsection{Operators on sets of pattern sets}
@@ -176,29 +201,29 @@ to define the partial derivative of an extended regular expression. We define
 these operators in the syntax used in \cite{pd-pat}.
 
 \begin{tabular}{lll}
-   $\mathbb{E} \circledcdot r_2$
+   $\esets \circledcdot r_2$
       & $=$
-      & $\{ \{ (r_1, r_2) | r_1 \in \mathcal{E} \} | \mathcal{E} \in \mathbb{E} \}$
+      & $\{ \{ (r_1, r_2) | r_1 \in \eset \} | \eset \in \esets \}$
       \\
 
-   $\mathbb{E}_1 \circledcap \mathbb{E}_2$
+   $\esets_1 \circledcap \esets_2$
       & $=$
       & $\{
-           \mathcal{E}_1 \cup \mathcal{E}_2
-           | \mathcal{E}_1 \in \mathbb{E}_1, \mathcal{E}_2 \in \mathbb{E}_2
+           \eset_1 \cup \eset_2
+           | \eset_1 \in \esets_1, \eset_2 \in \esets_2
         \}$
       \\
 
-   $\circledneg\mathbb{E}$
+   $\circledneg\esets$
       & $=$
-      & $\{ \{ \neg r | r \in \mathcal{E} \} | \mathcal{E} \in \mathbb{E} \}$
+      & $\{ \{ \neg r | r \in \eset \} | \eset \in \esets \}$
       \\
 \end{tabular}
 
 We can recognise that these operators are essentially distributive laws
 defined on sets of expression sets. E.g. the $\circledcdot$ operator
 concatenates an expression to every expression in every set in the expression
-set $\mathbb{E}$, the $\circledneg$ operator negates every expression in the
+set $\esets$, the $\circledneg$ operator negates every expression in the
 set.
 
 The expression set operators must be defined for pattern derivatives, but
@@ -206,16 +231,16 @@ since pattern derivatives carry a transition function $f$, these must be
 sensibly combined in the set operators.
 
 \begin{tabular}{lll}
-   $\mathbb{D} \circledcdot_{mod} p_2$
+   $\psets \circledcdot_{mod} p_2$
       & $=$
-      & $\{ (\{ (p_1, p_2) | p_1 \in \mathcal{P} \}, f \circ mod) | (\mathcal{P}, f) \in \mathbb{D} \}$
+      & $\{ (\{ (p_1, p_2) | p_1 \in \eset \}, f \circ mod) | (\eset, f) \in \psets \}$
       \\
 
-   $\mathbb{D}_1 \circledcap \mathbb{D}_2$
+   $\psets_1 \circledcap \psets_2$
       & $=$
       & $\{
-           (\mathcal{E}_1 \cup \mathcal{E}_2, f_1 \circ f_2)
-           | (\mathcal{E}_1, f_1) \in \mathbb{D}_1, (\mathcal{E}_2, f_2) \in \mathbb{D}_2
+           (\eset_1 \cup \eset_2, f_1 \circ f_2)
+           | (\eset_1, f_1) \in \psets_1, (\eset_2, f_2) \in \psets_2
         \}$
       \\
 \end{tabular}
@@ -237,7 +262,7 @@ modification, and with the addition of expression repetition.
 \[\textbf{(4)} \dda(r^*) = \dda(r) \circledcdot r^*,\]
 \[\textbf{(5)} \dda((r_1, r_2)) =
     \begin{cases}
-       \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\Downarrow) \\
+       \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\esetsOfRe) \\
        \dda(r_1) \circledcdot r_2 \cup \dda(r_2) & \text{otherwise}
     \end{cases}
 \]
@@ -262,48 +287,49 @@ constructed as follows:
    = \emptyset
 \]
 
-The correct partial derivative is $\dda(\neg b) = \{\{\Sigma\}\}$. With our
+The correct partial derivative is $\dda(\neg b) = \{\{\Sigma^*\}\}$. With our
 definition, we construct the partial derivative as follows, considering that
-the negation of the empty language is the complete alphabet $\Sigma$:
+the negation of the empty language is every possible word made from any number
+of letters in the alphabet $\Sigma$:
 
 \[\dda(\neg b)
    =_{\textbf{(8)}} \circledneg \dda(b)
    =_{\textbf{(1)}} \circledneg (\{\{\phi\}\})
    = \{\{\neg\phi\}\}
-   = \{\{\Sigma\}\}
+   = \{\{\Sigma^*\}\}
 \]
 
 We define the partial derivative of an extended pattern expression using the
 operators $\circledcdot$ and $\circledcap$, omitting negation.
 
 \[\textbf{(1)} \dda(x:r)
-   = \{ (\{ \mathcal{E}\downarrow \}, update(x,a)) | \mathcal{E} \in \dda(r) \},\]
+   = \{ (\{ \eset\reOfEset \}, update(x,a)) | \eset \in \dda(r) \},\]
 \[\textbf{(2)} \dda(x:p)
-   = \{ (\{ (x:p'\downarrow) \}, update(x,a) \circ f) | (p', f) \in \dda(p) \},\]
+   = \{ (\{ (x:\pset\reOfEset) \}, update(x,a) \circ f) | (\pset, f) \in \dda(p) \},\]
 \[\textbf{(3)} \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2),\]
-\[\textbf{(4)} \dda(p^*) = \dda(p) \circledcdot_{iterate_{fv(p)}} p^*,\]
+\[\textbf{(4)} \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*,\]
 \[\textbf{(5)} \dda((p_1, p_2)) =
     \begin{cases}
-       \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\Downarrow) \\
+       \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\reOfEsets) \\
        \dda(r_1) \circledcdot_{id} p_2 \cup \dda(p_2) & \text{otherwise}
     \end{cases}
 \]
 \[\textbf{(6)} \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
 \[\textbf{(7)} \dda(p^n) =
     \begin{cases}
-       \{ (p', f \circ iterate_{fv(p)}) | (p', f) \in \dda(p) \} & \text{if } n = 1 \\
-       \dda(p) \circledcdot_{iterate_{fv(p)}} p^{n-1} & \text{otherwise}
+       \{ (\pset, f \circ \iterate) | (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
+       \dda(p) \circledcdot_{\iterate} p^{n-1} & \text{otherwise}
     \end{cases}
 \]
 
 In \textbf{(5)}, the identity function is given as modifier to the
 $\circledcdot$ operator, keeping the environment as is before passing it to
-the transition function. The $iterate_{fv(p)}$ function can modify the
-environment for the two iterating patterns $p^*$ and $p^n$. It can choose to
-keep only the last match or all matches, by renaming past recorded match
-variables. This function is described in more detail in section 5.1 of
-\cite{pd-pat}. The $fv(p)$ function finds all free variables used in the
-pattern, and is defined in section 3.1 of the same paper.
+the transition function. The $\iterate$ function can modify the environment
+for the two iterating patterns $p^*$ and $p^n$. It can choose to keep only the
+last match or all matches, by renaming past recorded match variables. This
+function is described in more detail in section 5.1 of \cite{pd-pat}. The
+$\fv(p)$ function finds all free variables used in the pattern, and is defined
+in section 3.1 of the same paper.
 
 
 

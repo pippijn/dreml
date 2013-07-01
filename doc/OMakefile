@@ -11,3 +11,7 @@ Parts[] =
 %.tex: %.bib
 
 latex-document ()
+
+.PHONY: view
+view: dreml.pdf
+  evince $<

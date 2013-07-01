@@ -2,25 +2,25 @@
 \label{submatch}
 
 As described in section \ref{ere-submatch}, the matching function yielded by
-the pattern partial derivative can be customised with an $iterate_{fv(p)}$. If
-this function is defined as one that keeps all matches, the number of possible
+the pattern partial derivative can be customised with an $\iterate$. If this
+function is defined as one that keeps all matches, the number of possible
 matches can become exponential.
 
-We consider the pattern $(x:a^*)$ and the input $a^n$. This pattern has one
-possible match, which is the complete input $a^n$. If we now add an iterating
-operator $p^*$ to the pattern, we match with the pattern $(x:a^*)^*$. The
+We consider the pattern $(x:A^*)$ and the input $A^n$. This pattern has one
+possible match, which is the complete input $A^n$. If we now add an iterating
+operator $p^*$ to the pattern, we match with the pattern $(x:A^*)^*$. The
 number of possible matches is now $2^{n-1}$, namely all combinations of the
-set $\{ a^1, \dots, a^n \}$ that yield the original input $a^n$.
+set $\{ A^1, \dots, A^n \}$ that yield the original input $A^n$.
 
 If the Kleene star is applied again, the number of matches does not change,
 but the number of states the automaton ends with will be $m^{n-1}$ where $m$
-is the number of kleene stars in tetration: $S((x:a^*)^{^m*}, a^n) = m^{n-1}$.
+is the number of kleene stars in tetration: $S((x:A^*)^{^m*}, A^n) = m^{n-1}$.
 
 This exponential number of matches can be reduced if instead of an ordered
 multi-set of matches, we use an unordered multi-set for the matching
-environment. E.g. the match $\{ x:a; x:aa \}$ and $\{ x:aa; x:a \}$ will be
+environment. E.g. the match $\{ x:A; x:AA \}$ and $\{ x:AA; x:A \}$ will be
 equivalent and counted only once. The resulting match-sets will be the set of
-parts of all partitions of $n$ represented as $a^n$. Consequently, the number
+parts of all partitions of $n$ represented as $A^n$. Consequently, the number
 of match-sets will be equal to the cardinality of the set of sets of parts of
 all partitions of $n$. This number is polynomial. TODO: really? and how many?
 
