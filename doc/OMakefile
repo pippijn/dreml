@@ -3,15 +3,14 @@ Target		= dreml
 
 # Sub-documents
 Parts[] =
-	tex/brainstorming
-	tex/ere-submatch
-	tex/nfa
-	tex/submatch
+  tex/brainstorming.tex
+  tex/ere-submatch.tex
+  tex/nfa.tex
+  tex/submatch.tex
 
-%.tex: %.bib
-
-latex-document ()
+$(Target).pdf: $(Target).tex $(Target).bib $(Parts)
+  rubber --quiet --pdf $<
 
 .PHONY: view
-view: dreml.pdf
-  evince $<
+view: $(Target).pdf
+  xpdf $<

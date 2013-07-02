@@ -3,30 +3,30 @@ Target		= dreml
 
 # Sources
 Modules[] =
-	Dreml
-	Duplicates
-	ExprSets
-	Instruction
-	Language
-	Lexer
-	Main
-	Nfa
-	Ops
-	Parser
-	Partial
-	Pattern
-	Simplify
-	Transition
-	Types
-	Util
-	Visualise
+  Dreml
+  Duplicates
+  ExprSets
+  Instruction
+  Language
+  Lexer
+  Main
+  Nfa
+  Ops
+  Parser
+  Partial
+  Pattern
+  Simplify
+  Transition
+  Types
+  Util
+  Visualise
 
 # Library dependencies
-Requires[] =
-	baselib
-	batteries.syntax
-	deriving-ocsigen
-	deriving-ocsigen.syntax
+OCaml-Requires[] =
+  baselib
+  batteries.syntax
+  deriving-ocsigen
+  deriving-ocsigen.syntax
 
 # Camlp4
 Flags. +=
@@ -36,4 +36,4 @@ Flags. +=
   $|partial.ml|		= -syntax camlp4o
   $|types.ml|		= -syntax camlp4o
 
-ocaml-program ()
+program (.DEFAULT)
