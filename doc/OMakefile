@@ -8,8 +8,7 @@ Parts[] =
   tex/nfa.tex
   tex/submatch.tex
 
-$(Target).pdf: $(Target).tex $(Target).bib $(Parts)
-  rubber --quiet --pdf $<
+latex-document (.DEFAULT)
 
 .PHONY: view
 view: $(Target).pdf
