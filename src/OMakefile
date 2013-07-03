@@ -1,5 +1,5 @@
 # Target
-Target		= dreml
+Name		= dreml
 
 # Sources
 Modules[] =
@@ -36,4 +36,4 @@ Flags. +=
   $|partial.ml|		= -syntax camlp4o
   $|types.ml|		= -syntax camlp4o
 
-program (.DEFAULT)
+program-install (.DEFAULT)
