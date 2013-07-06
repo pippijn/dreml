@@ -8,8 +8,9 @@ Parts[] =
   tex/nfa.tex
   tex/submatch.tex
 
-latex-document (.DEFAULT)
+TARGET = $(latex-document)
+.DEFAULT: $(TARGET)
 
 .PHONY: view
-view: $(Target).pdf
+view: $(TARGET)
   xpdf $<
