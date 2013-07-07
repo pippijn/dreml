@@ -1,5 +1,5 @@
+open CorePervasives
 open Types
-open Ops
 
 let pat_simplify_list =
   List.map Simplify.simplify_pat

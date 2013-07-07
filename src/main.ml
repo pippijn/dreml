@@ -1,4 +1,4 @@
-open Ops
+open CorePervasives
 
 
 (*module Nfa = Nfa.Make(Partial)(Transition)*)

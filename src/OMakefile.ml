@@ -12,7 +12,6 @@ install Program ".DEFAULT" [
     "Lexer";
     "Main";
     "Nfa";
-    "Ops";
     "Parser";
     "Partial";
     "Pattern";

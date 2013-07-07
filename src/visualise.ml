@@ -1,5 +1,5 @@
+open CorePervasives
 open Types
-open Ops
 
 
 let graphviz_of_nfa out (nfa, start) =

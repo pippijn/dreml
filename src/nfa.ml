@@ -8,8 +8,8 @@ end
 
 module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
 
+  open CorePervasives
   open Types
-  open Ops
 
   module Derive = Derive.Make(Tag)
 
