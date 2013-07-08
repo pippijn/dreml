@@ -47,6 +47,7 @@ type pattern =
   | PatConcat of pattern * pattern
   | PatStar of pattern
   | PatRepeat of pattern * int
+  | PatNot of pattern
   deriving (Show)
 
 type instruction =

@@ -35,6 +35,8 @@ pat_and:
 pat_branch:
 	| pat_expression
 	  { $1 }
+	| NEGATE pat_expression
+	  { PatNot $2 }
 	| pat_branch pat_expression
 	  { PatConcat ($1, $2) }
 

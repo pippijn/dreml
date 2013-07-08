@@ -26,6 +26,7 @@ let main pattern input =
   in
 
   check_clashes re;
+  let re = Negation.normal_form re in
 
   let nfa = Timing.time "build nfa" Nfa.build re in
   if _visualise then (

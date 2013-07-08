@@ -16,6 +16,8 @@ let rec vars_of_pattern vars = function
       vars_of_pattern vars p
   | PatRepeat (p, _) ->
       vars_of_pattern vars p
+  | PatNot (p) ->
+      vars_of_pattern vars p
 
 let vars_of_pattern = vars_of_pattern []
 

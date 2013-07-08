@@ -11,6 +11,7 @@ install Program ".DEFAULT" [
     "Language";
     "Lexer";
     "Main";
+    "Negation";
     "Nfa";
     "Parser";
     "Partial";

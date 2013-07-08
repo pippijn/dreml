@@ -79,10 +79,10 @@ let rec simplify_pat = function
   | VarBase (x, r) -> VarBase (x, simplify r)
   | VarGroup (x, p) -> VarGroup (x, simplify_pat p)
 
-  | PatIntersect (r1, r2) -> PatIntersect (simplify_pat r1, simplify_pat r2)
-  | PatConcat (r1, r2) -> PatConcat (simplify_pat r1, simplify_pat r2)
-  | PatChoice (r1, r2) -> PatChoice (simplify_pat r1, simplify_pat r2)
-  | PatStar r -> PatStar (simplify_pat r)
+  | PatIntersect (p1, p2) -> PatIntersect (simplify_pat p1, simplify_pat p2)
+  | PatConcat (p1, p2) -> PatConcat (simplify_pat p1, simplify_pat p2)
+  | PatChoice (p1, p2) -> PatChoice (simplify_pat p1, simplify_pat p2)
+  | PatStar p -> PatStar (simplify_pat p)
   | PatRepeat (p, n) -> PatRepeat (simplify_pat p, n)
 
 let simplify_pat = Util.rewrite simplify_pat
