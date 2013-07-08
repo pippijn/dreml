@@ -8,10 +8,15 @@ $\cdot \setminus_p \cdot :: p \to l \to \{(p, x \to l)\}$
 
 $p \setminus_p l = \{ (\mathcal{P}\downarrow, f) | (\mathcal{P}, f) \in \dd{l}(p) \}$
 
-and the partial derivative of a word:
-$\cdot \setminus_p \cdot :: p \to w \to \{(p, x \to l)\}$
+Using this function, the submatching automaton can be constructed by
+iteratively constructing the partial derivative of the input pattern over each
+letter in the alphabet. The resulting set of derivated terms is then filtered
+to remove all those that describe the empty language. This filtered set is
+then used as input and each term is derived over each letter again. This is
+done until no new terms appear or all terms yield the empty language.
 
-TODO
+In order to test whether a term describes the empty language, we define a
+predicate $\isempty$.
 
 
 % vim:tw=78

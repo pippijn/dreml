@@ -1,6 +1,9 @@
-\documentclass[a4paper,draft]{article}
+\documentclass[10pt,a4paper,german,headsepline,twoside,DIV15,BCOR12mm]{scrbook}
+\usepackage{framed}
 \usepackage{noweb}
+\usepackage{color}
 \usepackage{amsmath}
+\usepackage{amsthm}
 \usepackage{amsfonts}
 \usepackage[margin=2cm]{geometry}
 \usepackage{tikz}
@@ -14,15 +17,62 @@
 \newcommand\fv{\mathit{fv}}
 \newcommand\iterate{\mathit{iterate}_{\fv(p)}}
 
+% Colours
+\newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
+
+% Theorems
+\theoremstyle{definition}
+
+\newtheorem{thm2}{\optcolor{1,0,0}{Theorem}}
+\newtheorem{lem2}[thm2]{\optcolor{1,0,0}{Lemma}}
+\newtheorem{defn2}[thm2]{\optcolor{0,0,1}{Definition}}
+\newtheorem{eg2}[thm2]{\optcolor{0,0.5,0}{Example}}
+\newtheorem{rem2}[thm2]{Remark}
+
+\newlength{\topsepbackup}
+
+\newcommand{\newboxenv}[4]
+  {\newenvironment{#1}
+    {
+      \pagebreak[2]
+      \ifx\bw\relax
+        \definecolor{shadecolor}{gray}{#3}
+      \else
+        \definecolor{shadecolor}{rgb}{#4}
+      \fi
+      \setlength{\topsepbackup}{\topsep}
+      \setlength{\topsep}{0pt}
+      \begin{shaded}
+      \begin{#2}
+    }{
+      \end{#2}
+      \end{shaded}
+      \setlength{\topsep}{\topsepbackup}
+    }
+  }
+
+\newboxenv{thm}{thm2}{0.9}{0.95,0.99,1}
+\newboxenv{lem}{lem2}{0.9}{0.95,0.99,1}
+\newboxenv{defn}{defn2}{0.91}{0.95,1,0.9}
+\newboxenv{eg}{eg2}{0.91}{0.95,1,0.9}
+\newboxenv{rem}{rem2}{0.91}{0.95,1,0.9}
+
 \noweboptions{smallcode}
 
-\setlength{\parindent}{0cm}
-\setlength{\parskip}{0.3cm plus4mm minus3mm}
+\sloppy
+\frenchspacing
+\parskip=3pt
+\parindent=0pt
 
 \begin{document}
 
-\input{tex/submatch}
+\input{tex/macros}
+
+\chapter{Submatching}
+
 \input{tex/ere-submatch}
+\input{tex/patmatchrel}
+\input{tex/exprsets}
 \input{tex/nfa}
 
 \nowebchunks

@@ -3,14 +3,16 @@ Name		= dreml
 
 # Sub-documents
 Parts[] =
-  tex/brainstorming.tex
-  tex/ere-submatch.tex
-  tex/nfa.tex
-  tex/submatch.tex
+  tex/brainstorming
+  tex/ere-submatch
+  tex/exprsets
+  tex/macros
+  tex/nfa
+  tex/patmatchrel
 
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)
 
 .PHONY: view
 view: $(TARGET)
-  xpdf $<
+  evince $<

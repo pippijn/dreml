@@ -1,0 +1,99 @@
+\section{Pattern matching relation}
+\label{patmatchrel}
+
+We write the union of pattern match environments as $\uplus$, which is, since
+we use ordered multi-sets to represent an environment, equivalent to list
+concatenation. We formalise the pattern matching relation $w \vdash p \leadsto
+\Gamma$ based on the definition in \cite{pd-pat}, extending it with
+intersection. We do not define a relation on pattern negation, since at this
+point, these must have been put in the negation normal form using $\negnorm$.
+
+\begin{minipage}[t]{0.4\textwidth}
+   \[\text{(VarBase)} \frac
+      {w \in L(r)}
+      {w \vdash x : r \leadsto \{x : w\}}
+   \]
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+   \[\text{(VarGroup)} \frac
+      {w \vdash p \leadsto \Gamma}
+      {w \vdash x : p \leadsto \{x : w\} \uplus \Gamma}
+   \]
+\end{minipage}
+
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(Concat)} \frac
+   {\begin{array}{c}
+      w = w_1 w_2 \\
+      w_1 \vdash p_1 \leadsto \Gamma_1 \\
+      w_2 \vdash p_2 \leadsto \Gamma_2
+   \end{array}}     
+   {w \vdash (p_1, p_2) \leadsto \Gamma_1 \uplus \Gamma_2}
+\]
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(Star)} \frac
+   {\begin{array}{c}
+      w = w_1 \dots w_n \\
+      w_i \vdash p \leadsto \Gamma_i \text{ for } i = 1 \dots n
+   \end{array}}     
+   {w \vdash p^* \leadsto \Gamma_1 \uplus \dots \uplus \Gamma_n}
+\]
+\end{minipage}
+
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(ChoiceL)} \frac
+   {w \vdash p_1 \leadsto \Gamma_1}
+   {w \vdash p_1 + p_2 \leadsto \Gamma_1}
+\]
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(ChoiceR)} \frac
+   {w \vdash p_2 \leadsto \Gamma_2}
+   {w \vdash p_1 + p_2 \leadsto \Gamma_2}
+\]
+\end{minipage}
+
+\[\text{(Intersect)} \frac
+   {\begin{array}{c}
+      w \vdash p_1 \leadsto \Gamma_1 \\
+      w \vdash p_2 \leadsto \Gamma_2
+   \end{array}}     
+   {w \vdash p_1 \cap p_2 \leadsto \Gamma_1 \uplus \Gamma_2}
+\]
+
+As described in section \ref{ere-submatch}, the matching function yielded by
+the pattern partial derivative can be customised with an $\iterate$. If this
+function is defined as one that keeps all matches, the number of possible
+matches can become exponential, if the pattern matching relation is defined as
+above.
+
+We consider the pattern $(x:A^*)$ and the input $A^n$. This pattern has one
+possible match, which is the complete input $A^n$. If we now add an iterating
+operator $p^*$ to the pattern, we match with the pattern $(x:A^*)^*$. The
+number of possible matches is now $2^{n-1}$, namely all combinations of the
+set $\{ A^1, \dots, A^n \}$ that yield the original input $A^n$.
+
+If the Kleene star is applied again, the number of matches does not change,
+but the number of states the automaton ends with will be $m^{n-1}$ where $m$
+is the number of kleene stars in tetration: $S((x:A^*)^{^m*}, A^n) = m^{n-1}$.
+
+This exponential number of matches can be reduced if instead of an ordered
+multi-set of matches, we use an unordered multi-set for the matching
+environment. E.g. the match $\{ x:A; x:AA \}$ and $\{ x:AA; x:A \}$ will be
+equivalent and counted only once. The resulting match-sets will be the set of
+parts of all partitions of $n$ represented as $A^n$. Consequently, the number
+of match-sets will be equal to the cardinality of the set of sets of parts of
+all partitions of $n$. % This number is polynomial. TODO: really? and how many?
+
+We can reduce the number of matches to one by defining a deterministic pattern
+matching relation. The most commonly used disambiguation strategy used is the
+greedy left-most matching strategy as used by Perl style regular expression
+engines. A different strategy is used by POSIX, which favours the longest word
+match. We employ the Perl strategy, which is natural for partial derivatives,
+as we can simply take the first matched variable from the ordered multi-set
+that is the matching environment.
+
+
+
+% vim:tw=78
