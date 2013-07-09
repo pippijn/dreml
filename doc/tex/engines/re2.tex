@@ -1,0 +1,41 @@
+\section{RE2}
+
+The RE2 engine by Russ Cox is a regular expression matcher based on finite
+automata. In the first step, it constructs an NFA from the expression. When
+matching an input string, it constructs a DFA on the fly and caches the states.
+If the DFA cache exceeds a certain size, it is cleared and the DFA construction
+starts over.
+
+RE2 implements several low-level optimisations and exhibits high performance. It
+provides specialised functions for specific matching tasks, e.g. a function that
+only solves the word problem, that is, it tests whether the complete input is a
+word in the language described by the regular expression. Another function may
+test whether any substring of the input can be matched by the expression.
+
+In addition, it performs several analyses over the regular expression that allow
+it to choose specialised paths and algorithms for common cases of simple regular
+expressions. For example, if the engine can always know which submatch a
+character is part of, it can avoid copying submatch boundary sets. For example
+in $(x:a^*)(y:b)$, all $a$s are assigned to the match variable $x$, and the
+final $b$ is assigned to $y$, whereas in $(x:a^*)(y:a)$, after reading $aa$, it
+can not yet be decided which variable the letters will be assigned to, resulting
+in a boundary set with two elements: $\{\{(x,aa)\},\{(x,a),(y,a)\}\}$.
+
+The problem solved by our pattern submatching with partial derivatives is the
+most difficult one, and RE2 solves it by first running the DFA on the input to
+find the end of the matched substring. After that, it runs another DFA in which
+all concatenations of regular expressions are reversed, in order to find the
+beginning of the matched substring. Finally, it runs an NFA to locate the
+submatches.
+
+
+\subsection{Automata construction}
+
+The time taken by RE2 to compile a regular expression into an automaton is,
+according to \cite{regexp3}, about three to four times more than by PCRE.
+
+
+
+
+
+% vim:tw=80

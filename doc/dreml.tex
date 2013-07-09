@@ -1,21 +1,15 @@
 \documentclass[10pt,a4paper,german,headsepline,twoside,DIV15,BCOR12mm]{scrbook}
 \usepackage{framed}
+\usepackage{needspace}
+\usepackage[implicit,naturalnames]{hyperref}
 \usepackage{noweb}
+\usepackage{graphviz}
 \usepackage{color}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amsfonts}
 \usepackage[margin=2cm]{geometry}
 \usepackage{tikz}
-
-\newcommand\circledcap{\textcircled{\tiny$\cap$}}
-\newcommand\circledneg{\textcircled{\tiny$\neg$}}
-\newcommand\circledcdot{\textcircled{\raisebox{-0.4pt}{$\cdot$}}}
-\newcommand\dd[1]{\frac{\partial}{\partial_{#1}}}
-\newcommand\dda{\dd{a}}
-
-\newcommand\fv{\mathit{fv}}
-\newcommand\iterate{\mathit{iterate}_{\fv(p)}}
 
 % Colours
 \newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
@@ -26,8 +20,8 @@
 \newtheorem{thm2}{\optcolor{1,0,0}{Theorem}}
 \newtheorem{lem2}[thm2]{\optcolor{1,0,0}{Lemma}}
 \newtheorem{defn2}[thm2]{\optcolor{0,0,1}{Definition}}
-\newtheorem{eg2}[thm2]{\optcolor{0,0.5,0}{Example}}
-\newtheorem{rem2}[thm2]{Remark}
+\newtheorem{eg2}{\optcolor{0,0.5,0}{Example}}
+\newtheorem{rem2}[eg2]{Remark}
 
 \newlength{\topsepbackup}
 
@@ -51,11 +45,11 @@
     }
   }
 
-\newboxenv{thm}{thm2}{0.9}{0.95,0.99,1}
-\newboxenv{lem}{lem2}{0.9}{0.95,0.99,1}
-\newboxenv{defn}{defn2}{0.91}{0.95,1,0.9}
-\newboxenv{eg}{eg2}{0.91}{0.95,1,0.9}
-\newboxenv{rem}{rem2}{0.91}{0.95,1,0.9}
+\newboxenv{thm}{thm2}{0.9}{1,1,1}
+\newboxenv{lem}{lem2}{0.9}{1,1,1}
+\newboxenv{defn}{defn2}{0.91}{1,1,1}
+\newboxenv{eg}{eg2}{0.91}{1,1,1}
+\newboxenv{rem}{rem2}{0.91}{1,1,1}
 
 \noweboptions{smallcode}
 
@@ -68,12 +62,8 @@
 
 \input{tex/macros}
 
-\chapter{Submatching}
-
-\input{tex/ere-submatch}
-\input{tex/patmatchrel}
-\input{tex/exprsets}
-\input{tex/nfa}
+\input{tex/engines}
+\input{tex/submatching}
 
 \nowebchunks
 

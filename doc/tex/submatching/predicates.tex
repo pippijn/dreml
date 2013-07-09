@@ -1,0 +1,53 @@
+\section{Language predicates}
+
+In order to test whether a regular expression describes the empty language, we
+define a boolean predicate $\isempty :: r \to \{0, 1\}$, which is an
+approximation of $L(r) = \emptyset$. Since $\isempty(r) \neq \neg\isempty(\neg
+r)$, we need to expand the negated case. We define a separate predicate
+$\isemptyneg :: r \to \{0, 1\}$ for this case so we can easily prove termination
+of the predicate.
+
+\begin{defn}
+   Approximation for $L(r) = \emptyset$.
+
+   \begin{tabular}{lll}
+      $\isempty(\emptyset)$	& $=$ & $1$ \\
+      $\isempty(\varepsilon) = \isempty(p^*) = \isempty(l)$
+         & $=$ & $0$ \\
+      $\isempty(r^n)$		& $=$ & $\isempty(r)$ \\
+      $\isempty(r_1 + r_2)$	& $=$ & $\isempty(r_1) \wedge \isempty(r_2)$ \\
+      $\isempty((r_1, r_2))$	& $=$ & $\isempty(r_1) \vee \isempty(r_2)$ \\
+      $\isempty(r_1 \cap r_2)$	& $=$ & $\isempty(r_1) \vee \isempty(r_2)$ \\
+      $\isempty(\neg r)$		& $=$ & $\isemptyneg(r)$ \\
+   \end{tabular}
+
+   Specialisation for negation:
+
+   \begin{tabular}{lll}
+      $\isemptyneg(\varepsilon)$	& $=$ & $1$ \\ 
+   \end{tabular}
+
+   Although $\neg(\Sigma^*)$ describes the empty language, we do not filter it
+   here, since this is an approximation.
+
+   \begin{tabular}{lll}
+      $\isemptyneg(r^*) = \isemptyneg(l) = \isemptyneg(\emptyset)$	& $=$ & $0$ \\
+   \end{tabular}
+
+   De Morgan's laws:
+
+   \begin{tabular}{lll}
+      $\isemptyneg(r_1 \cap r_2)$	& $=$ & $\isemptyneg(r_1) \wedge \isemptyneg(r_2)$ \\
+      $\isemptyneg(r_1 + r_2)$	& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
+      $\isemptyneg((r_1, r_2))$	& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
+   \end{tabular}
+
+   Double negation:
+
+   \begin{tabular}{lll}
+      $\isemptyneg(\neg r)$	& $=$ & $\isempty(r)$ \\
+   \end{tabular}
+\end{defn}
+
+
+% vim:tw=80

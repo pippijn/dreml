@@ -6,18 +6,21 @@ with the extended regular expression operators as defined in \cite{pd-ere}. We
 amend the regular expression syntax from Sulzmann and Lu with additional
 boolean operators for extended regular expressions.
 
-Words:
+\begin{defn}
+   Syntax of extended patterns and regular expressions.
 
-\begin{tabular}{lrll}
-   $w$	& $::=$	& $\varepsilon$		& Empty word	\\
-	& $|$	& $l \in \Sigma$	& Letters	\\
-	& $|$	& $lw$			& Concatenation	\\
-\end{tabular}
+   Words:
 
-Extended regular expressions:
+   \begin{tabular}{lrll}
+      $w$	& $::=$	& $\varepsilon$		& Empty word	\\
+		& $|$	& $l \in \Sigma$	& Letters	\\
+		& $|$	& $lw$			& Concatenation	\\
+   \end{tabular}
 
-\begin{tabular}{lrll}
-   $r$		& $::=$	& $r+r$				& Choice		\\
+   Extended regular expressions:
+
+   \begin{tabular}{lrll}
+      $r$	& $::=$	& $r+r$				& Choice		\\
 		& $|$	& $(r,r)$			& Concatenation		\\
 		& $|$	& $r_e \cap r_e$		& Intersection		\\
         	& $|$	& $\neg r_e$			& Negation		\\
@@ -26,19 +29,20 @@ Extended regular expressions:
 		& $|$	& $\varepsilon$			& Empty word		\\
 		& $|$	& $\phi$			& Empty language	\\
 		& $|$	& $l \in Sigma$			& Letters		\\
-\end{tabular}
+   \end{tabular}
 
-Extended patterns:
+   Extended patterns:
 
-\begin{tabular}{lrll}
-   $p$		& $::=$	& $(x:r)$			& Variables Base	\\
+   \begin{tabular}{lrll}
+      $p$	& $::=$	& $(x:r)$			& Variables Base	\\
 		& $|$	& $(x:p)$			& Variables Group	\\
 		& $|$	& $p+p$				& Choice		\\
 		& $|$	& $(p,p)$			& Concatenation		\\
 		& $|$	& $p_e \cap p_e$		& Intersection		\\
         	& $|$	& $p_e^n$			& Repetition		\\
 		& $|$	& $p^*$				& Kleene star		\\
-\end{tabular}
+   \end{tabular}
+\end{defn}
 
 
 Pattern and expression repetition in the form $r^n$ is essentially the same as
@@ -61,24 +65,30 @@ be assigned to $x$ and which to $y$. Therefore, we represent a subset of
 pattern negations in terms of a negation normal form transformation that must
 be applied before beginning the pattern match.
 
-\begin{tabular}{lll}
-   $\negnorm(\neg(x : r))$		& $=$	& $(x : \neg r)$					\\
-   $\negnorm(\neg(x : p))$		& $=$	& $(x : \negnorm(\neg p)$				\\
-   Double negation:			&	&							\\
-   $\negnorm(\neg(\neg p))$		& $=$	& $\negnorm(p)$						\\
-   De Morgan's laws:			&	&							\\
-   $\negnorm(\neg(p_1 \cap p_2))$	& $=$	& $(\negnorm(\neg p_1) + \negnorm(\neg p_2)$		\\
-   $\negnorm(\neg(p_1 + p_2))$		& $=$	& $(\negnorm(\neg p_1) \cap \negnorm(\neg p_2)$		\\
-   Distributive laws:			&	&							\\
-   $\negnorm(x : p)$			& $=$	& $(x : \negnorm p)$					\\
-   $\negnorm(p_1 + p_2)$		& $=$	& $\negnorm(p_1) + \negnorm(p_2)$			\\
-   $\negnorm(p_1 \cap p_2)$		& $=$	& $\negnorm(p_1) \cap \negnorm(p_2)$			\\
-   $\negnorm(p_1, p_2)$			& $=$	& $(\negnorm(p_1), \negnorm(p_2))$			\\
-   $\negnorm(p_1^*)$			& $=$	& $\negnorm(p_1)^*$					\\
-   $\negnorm(p_1^n)$			& $=$	& $\negnorm(p_1)^n$					\\
-   Trivial atomic pattern:		&	&							\\
-   $\negnorm(x : r)$			& $=$	& $(x : r)$						\\
-\end{tabular}
+\needspace{4cm}
+
+\begin{defn}
+   Negation normal form.
+
+   \begin{tabular}{lll}
+      $\negnorm(\neg(x : r))$		& $=$	& $(x : \neg r)$					\\
+      $\negnorm(\neg(x : p))$		& $=$	& $(x : \negnorm(\neg p)$				\\
+      Double negation:			&	&							\\
+      $\negnorm(\neg(\neg p))$		& $=$	& $\negnorm(p)$						\\
+      De Morgan's laws:			&	&							\\
+      $\negnorm(\neg(p_1 \cap p_2))$	& $=$	& $(\negnorm(\neg p_1) + \negnorm(\neg p_2)$		\\
+      $\negnorm(\neg(p_1 + p_2))$	& $=$	& $(\negnorm(\neg p_1) \cap \negnorm(\neg p_2)$		\\
+      Distributive laws:		&	&							\\
+      $\negnorm(x : p)$			& $=$	& $(x : \negnorm p)$					\\
+      $\negnorm(p_1 + p_2)$		& $=$	& $\negnorm(p_1) + \negnorm(p_2)$			\\
+      $\negnorm(p_1 \cap p_2)$		& $=$	& $\negnorm(p_1) \cap \negnorm(p_2)$			\\
+      $\negnorm(p_1, p_2)$		& $=$	& $(\negnorm(p_1), \negnorm(p_2))$			\\
+      $\negnorm(p_1^*)$			& $=$	& $\negnorm(p_1)^*$					\\
+      $\negnorm(p_1^n)$			& $=$	& $\negnorm(p_1)^n$					\\
+      Trivial atomic pattern:		&	&							\\
+      $\negnorm(x : r)$			& $=$	& $(x : r)$						\\
+   \end{tabular}
+\end{defn}
 
 We do not define negation of patterns containing concatenation and iteration,
 since there is no sensible way to assign pattern variables to submatches.
@@ -88,28 +98,32 @@ for extended regular expressions, and refer to their instances as $r$ instead
 of $r_e$.  Analogously, the term ``pattern'' is used for ``extended pattern''
 and $p$ is an instance.
 
-Environments:
+\begin{defn}
+   Matching environments and language of regular expressions.
 
-\begin{tabular}{lrll}
-   $\Gamma$	& $::=$	& $\{x:w\}$			& Variable binding	\\
+   Environments:
+
+   \begin{tabular}{lrll}
+      $\Gamma$	& $::=$	& $\{x:w\}$			& Variable binding	\\
 		& $|$	& $\Gamma \uplus \Gamma$	& Ordered multi-set of
 							  variable bindings	\\
-\end{tabular}
+   \end{tabular}
 
-Language:
+   Language:
 
-\begin{tabular}{lll}
-   $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
-   $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
-   $L(r_1 \cap r_2)$	& $=$	& $L(r_1) \cap L(r_2)$					\\
-   $L(\neg r)$		& $=$	& $\{\Sigma^*\} \setminus L(r)$				\\
-   $L(r^*)$		& $=$	&
-      $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
-      \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
-   $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
-   $L(\phi)$		& $=$	& $\{\}$						\\
-   $L(l)$		& $=$	& $\{l\}$						\\
-\end{tabular}
+   \begin{tabular}{lll}
+      $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
+      $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
+      $L(r_1 \cap r_2)$	& $=$	& $L(r_1) \cap L(r_2)$					\\
+      $L(\neg r)$	& $=$	& $\{\Sigma^*\} \setminus L(r)$				\\
+      $L(r^*)$		& $=$	&
+         $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
+         \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
+      $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
+      $L(\phi)$		& $=$	& $\{\}$						\\
+      $L(l)$		& $=$	& $\{l\}$						\\
+   \end{tabular}
+\end{defn}
 
 The variable environments are the same as in \cite{pd-pat}, the language
 definition has been extended with the definitions from \cite{pd-ere}.
