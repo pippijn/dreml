@@ -13,8 +13,8 @@ let remove_duplicate_results in_nfa states =
       ) states
   in
 
-  BatList.sort_unique compare (
+  BatList.unique (
     List.map (fun (state, env) ->
-      state, BatList.sort_unique compare env
+      state, BatList.unique env
     ) states
   )

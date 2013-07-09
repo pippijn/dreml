@@ -14,7 +14,7 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
   module Derive = Derive.Make(Tag)
 
 
-  let _trace = false
+  let _trace = true
 
 
   let transitions derive p =
@@ -35,7 +35,7 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
         Printf.printf "  on '%s':\n"
           (Char.escaped chr);
         List.iter (fun (pd, f) ->
-          print_endline ("    " ^ Util.string_of_pattern pd)
+          print_endline ("    " ^ Util.string_of_pattern (Simplify.simplify_pat pd))
         ) pds;
       );
 
@@ -133,7 +133,7 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
          )
       (* flatten new state list, as each state may have gone to several other states *)
       |> List.flatten
-      (*|> Duplicates.remove_duplicate_results true*)
+      |> Duplicates.remove_duplicate_results true
     ) [start, env] input
 
     |> reverse_env

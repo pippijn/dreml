@@ -49,14 +49,42 @@ let main pattern input =
   Printf.printf "%d vs %d\n" (List.length final) (List.length unique);
 ;;
 
+let bench () =
+  let re =
+    let lexbuf = Lexing.from_string "(x:(a|aa)*)" in
+    Parser.start Lexer.token lexbuf
+  in
+
+  let input = String.make (1024 * 1024) 'a' in
+
+  check_clashes re;
+  let re = Negation.normal_form re in
+
+  let nfa = Timing.time "build nfa" Nfa.build re in
+  let final = Timing.time "run nfa" (Nfa.run nfa input) Types.empty_env in
+
+  ()
+;;
+
 
 let () =
   Printexc.record_backtrace true;
 
+  Cmdline.run ignore;
+
   match Sys.argv with
+  | [|_; "-timing"|] ->
+      bench ()
+
+  | [|_; "-timing"; pattern; input|] ->
+      main pattern input
+  | [|_; "-timing"; pattern|] ->
+      main pattern ""
+
   | [|_; pattern; input|] ->
       main pattern input
   | [|_; pattern|] ->
       main pattern ""
+
   | _ ->
       main "(a:(a(b|c)d)*)(b:(ac)*)" "abdac"

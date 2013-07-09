@@ -51,8 +51,8 @@ module Make(Tag : TransitionType) = struct
     | p :: ps -> PatIntersect (p, pattern_of_exprset ps)
 
 
-  let set_union ?(compare=compare) a b =
-    BatList.sort_unique compare (a @ b)
+  let set_union ?(cmp=(=)) a b =
+    BatList.unique ~cmp (a @ b)
 
 
   (* circled · *)
@@ -85,7 +85,7 @@ module Make(Tag : TransitionType) = struct
 
   let intersect_exprsets_pat ess fss =
     (* unite every es with every fs *)
-    Util.reduce (set_union ~compare:Util.compare_fst) (
+    Util.reduce (set_union ~cmp:Util.equal_fst) (
       (* for each E set *)
       List.map (fun (es, e_tag) ->
         (* for each F set *)
@@ -204,10 +204,12 @@ module Make(Tag : TransitionType) = struct
           mul_exprsets_expr_pat ~iterate (derive_pat l e) repeat
     in
 
+    (*
     Printf.printf "'%s': %s = %s\n"
       (Char.escaped l)
       (Util.string_of_pattern pattern)
       (string_of_exprsets_pat sets);
+    *)
 
     sets
 
