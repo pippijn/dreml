@@ -84,7 +84,7 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
     let optimised = Array.make nstates [||] in
     Hashtbl.iter (fun p xs ->
       let p = Hashtbl.find hashcons p in
-      let xs = Array.map (List.map (fun (pd, f) ->
+      let xs = Array.map (BatList.map (fun (pd, f) ->
         Hashtbl.find hashcons pd, f
       )) xs in
       optimised.(p) <- xs
@@ -110,8 +110,8 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
 
   let reverse_env states =
     if Transition._reverse then
-      List.map (fun (state, env) ->
-        state, List.map (fun (x, w) -> x, List.rev w) env
+      BatList.map (fun (state, env) ->
+        state, BatList.map (fun (x, w) -> x, List.rev w) env
       ) states
     else
       states
@@ -119,20 +119,20 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
 
   let run (nfa, start) input env =
     BatString.fold_left (fun states c ->
-      List.rev_map (fun (state, env) ->
+      BatList.map (fun (state, env) ->
         (* get the transition tables for the current states *)
         let table = Hashtbl.find nfa state in
         (* find all transitions on 'c' *)
         table.(Char.code c), env
       ) states
       (* update envs *)
-      |> List.rev_map (fun (next, env) ->
-           List.rev_map (fun (pd, f) ->
+      |> BatList.map (fun (next, env) ->
+           BatList.map (fun (pd, f) ->
              pd, Tag.execute f env
            ) next
          )
       (* flatten new state list, as each state may have gone to several other states *)
-      |> List.flatten
+      |> BatList.flatten
       |> Duplicates.remove_duplicate_results true
     ) [start, env] input
 
@@ -143,25 +143,25 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
     let (nfa, start, inversion) = optimised (nfa, start) in
 
     Timing.time "run" (BatString.fold_left (fun states c ->
-      List.rev_map (fun (state, env) ->
+      BatList.map (fun (state, env) ->
         (* get the transition tables for the current states *)
         let table = nfa.(state) in
         (* find all transitions on 'c' *)
         table.(Char.code c), env
       ) states
       (* update envs *)
-      |> List.rev_map (fun (next, env) ->
-           List.rev_map (fun (pd, f) ->
+      |> BatList.map (fun (next, env) ->
+           BatList.map (fun (pd, f) ->
              pd, Tag.execute f env
            ) next
          )
       (* flatten new state list, as each state may have gone to several other states *)
-      |> List.flatten
+      |> BatList.flatten
       |> Duplicates.remove_duplicate_results true
     ) [start, env]) input
 
     |> reverse_env
-    |> List.rev_map (fun (state, env) ->
+    |> BatList.map (fun (state, env) ->
          inversion.(state), env
        )
 

@@ -51,7 +51,7 @@ let main pattern input =
 
 let bench () =
   let re =
-    let lexbuf = Lexing.from_string "(x:(a|aa)*)" in
+    let lexbuf = Lexing.from_string "(x:a*)" in
     Parser.start Lexer.token lexbuf
   in
 
