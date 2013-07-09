@@ -32,10 +32,29 @@ submatches.
 \subsection{Automata construction}
 
 The time taken by RE2 to compile a regular expression into an automaton is,
-according to \cite{regexp3}, about three to four times more than by PCRE.
+according to \cite{regexp3}, about three to four times more than by PCRE. The
+resulting automaton object can become large, because of the cached DFA, but RE2
+limits the size to a user-defined limit. By constructing DFA states on demand
+rather than constructing the complete DFA up front, RE2 avoids the exponential
+complexity of a full NFA state subset construction.
 
 
+\subsection{Matching performance}
 
+Using an automata based approach, RE2 avoids exponential time complexity for
+regular expression matching, which a backtracking algorithm exposes for example
+when matching $a^n$ with the expression $a?^na^n$. Russ Cox explains this
+running time behaviour in more detail in \cite{regexp1}. Common case
+optimisations help RE2 outperform PCRE on large inputs, and the engine is
+not much slower than PCRE on small strings.
+
+
+\subsection{Accepted syntax}
+
+RE2 accepts most common regular expression operators, but does not in any way
+support negation or intersection of subexpressions. Backreferences are not
+supported in any automata based engine, and although RE2 contains a backtracking
+implementation, it does not expose this in its API or syntax.
 
 
 % vim:tw=80

@@ -15,8 +15,6 @@ those that describe the empty language. This filtered set is then used as input
 and each term is derived over each letter again. This is done until no new terms
 appear or all terms yield the empty language, i.e. $L(p) = \emptyset$.
 
-\pagebreak
-
 \begin{eg}
    Given the alphabet $\Sigma = \{a, b, c\}$ and the pattern expression $p =
    (x:a, p_2)$ where $p_2 = (y:\neg c, p_3)$ and $p_3 = (z:ab + ac)$, we can
@@ -118,6 +116,9 @@ appear or all terms yield the empty language, i.e. $L(p) = \emptyset$.
    The resulting set of pattern sets is
    \[\dda(\neg c) \cup \dda(z:ab + ac) = \{ (\{ (\neg\phi, p_3) \},
    \update{y}{a}), (\{ b \}, \update{z}{a}), (\{ c \}, \update{z}{a}) \}\].
+
+   After using the same method to iteratively construct the entire automaton,
+   the states and transitions will be as in the following graph:
 
    \digraph[scale=0.5]{MyGraph}{
      rankdir = LR;
