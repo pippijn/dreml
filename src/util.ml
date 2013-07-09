@@ -53,14 +53,11 @@ let reduce f = function
 
 
 let rec rewrite f x =
-  f (f x)
-  (*
   let x' = f x in
   if x = x' then
     x
   else
     rewrite f x'
-    *)
 
 
 let compare_list compare a_list b_list =
@@ -78,3 +75,6 @@ let compare_list compare a_list b_list =
 
 let compare_fst a b =
   compare (fst a) (fst b)
+
+let equal_fst a b =
+  fst a = fst b
