@@ -26,6 +26,7 @@ appear or all terms yield the empty language, i.e. $L(p) = \emptyset$.
          $\{\{ \varepsilon \}\}$
    \end{tabular}
 
+   \needspace{5cm}
    \begin{tabular}{lll}
       $\dda(((x:a), p_2))$
       & $=_{\nr{5p}}$ &
@@ -120,21 +121,7 @@ appear or all terms yield the empty language, i.e. $L(p) = \emptyset$.
    After using the same method to iteratively construct the entire automaton,
    the states and transitions will be as in the following graph:
 
-   \digraph[scale=0.5]{MyGraph}{
-     rankdir = LR;
-     bgcolor = "transparent";
-     "(x:a)p2" -> "p2" [ label = "a | x⊕[a]" ];
-     "p2" -> "(y:¬Ø)p3" [ label = "a | y⊕[a]" ];
-     "p2" -> "(y:¬Ø)p3" [ label = "b | y⊕[b]" ];
-     "p2" -> "(z:b+c)" [ label = "a | z⊕[a]" ];
-     "(y:¬Ø)p3" -> "(y:¬Ø)p3" [ label = "c | y⊕[b]" ];
-     "(y:¬Ø)p3" -> "(y:¬Ø)p3" [ label = "b | y⊕[c]" ];
-     "(y:¬Ø)p3" -> "(y:¬Ø)p3" [ label = "a | y⊕[a]" ];
-     "(y:¬Ø)p3" -> "(z:b+c)" [ label = "a | z⊕[a]" ];
-     "(z:b+c)" -> "(z:ε)" [ label = "'b' | z⊕['b']" ];
-     "(z:b+c)" -> "(z:ε)" [ label = "'c' | z⊕['c']" ];
-   }
-
+   \img{img/nfa}{16cm}
 
 \end{eg}
 

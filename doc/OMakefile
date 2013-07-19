@@ -15,6 +15,9 @@ Parts[] =
   tex/submatching
   tex/macros
 
+Images[] =
+  img/nfa
+
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)
 
@@ -23,3 +26,5 @@ $(TARGET): graphviz.sty
 .PHONY: view
 view: $(TARGET)
   evince $<
+
+.SUBDIRS: img

@@ -2,11 +2,12 @@
 \label{ere-submatch}
 
 The definition of partial derivatives from \cite{pd-pat} has been combined
-with the extended regular expression operators as defined in \cite{pd-ere}. We
-amend the regular expression syntax from Sulzmann and Lu with additional
+with the extended regular expression operators as defined in \cite{pd-ere}.
+The regular expression syntax from Sulzmann and Lu is amended with additional
 boolean operators for extended regular expressions.
 
 \begin{defn}
+   \label{defn-syn}
    Syntax of extended patterns and regular expressions.
 
    Words:
@@ -68,6 +69,7 @@ be applied before beginning the pattern match.
 \needspace{4cm}
 
 \begin{defn}
+   \label{defn-negnorm}
    Negation normal form.
 
    \begin{tabular}{lll}
@@ -99,6 +101,7 @@ of $r_e$.  Analogously, the term ``pattern'' is used for ``extended pattern''
 and $p$ is an instance.
 
 \begin{defn}
+   \label{defn-lang}
    Matching environments and language of regular expressions.
 
    Environments:
@@ -119,14 +122,21 @@ and $p$ is an instance.
       $L(r^*)$		& $=$	&
          $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
          \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
-      $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
-      $L(\phi)$		& $=$	& $\{\}$						\\
+      $L(r^n)$		& $=$	&
+         $\{ w_1 \dots w_n | w_n \in L(r) \}$	\\
       $L(l)$		& $=$	& $\{l\}$						\\
+      $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
+      $L(\phi)$		& $=$	& $\emptyset$						\\
    \end{tabular}
 \end{defn}
 
+% TODO: prove L(r^n)
+
 The variable environments are the same as in \cite{pd-pat}, the language
 definition has been extended with the definitions from \cite{pd-ere}.
+Juxtaposition of terms is used interchangably with the explicit pair syntax
+for concatenation, following from the language definition as set product of
+the languages of the concatenated terms.
 
 
 % vim:tw=78

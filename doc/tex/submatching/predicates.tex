@@ -2,19 +2,34 @@
 
 In order to test whether a regular expression describes the empty language, we
 define a boolean predicate $\isempty :: r \to \{0, 1\}$, which is an
-approximation of $L(r) = \emptyset$. Since $\isempty(r) \neq \neg\isempty(\neg
-r)$, we need to expand the negated case. We define a separate predicate
-$\isemptyneg :: r \to \{0, 1\}$ for this case so we can easily prove termination
-of the predicate.
+approximation of $L(r) = \emptyset$. An exact solution to this problem is, for
+negation, equivalent to testing whether the language under negation accepts
+$\Sigma^*$. As shown by \cite{stoc73}, this problem is PSPACE-complete. The
+approximation described here requires linear time and constant space.
 
-\needspace{5cm}
+Since $\isempty(r) \neq \neg\isempty(\neg r)$, we need to expand the negated
+case. We define a separate predicate $\isemptyneg :: r \to \{0, 1\}$ for this
+case so we can easily prove termination of the predicate.
+
+In other words, if a language is non-empty, one can not directly derive that its
+negation is empty. For example, considering the simple atomic regular expression
+$r = a$ matching a single letter from the alphabet, the language of the
+negation, $L(\neg a)$ is in fact $\Sigma^* \setminus a$. Conversely, however,
+the negation of the empty language, regardless of its form as regular
+expression, is always $\Sigma^*$, so that e.g. $L(\neg(a \cap b)) =
+L(\neg(\phi)) = \Sigma^* \setminus \phi = \Sigma^*$.
+
+This function is an approximation in that if it yields true, then $L(r) =
+\emptyset$, but if it yields false, $L(r) \neq \emptyset$ may not follow. For
+instance, $\isempty(a \cap b) = 0$, but $L(a \cap b) = \emptyset$.
 
 \begin{defn}
+   \label{defn-isempty}
    Approximation for $L(r) = \emptyset$.
 
    \begin{tabular}{lll}
-      $\isempty(\emptyset)$	& $=$ & $1$ \\
-      $\isempty(\varepsilon) = \isempty(p^*) = \isempty(l)$
+      $\isempty(\phi)$	& $=$ & $1$ \\
+      $\isempty(\varepsilon) = \isempty(r^*) = \isempty(l)$
          & $=$ & $0$ \\
       $\isempty(r^n)$		& $=$ & $\isempty(r)$ \\
       $\isempty(r_1 + r_2)$	& $=$ & $\isempty(r_1) \wedge \isempty(r_2)$ \\
@@ -33,15 +48,15 @@ of the predicate.
    here, since this is an approximation.
 
    \begin{tabular}{lll}
-      $\isemptyneg(r^*) = \isemptyneg(l) = \isemptyneg(\emptyset)$	& $=$ & $0$ \\
+      $\isemptyneg(r^*) = \isemptyneg(l) = \isemptyneg(\phi)$	& $=$ & $0$ \\
    \end{tabular}
 
    De Morgan's laws:
 
    \begin{tabular}{lll}
       $\isemptyneg(r_1 \cap r_2)$	& $=$ & $\isemptyneg(r_1) \wedge \isemptyneg(r_2)$ \\
-      $\isemptyneg(r_1 + r_2)$	& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
-      $\isemptyneg((r_1, r_2))$	& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
+      $\isemptyneg(r_1 + r_2)$		& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
+      $\isemptyneg((r_1, r_2))$		& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
    \end{tabular}
 
    Double negation:
@@ -50,6 +65,89 @@ of the predicate.
       $\isemptyneg(\neg r)$	& $=$ & $\isempty(r)$ \\
    \end{tabular}
 \end{defn}
+
+We provide a partial proof for the above definition by showing that
+$\isempty(r)$ iff $L(r) = \emptyset$. The assertion that conversely, $L(r) =
+\emptyset$ iff $\neg\isempty(r)$ and therefore $\neg\isempty(r) \Rightarrow L(r)
+\neq \emptyset$ is not required for the approximation, since the function is
+only necessary to rule out false positives and therefore the possibility of
+removing valid transitions from the resulting automaton.
+
+\begin{lem}
+   $\isempty(r) \Rightarrow L(r) = \emptyset$
+
+   It must be shown that for every instance of $r$ in which $\isempty(r)$ is
+   true, it holds that $L(r) = \emptyset$.
+
+   \begin{enumerate}[label=\textbf{(\arabic*)}]
+      \item
+         $L(\phi) = \emptyset \Rightarrow \isempty(\phi)$
+
+      \item
+         $L(r_1 \cap r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) \cap L(r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(r_1) \vee \isempty(r_2)$ \\
+         $\Leftrightarrow \isempty(r_1 \cap r_2)$
+
+      \item
+         $L(r_1 + r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) \cup L(r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) = \emptyset \wedge L(r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(r_1) \wedge \isempty(r_2)$ \\
+         $\Leftrightarrow \isempty(r_1 + r_2)$
+
+      \item
+         $L((r_1, r_2)) = \emptyset$ \\
+         $\Leftrightarrow \{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \} = \emptyset$ \\
+         $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(r_1) \vee \isempty(r_2)$ \\
+         $\Leftrightarrow \isempty(r_1 \cap r_2)$
+
+      \item
+         $L(r^n) = \emptyset$ \\
+         $\Leftrightarrow \{ w_1 \dots w_n | w_i \in L(r) \} = \emptyset$ \\
+         $\Leftrightarrow L(r) = \emptyset$ \\
+         $\Leftarrow \isempty(r)$ \\
+         $\Leftrightarrow \isempty(r^n)$
+
+      \item TODO: negation
+
+   \end{enumerate}
+\end{lem}
+
+
+In the derivation of $(r,r)$, i.e. expression or pattern concatenation, we need
+to know whether the first expression may derive $\varepsilon$, the empty word.
+In this case, we consider the second expression for the derivative, as well. For
+the same reason we have a predicate for $L(r) = \emptyset$, we create a function
+for $\varepsilon \in L(r)$. The two predicates have the same time and space
+complexity. Unlike the above predicate, however, the $\nullable$ function is
+exact.
+
+\begin{defn}
+   \label{defn-nullable}
+   Exact function for $\varepsilon \in L(r)$.
+
+   \begin{tabular}{lll}
+      $\nullable(\phi)$		& $=$ & $0$ \\
+      $\nullable(\varepsilon)$	& $=$ & $1$ \\
+      $\nullable(r^*)$		& $=$ & $1$ \\
+      $\nullable(r^n)$		& $=$ & $\nullable(r)$ \\
+      $\nullable(r_1 + r_2)$	& $=$ & $\nullable(r_1) \vee \nullable(r_2)$ \\
+      $\nullable((r_1, r_2))$	& $=$ & $\nullable(r_1) \wedge \nullable(r_2)$ \\
+      $\nullable(r_1 \cap r_2)$	& $=$ & $\nullable(r_1) \wedge \nullable(r_2)$ \\
+      $\nullable(\neg r)$	& $=$ & $\neg\nullable(r)$ \\
+   \end{tabular}
+
+\end{defn}
+
+Note that unlike the predicate from definition \ref{defn-isempty}, the
+$\nullable$ predicate does not require a specialisation for $\neg r$, since the
+language $L$ of a negated regular expression $r$ is, as defined in
+\ref{defn-lang}, $\Sigma^* \setminus L(r)$, i.e. every word, except the ones in
+$L(r)$. Therefore, the question whether a symbol or word is in a language is
+equivalent to the question whether it is not in the negated language.
 
 
 % vim:tw=80

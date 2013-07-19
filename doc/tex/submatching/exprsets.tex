@@ -282,12 +282,12 @@ with the addition of expression repetition.
    \end{minipage}
 
    \begin{minipage}[t]{0.6\textwidth}
-   \[\nr{5} \dda((r_1, r_2)) =
-       \begin{cases}
-          \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\esetsOfRe) \\
-          \dda(r_1) \circledcdot r_2 \cup \dda(r_2) & \text{otherwise}
-       \end{cases}
-   \]
+      \[\nr{5} \dda((r_1, r_2)) =
+          \begin{cases}
+             \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\esetsOfRe) \\
+             \dda(r_1) \circledcdot r_2 \cup \dda(r_2) & \text{otherwise}
+          \end{cases}
+      \]
    \end{minipage}
    \begin{minipage}[t]{0.3\textwidth}
       \[\nr{6} \dda(r_1 \cap r_2) = \dda(r_1) \circledcap \dda(r_2)\]
@@ -336,20 +336,20 @@ operators $\circledcdot$ and $\circledcap$, omitting negation.
    \label{defn-pd-pset}
    Pattern partial derivatives as sets of pattern sets.
 
-   \[\nr{1p} \dda(x:r)
+   \[\nr{1p}\quad \dda(x:r)
       = \{ (\{ \eset\reOfEset \}, \updatexa) | \eset \in \dda(r) \}\]
-   \[\nr{2p} \dda(x:p)
+   \[\nr{2p}\quad \dda(x:p)
       = \{ (\{ (x:\pset\reOfEset) \}, \updatexa \circ f) | (\pset, f) \in \dda(p) \}\]
-   \[\nr{3p} \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
-   \[\nr{4p} \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
-   \[\nr{5p} \dda((p_1, p_2)) =
+   \[\nr{3p}\quad \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
+   \[\nr{4p}\quad \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
+   \[\nr{5p}\quad \dda((p_1, p_2)) =
        \begin{cases}
           \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\reOfEsets) \\
           \dda(r_1) \circledcdot_{id} p_2 \cup \dda(p_2) & \text{otherwise}
        \end{cases}
    \]
-   \[\nr{6p} \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
-   \[\nr{7p} \dda(p^n) =
+   \[\nr{6p}\quad \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
+   \[\nr{7p}\quad \dda(p^n) =
        \begin{cases}
           \{ (\pset, f \circ \iterate) | (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
           \dda(p) \circledcdot_{\iterate} p^{n-1} & \text{otherwise}

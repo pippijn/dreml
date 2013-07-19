@@ -1,4 +1,53 @@
 \section{PCRE}
 
+The Perl Compatible Regular Expressions library is a C library that attempts to
+bring the power of Perl regular expressions to other languages. PCRE and Perl
+differ in a few instances, but their semantics and syntax are mostly equivalent.
+In particular, Perl allows arbitrary Perl code to be executed within a match,
+whereas PCRE does not include a Perl interpreter and can therefore never
+implement this feature. However, PCRE does provide a way to call C code in named
+``callout'' points.
+
+\subsection{Automata construction}
+
+PCRE is very fast at compiling a regular expression. The expression is compiled
+to 
+
+
+\subsection{Matching performance}
+
+The default matching algorithm used by the library is based on backtracking. The
+regular expression is translated to a program that operates by processing one
+path of an expression at a time, going back to the last matched text and program
+position.
+
+For example, consider the regular expression $(x_1:a^*)(x_2:a)(x_3:b^*)(x_4:b)$,
+which matches any number of $a$ followed by any number of $b$, but at least one
+of each. Matching the string $aabb$ against this pattern with a backtracking
+algorithm will first attempt process the sub-expression $a^*$ by repeatedly
+processing the sub-expression $a$ until it fails, so that $x_1 = aa$. Then, it
+tries to match $(x_2:a)$, which fails, because the input is now at $b$, so the
+algorithm backs up to the position at which the last successful match began, and
+proceeds to process the input $abb$.
+
+This algorithm requires the matcher to process the input up to $2^n$ times, as
+there might be an exponential number of paths to test.
+
+PCRE offers a DFA implementation as alternative matching algorithm, which is not
+Perl compatible, but very efficient. Furthermore, it includes a Just-In-Time
+compiler based on sljit, the stackless JIT compiler, increasing matching
+performance by several times\footnote{\texttt{pcregrep --no-jit} was between two
+and five times slower than without \texttt{--no-jit} for various patterns.}.
+
+A pattern that causes particularly bad performance in PCRE is $(a?)^na^*b$. For
+this expression, PCRE takes exponential time, and a DFA takes linear time.
+
+
+\subsection{Accepted syntax}
+
+PCRE supports the richest syntax of all investigated regular expression
+implementations. It supports the full syntax as specified by the Perl regular
+expression man page.
+
 
 % vim:tw=80

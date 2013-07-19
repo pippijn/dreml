@@ -1,5 +1,8 @@
 \documentclass[10pt,a4paper,german,headsepline,twoside,DIV15,BCOR12mm]{scrbook}
 \usepackage{framed}
+\usepackage[utf8x]{inputenc}
+\usepackage{enumerate}
+\usepackage{enumitem}
 \usepackage{needspace}
 \usepackage[implicit,naturalnames]{hyperref}
 \usepackage{noweb}
@@ -13,6 +16,9 @@
 
 % Colours
 \newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
+
+% Images
+\newcommand{\img}[2]{\includegraphics[width=#2]{#1.pdf}}
 
 % Theorems
 \theoremstyle{definition}
@@ -45,11 +51,11 @@
     }
   }
 
-\newboxenv{thm}{thm2}{0.9}{1,1,1}
-\newboxenv{lem}{lem2}{0.9}{1,1,1}
-\newboxenv{defn}{defn2}{0.91}{1,1,1}
-\newboxenv{eg}{eg2}{0.91}{1,1,1}
-\newboxenv{rem}{rem2}{0.91}{1,1,1}
+\newboxenv{thm}{thm2}{0.9}{0.95,0.95,0.95}
+\newboxenv{lem}{lem2}{0.9}{0.95,0.95,0.95}
+\newboxenv{defn}{defn2}{0.91}{0.95,0.95,0.95}
+\newboxenv{eg}{eg2}{0.91}{0.95,0.95,0.95}
+\newboxenv{rem}{rem2}{0.91}{0.95,0.95,0.95}
 
 \noweboptions{smallcode}
 

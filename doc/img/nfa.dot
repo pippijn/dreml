@@ -1,0 +1,14 @@
+digraph nfa {
+        rankdir = LR;
+        bgcolor = "transparent";
+        "(x:a)p2" -> "p2" [ label = "a | x⊕[a]" ];
+        "p2" -> "(y:¬Ø)p3" [ label = "a | y⊕[a]" ];
+        "p2" -> "(y:¬Ø)p3" [ label = "b | y⊕[b]" ];
+        "p2" -> "(z:b+c)" [ label = "a | z⊕[a]" ];
+        "(y:¬Ø)p3" -> "(y:¬Ø)p3" [ label = "c | y⊕[b]" ];
+        "(y:¬Ø)p3" -> "(y:¬Ø)p3" [ label = "b | y⊕[c]" ];
+        "(y:¬Ø)p3" -> "(y:¬Ø)p3" [ label = "a | y⊕[a]" ];
+        "(y:¬Ø)p3" -> "(z:b+c)" [ label = "a | z⊕[a]" ];
+        "(z:b+c)" -> "(z:ε)" [ label = "'b' | z⊕['b']" ];
+        "(z:b+c)" -> "(z:ε)" [ label = "'c' | z⊕['c']" ];
+}
