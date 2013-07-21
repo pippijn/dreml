@@ -3,9 +3,14 @@ Name		= dreml
 
 # Sub-documents
 Parts[] =
-  tex/engines/pcre
-  tex/engines/re2
-  tex/engines
+  tex/background
+  tex/conclusion
+  tex/discussion/pcre
+  tex/discussion/re2
+  tex/discussion
+  tex/implementation
+  tex/intro
+  tex/results
   tex/submatching/brainstorming
   tex/submatching/ere-submatch
   tex/submatching/exprsets

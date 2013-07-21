@@ -118,7 +118,7 @@ and $p$ is an instance.
       $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
       $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
       $L(r_1 \cap r_2)$	& $=$	& $L(r_1) \cap L(r_2)$					\\
-      $L(\neg r)$	& $=$	& $\{\Sigma^*\} \setminus L(r)$				\\
+      $L(\neg r)$	& $=$	& $\Sigma^* \setminus L(r)$				\\
       $L(r^*)$		& $=$	&
          $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
          \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
@@ -131,6 +131,8 @@ and $p$ is an instance.
 \end{defn}
 
 % TODO: prove L(r^n)
+
+The term $\Sigma^*$ is used as abbreviation for $\{ w | w \in \Sigma^* \}$.
 
 The variable environments are the same as in \cite{pd-pat}, the language
 definition has been extended with the definitions from \cite{pd-ere}.
