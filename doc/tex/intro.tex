@@ -9,6 +9,19 @@ written in it, or have bindings to a popular C regex engine such as PCRE.
 
 Many of these matching engines support a superset of regular languages. In order
 to implement these non-regular expressions, engines use backtracking algorithms.
+The fact that these algorithms take exponential runtime make them unfeasible for
+many applications, such as compilers and public search engines. Applications
+requiring linear execution time for pattern matching generally use real regular
+expressions, i.e. descriptions of regular languages, that can be compiled to
+efficient matching automata.
+
+There are several ways to construct such automata. A well-known method is
+Thompson's construction algorithm, described in \cite{thompson}. The paper
+mentions backtracking algorithms and explains how finite automata can improve
+execution time from exponential to linear. It builds on ideas from Janusz
+Brzozowski's, who, in his article \cite{brzozowski}, developed a formalism to
+construct a finite automaton for a regular language by taking the left
+derivative of the language with respect to its input.  Brzozowski in .
 
 \begin{itemize}
    \item What is the thesis about?
