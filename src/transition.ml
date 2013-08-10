@@ -37,9 +37,7 @@ let rename var =
   "'" ^ var
 
 
-let iterate p =
-  (* find all variable names in the pattern *)
-  let vars = Pattern.vars_of_pattern p in
+let rename vars =
   (* rename the previous match *)
   List.map (fun (x, w) ->
     if List.mem x vars then
@@ -48,6 +46,10 @@ let iterate p =
       (x, w)
   )
 
+
+let iterate p =
+  (* find all variable names in the pattern *)
+  rename (Pattern.vars_of_pattern p)
 
 
 let combine = (-|)

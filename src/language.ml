@@ -13,8 +13,7 @@ let rec is_empty_language r =
     | Concat (r1, r2) -> is_empty_language r1 || is_empty_language r2
     | Intersect (r1, r2) -> is_empty_language r1 || is_empty_language r2
 
-    | Not (Epsilon) -> true
-
+    | Not (Epsilon)
     | Not (Star _)
     | Not (Letter _)
     | Not (Phi) -> false
@@ -26,10 +25,9 @@ let rec is_empty_language r =
     (* Double negation *)
     | Not (Not r) -> is_empty_language r
 
-    (* XXX: correct? *)
     | Not (Repeat (r, n)) -> assert (n > 0); is_empty_language (Not r)
 
-    (* XXX: uhhh... is this correct? *)
+    (* XXX: correct? *)
     | Not (Concat (a, b)) -> is_empty_language (Not a) && is_empty_language (Not b)
   in
   (*

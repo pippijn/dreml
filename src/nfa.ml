@@ -95,6 +95,12 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
     optimised, start, inversion
 
 
+  let filter_final states =
+    List.filter (
+      Language.nullable -| Language.regex_of_pattern -| fst
+    ) states
+
+
   let show states =
     List.iter (fun (p, env) ->
       let is_final =

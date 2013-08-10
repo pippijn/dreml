@@ -2,17 +2,22 @@
 \usepackage{framed}
 \usepackage[utf8x]{inputenc}
 \usepackage{enumerate}
+\usepackage{listings}
 \usepackage{enumitem}
 \usepackage{needspace}
 \usepackage[implicit,naturalnames]{hyperref}
 \usepackage{noweb}
-\usepackage{graphviz}
 \usepackage{color}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amsfonts}
+\usepackage{textcomp}
 \usepackage[margin=2cm]{geometry}
 \usepackage{tikz}
+
+% Listings settings
+\lstset{language=Caml}
+\lstset{defaultdialect=[Objective]Caml}
 
 % Colours
 \newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
@@ -23,11 +28,11 @@
 % Theorems
 \theoremstyle{definition}
 
-\newtheorem{thm2}{\optcolor{1,0,0}{Theorem}}
-\newtheorem{lem2}[thm2]{\optcolor{1,0,0}{Lemma}}
-\newtheorem{defn2}[thm2]{\optcolor{0,0,1}{Definition}}
-\newtheorem{eg2}{\optcolor{0,0.5,0}{Example}}
-\newtheorem{rem2}[eg2]{Remark}
+\newtheorem{thmbase}{\optcolor{1,0,0}{Theorem}}
+\newtheorem{lembase}[thmbase]{\optcolor{1,0,0}{Lemma}}
+\newtheorem{defnbase}[thmbase]{\optcolor{0,0,1}{Definition}}
+\newtheorem{egbase}{\optcolor{0,0.5,0}{Example}}
+\newtheorem{rembase}[egbase]{Remark}
 
 \newlength{\topsepbackup}
 
@@ -51,11 +56,11 @@
     }
   }
 
-\newboxenv{thm}{thm2}{0.9}{0.95,0.95,0.95}
-\newboxenv{lem}{lem2}{0.9}{0.95,0.95,0.95}
-\newboxenv{defn}{defn2}{0.91}{0.95,0.95,0.95}
-\newboxenv{eg}{eg2}{0.91}{0.95,0.95,0.95}
-\newboxenv{rem}{rem2}{0.91}{0.95,0.95,0.95}
+\newboxenv{thm}{thmbase}{0.9}{0.97,0.97,0.97}
+\newboxenv{lem}{lembase}{0.9}{0.97,0.97,0.97}
+\newboxenv{defn}{defnbase}{0.91}{0.97,0.97,0.97}
+\newboxenv{eg}{egbase}{0.91}{1,1,1}
+\newboxenv{rem}{rembase}{0.91}{1,1,1}
 
 \noweboptions{smallcode}
 

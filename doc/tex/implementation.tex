@@ -1,6 +1,343 @@
 \chapter{Implementation}
+\label{implementation}
 
-In OCaml.
+A prototype implementation was done in OCaml, a functional programming language
+with imperative and object-oriented elements. This chapter describes how the
+prototype was initially built for derivatives, how it was changed to partial
+derivatives, how support for extended regular expressions was implemented, and
+finally how the prototype was optimised.
+
+In addition to the prototype, the algorithms implemented were integrated into a
+tool called \texttt{re2ml}, which accepts the full syntax, including
+sub-matching, supported by \texttt{ocamllex}.
+
+
+\section{Grammar}
+%%%%%%%%%%%%%%%%%
+
+The lexical grammar in the prototype supports only latin letters, $a$ through
+$z$ in upper and lower case, for matches. This limitation is rather arbitrary
+but removes the need for escape sequences. The \texttt{re2ml} tool supports any
+character, as well as unicode escape sequences, which are translated to a UTF-8
+encoded sequence.
+
+\begin{defn}
+   \label{defn-gram-reg}
+   Regular grammar of regular expression syntax.
+
+   \begin{tabular}{lrl}
+      Digit	& $::=$	& '0' \dots '9'				\\
+      Number	& $::=$	& Digit Number				\\
+      Character	& $::=$	& 'a' \dots 'z' $|$ 'A' \dots 'Z'	\\
+      Namechar	& $::=$	& 'a' \dots 'z'				\\
+      Namestr	& $::=$	& Namestr Name				\\
+      Name	& $::=$	& Namestr ':'				\\
+   \end{tabular}
+\end{defn}
+
+The \textit{name} terminal includes the trailing ':' so that it can be
+distinguished from a single character. Another way would be to allow
+\textit{namestr} both as name and as expression, and transforming the string
+into a character sequence at a later point.
+
+\begin{defn}
+   \label{defn-gram-cfg}
+   Context-free grammar of regular expression syntax.
+
+   In this concrete syntax definition, identifiers starting with a majuscule
+   name tokens defined in the lexical grammar, and identifiers starting with a
+   miniscule name other context-free grammar rules defined here.
+
+   Patterns:
+
+   \begin{tabular}{lrl}
+      pattern		& $::=$	& pat\_and			\\
+      pat\_and		& $::=$	& pat\_branch			\\
+      			& $|$	& pat\_and '$|$' pat\_branch	\\
+      pat\_branch	& $::=$	& pat\_concat			\\
+      			& $|$	& pat\_and '\&' pat\_concat	\\
+      pat\_concat	& $::=$	& pat\_expr			\\
+			& $|$	& '$\sim$' pat\_expr		\\
+			& $|$	& pat\_concat pat\_expr		\\
+      pat\_expr		& $::=$	& '(' Name regex ')'		\\
+			& $|$	& '(' Name pattern ')'		\\
+			& $|$	& '(' pattern ')'		\\
+			& $|$	& pat\_expr '*'			\\
+                        & $|$	& pat\_expr '\verb!^!' Number	\\
+                        & $|$	& pat\_expr '\{' Number '\}'	\\
+   \end{tabular}
+
+   \needspace{5cm}
+   Expressions:
+
+   \begin{tabular}{lrl}
+      regex		& $::=$	& re\_and			\\
+      re\_and		& $::=$	& re\_branch			\\
+      			& $|$	& re\_and '$|$' re\_branch	\\
+      re\_branch	& $::=$	& re\_concat			\\
+      			& $|$	& re\_and '\&' re\_concat	\\
+      re\_concat	& $::=$	& re\_expr			\\
+			& $|$	& '$\sim$' re\_expr		\\
+			& $|$	& re\_concat re\_expr		\\
+      re\_expr		& $::=$	& '(' regex ')'			\\
+			& $|$	& re\_expr '*'			\\
+			& $|$	& re\_expr '?'			\\
+                        & $|$	& re\_expr '\verb!^!' Number	\\
+                        & $|$	& re\_expr '\{' Number '\}'	\\
+                        & $|$	& Character			\\
+   \end{tabular}
+\end{defn}
+
+The parser also allows for '$\cap$' (U+2229) to be used as intersection operator
+'\&', as well as '+' for the choice operator '$|$' and '$\neg$' (U+00AC) for
+negation '$\sim$'. The two syntaxes for counted repetition are equivalent.  The
+repetition operator is not supported in \texttt{ocamllex}, but \texttt{re2ml}
+allows it. It should be noted that since a finite state machine does not have a
+memory, the repetition operator yields the same automaton as an expanded
+expression with the expression under repetition actually repeated $n$ times.
+Thus, the number of states required by the automaton grows linearly with $n$.
+
+
+\section{Derivatives}
+%%%%%%%%%%%%%%%%%%%%%
+
+In a first step after defining the abstract and concrete syntax for regular
+expressions, a derivative operation was defined that computes the derivative of
+a pattern over one input symbol.
+
+The derivative function operates directly on the syntax tree structure of the
+parsed expression and yields a value of the same type. The $\nullable$ predicate
+is used in the implementation of the derivative of regular expression
+concatenation.
+
+In the initial implementation, the syntax tree contained not only the pattern
+variable name, but also its value. Thus, the derivative operation directly
+records the sub-match in the resulting pattern derivative instead of yielding a
+pattern derivative along with a transition function as discussed in section
+\ref{exprsets}.
+
+A consequence of this interpretative method is that an automaton cannot be
+pre-computed or even cached. Every derivative is always computed from scratch.
+The amount of memory needed by this method is the size of the largest expression
+derivative in the automaton.
+
+The pattern derivative over a word is then defined in terms of the pattern
+derivative over a letter:
+
+\begin{tabular}{lrl}
+   $p \setminus \varepsilon$	& $=$ & $p$				\\
+   $p \setminus lw$		& $=$ & $(p \setminus l) \setminus w$	\\
+\end{tabular}
+
+This definition is from \cite{pdpat}, figure 7.
+
+\begin{eg}
+   Computation of pattern derivative of a word.
+
+   Given the pattern $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC)$ and the input string $AB$,
+   the derivative of the pattern over the word is recursively constructed.
+   
+   \begin{tabular}{lrl}
+      $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus A \setminus B$
+         & $=$ & $(x|[A]:B)+(y|[A]:C)+(z|[A]:BC) \setminus B$ \\
+         & $=$ & $(x|[AB]:\varepsilon)+(y|[AB]:\phi)+(y|[AB]:C)$
+   \end{tabular}
+\end{eg}
+
+In order to obtain the greedy left-most match, we need to do a depth-first
+left-to-right search on the resulting pattern structure, looking for
+sub-patterns consisting of $\varepsilon$, extracting at most one of each pattern
+variable. This process will, in the above example, ignore the failed match
+$(y:AC)$, as well as the incomplete match $(z:ABC)$. Sub-patterns of failed
+matches are ignored, which means the patterns at the highest level of the syntax
+tree must succeed for all others to yield a value.
+
+
+\section{Partial derivatives}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The partial derivative operation producing the a list of derivated terms instead
+of the complete derivative. This is done by returning a list of terms where the
+derivative operation returns a choice. The derivative operation for choice is
+defined as $(p_1 + p_2) \setminus l = p_1 \setminus l + p_2 \setminus l$. For
+the partial derivative, we return the choices separately as a list, and since
+each partial derivative is itself a list, the definition is changed to $(p_1 +
+p_2) \setminus_p l = p_1 \setminus_p l ++ p_2 \setminus_p l$, where $++$ is the
+list concatenation or in other words, ordered set union, operator.
+
+At this point, we still use the expression structure to record matches, so the
+partial derivative of the above example would yield:
+
+\begin{eg}
+   Computation of pattern partial derivative of a word.
+
+   \begin{tabular}{lrl}
+      $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus_p A \setminus_p B$
+         & $=$ & $\{ p' \setminus_p B | p' \in \{(x|[A]:B), (y|[A]:C), (z|[A]:BC)\} \}$ \\
+         & $=$ & $\{ (x|[AB]:\varepsilon), (y|[AB]:\phi), (z|[AB]:C) \}$
+   \end{tabular}
+\end{eg}
+
+Here, we can obtain the greedy left-most match by taking the first succeeding
+pattern from the final list and extracting all matches from that. Since the
+partial derivative contains no choice operators, there can be no clashes in
+variable names due to several paths being taken.
+
+A Brzozowski derivative from the Antimirov partial derivative constructed here
+can easily be obtained by folding the set of derivated terms into choices:
+
+\[p \setminus l = (p_1 + \dots + p_n) | p_i \in p \setminus_p l \]
+
+This function is used to implement negation and intersection as a natural
+extension to partial derivatives. It is not used in the sets of sets extension.
+
+\subsection{Transition function}
+
+The problem with recording the match in the pattern structure is still that we
+cannot pre-compute a matching automaton. For this reason, the derivative
+operation must yield a derivative along with a transition function.
+
+In our prototype implementation, the transition function is described by the
+abstract type \texttt{TransitionType.t} in module \texttt{Types}.
+
+\begin{lstlisting}
+   (* Transition function interface. *)
+   module type TransitionType = sig
+     type t
+
+     val update : (string * letter) -> t
+     val iterate : pattern -> t
+     val compose : t -> t -> t
+
+     val execute : t -> env -> env
+
+     val show : t -> string
+   end
+\end{lstlisting}
+
+Abstract type \texttt{t} represents the transition function. Semantically, it
+represents a function of type $\mathit{env} \to \mathit{env}$. In the concrete
+implementation \texttt{Transition}, that is exactly its type, and function
+composition is done with function closures. \texttt{Transition.execute} is then
+simply a function application operator. The implementation in module
+\texttt{Instruction} defines it as a data structure that is interpreted by
+\texttt{execute}.
+
+Ultimately, the data structure based execution calls the functions from module
+\texttt{Transition}, and is therefore slightly less efficient than a direct
+closure, but has the advantage that it can be inspected, whereas function
+closures are effectively opaque. Furthermore, a data structure representing the
+transition function can be used for code generation, so that our tagged
+automaton can be translated to OCaml functions.
+
+In our prototype, type \texttt{letter} is an alias for built-in OCaml type
+\texttt{char}, but can naturally be extended to any input symbol type
+representing the alphabet $\Sigma$.
+
+In the first prototype, the built-in \texttt{string} type or the standard
+library module \texttt{Buffer} were not used, in order to keep the
+implementation close to the mathematical definition, which is convenient when
+using proof assistants to investigate the program. Section \ref{opts} describes
+how different data structure choices affect various performance characteristics
+of automaton simulation.
+
+\subsubsection{compose}
+
+The first three functions are constructors for the transition type, two of which
+correspond to operations required in definition \ref{defn-pd-pset}. A third
+function, \texttt{compose}, resembles the mathematical function composition
+operator $\circ$, so that $(f \circ g)(\mathit{env})$ can be directly mapped to
+the OCaml code \texttt{execute (compose f g) env}.
+
+\subsubsection{instruction type}
+
+Type \texttt{instruction} is used in module \texttt{Instruction} to represent
+the transition function as data structure.
+
+\begin{lstlisting}
+   (* Transition function as data structure. *)
+   type instruction =
+     | Update of string * letter
+     | Iterate of string list
+     | Compose of instruction * instruction
+\end{lstlisting}
+
+\subsubsection{iterate}
+
+\texttt{iterate} is a two-step function. In the definition of pattern partial
+derivatives, $\iterate$ is indexed by $\fv(p)$, which is the set of pattern
+variables in $p$. When calling \texttt{iterate}, these variables are renamed, so
+that the next iteration of $p^*$ or $p^n$ receives a pristine matching
+environment.
+
+Since the value of $\fv(p)$ does not depend on the input, it can be computed
+once and stored in the transition function. \texttt{Transition} stores the set
+of variables in the closure, and \texttt{Instruction} explicitly stores it in
+the string list of variant \texttt{Iterate}.
+
+\subsubsection{update}
+
+Finally, the most important function, \texttt{update (x, l)} records the fact
+that a letter $l$ has been matched by pattern variable $x$. The matching
+environment is a list of pairs containing name and value of matches. Type
+\texttt{env} is \texttt{(string * word) list}, where type \texttt{word = char
+list}.
+
+\subsubsection{show}
+
+Every data structure used in the program can be converted to a string
+representation. We use the OCaml library \texttt{Deriving\_Show} to generate
+functions for every type, and for some types, we provide specialised functions
+that visualise data on a higher semantic level. Since the captured environment
+of function closures cannot normally\footnote{Without using the \texttt{Obj}
+interface} be inspected in OCaml, \texttt{Transition.show} does nothing, but
+\texttt{Instruction.show} can be used to visualise the transition function's
+effects on a passed matching environment.
+
+\subsection{Parametrised partial derivative function}
+
+In order to support both concrete implementations of the transition function
+interface, module \texttt{Partial}, which exports the entry point of the partial
+derivative operation, is parametrised by \texttt{TransitionType}. Only the
+pattern partial derivative function requires this parametrisation; the
+expression partial derivative is outside the functor definition.
+
+\begin{lstlisting}
+   (* Partial derivative interface. *)
+   module type PartialDerivative : functor(Tag : TransitionType) -> sig
+     val derive_pat : letter -> pattern -> (pattern * Tag.t) list
+   end
+\end{lstlisting}
+
+
+\section{Extended regular expressions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Support for additional boolean operators was implemented using the DNF extension
+described in section \ref{exprsets}. The relevant types for the sets of
+expression sets and pattern sets are defined in the \texttt{Types} module:
+
+\begin{lstlisting}
+   (* Types for sets of expression sets. *)
+   type exprset = regex list
+   type exprsets = exprset list
+
+   type exprset_pat = pattern list
+\end{lstlisting}
+
+Sets of pattern sets are parametrised by their transition function type, and
+must therefore be defined in the functor that defines the derivative operation.
+Types \texttt{regex} and \texttt{pattern} are the abstract syntax tree types for
+regular expressions and patterns.
+
+
+\section{Expression simplification}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Optimisations}
+%%%%%%%%%%%%%%%%%%%%%%%
+\label{opts}
 
 
 % vim:tw=80

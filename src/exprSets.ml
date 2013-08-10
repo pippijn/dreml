@@ -202,6 +202,8 @@ module Make(Tag : TransitionType) = struct
           let iterate = Tag.iterate e in
           let repeat = PatRepeat (e, n - 1) in
           mul_exprsets_expr_pat ~iterate (derive_pat l e) repeat
+      | PatNot _ ->
+          failwith "Negation in pattern must be resolved before derivation"
     in
 
     (*

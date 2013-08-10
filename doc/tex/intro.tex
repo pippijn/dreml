@@ -7,13 +7,32 @@ more features are implemented in engines used by Perl, Java and many other
 programming languages. Most programming languages have at least one engine
 written in it, or have bindings to a popular C regex engine such as PCRE.
 
-Many of these matching engines support a superset of regular languages. In order
-to implement these non-regular expressions, engines use backtracking algorithms.
+Most of these engines share a common deficiency: they are slow. Naturally, they
+are fast for most common expressions, because that is what they were optimised
+for, but for almost every regular expression engine, a class of expressions
+exists for which the engine is slow. Slow, in this context, means that it takes
+exponential execution time, and that means that even for relatively small
+inputs, the time taken for a match can exceed a human lifetime.
+
+C\# can compile regular expressions to CIL bytecode, which is then compiled to
+native code by the .NET Just-In-Time compiler. PCRE contains a JIT mode, as
+well, but these optimisations, while very useful, only reduce the runtime by a
+constant factor.
+
+Why do these engines have such inefficient edge-cases? The reason is that all of
+them implement a superset of regular languages. In order to implement these
+non-regular expressions, backtracking algorithms are used.
+
 The fact that these algorithms take exponential runtime make them unfeasible for
-many applications, such as compilers and public search engines. Applications
-requiring linear execution time for pattern matching generally use real regular
-expressions, i.e. descriptions of regular languages, that can be compiled to
-efficient matching automata.
+many applications, in particular those that allow untrusted users to enter
+arbitrary expressions. Russ Cox developed RE2, an automata based regular
+expression engine, for exactly this reason: Google code search allows web users
+to enter regular expressions that run against a large amount of source code. An
+engine with potentially exponential runtime would create a security risk.
+
+Applications requiring linear execution time for pattern matching generally use
+actual regular expressions, i.e. descriptions of regular languages, that can be
+compiled to efficient matching automata.
 
 There are several ways to construct such automata. A well-known method is
 Thompson's construction algorithm, described in \cite{thompson}. The paper
@@ -21,18 +40,145 @@ mentions backtracking algorithms and explains how finite automata can improve
 execution time from exponential to linear. It builds on ideas from Janusz
 Brzozowski's, who, in his article \cite{brzozowski}, developed a formalism to
 construct a finite automaton for a regular language by taking the left
-derivative of the language with respect to its input.  Brzozowski in .
+derivative of the language with respect to its input.
+
+
+\section{Efficient regex sub-matching}
+
+The C programming language specifies integer literals as a number followed by
+zero or more type suffixes, \texttt{l} standing for \texttt{long}, \texttt{u}
+for \texttt{unsigned}. In a C compiler, it is therefore useful to extract the
+parts directly during the lexical analysis, in order to reduce duplication of
+knowledge.
+
+The goal of this thesis is to create an efficient replacement for
+\texttt{ocamllex} based on the theory of partial derivatives. OCaml contains the
+\texttt{ocamllex} program, which is used in the implementation of the OCaml
+compiler itself, as well as many other languages implemented in OCaml.
+Unfortunately, this tool has several serious drawbacks:
 
 \begin{itemize}
-   \item What is the thesis about?
-   \item What problems will be solved?
-   \item Outline.
-   \item Key ideas.
+   \item The automaton is restricted in size.
+
+      It is not possible to list all C keywords in the lexer description, since
+      the program will refuse to generate a large automaton.
+
+   \item Pattern sub-matching can increase the automaton size considerably.
+
+      When adding sub-matches such as \verb!(i:[0-9])(s:[lLuU]*)! for the C
+      programming language, \texttt{ocamllex} output increases in size. With
+      many sub-match patterns, the tool can run into internal limits.
+
+   \item Expression syntax is weak.
+
+      There is no support for regular expression negation or intersection.
+      Counted repetition is not supported. The accepted expression syntax is
+      very basic.
+
+   \item No compositing.
+
+      This is not a serious drawback, but parser generators such as Menhir have
+      supported grammar compositing for a long time. Lexical grammar compositing
+      is particularly useful when creating a combined C/C++ front-end.
+
+   \item Weak support for line number counting.
+
+      In order to correctly track the line number in the lexer, the user must
+      create a special rule in every sub-automaton where a new-line character
+      may occur, just to call \texttt{Lexing.new\_line lexbuf}. This requirement
+      makes the resulting lexer slower and the grammar more error-prone.
+
 \end{itemize}
 
-When constructing the partial derivative of a regular expression, the choice
-operator results in a set of possible derivatives, rather than a single
-derivated term.
+We developed a new tool, \texttt{re2ml}, which is fully backwards compatible
+with \texttt{ocamllex}, but solves all of the above drawbacks.
+
+\begin{itemize}
+   \item The automaton size is unbounded.
+
+      Our approach is based on non-deterministic finite automata, constructed
+      from partial derivatives. The automaton size is therefore linear in the
+      expression length. A lexer generated by \texttt{re2ml} from a grammar
+      twice as long will be twice as large. We can easily support thousands of
+      keywords without the automaton growing to impossible sizes.
+
+   \item Pattern sub-matching is fully integrated.
+
+      Tagged transitions do not considerably increase the automaton size. There
+      is no limit to the number of sub-matches. In fact, rules in \texttt{re2ml}
+      are implemented as sub-matches, internally.
+
+   \item Richer expression syntax.
+
+      The integration of extended regular expression syntax, as well as some
+      other commonly found extensions, give \texttt{re2ml} users the power to
+      describe their lexical grammar in a more expressive way.
+
+   \item Grammar compositing.
+
+      \texttt{re2ml} has direct support for importing definitions and even
+      entire grammars from other files.
+
+   \item Direct support for line numbers.
+
+      Every transition on the new-line character automatically calls
+      \texttt{Lexing.new\_line lexbuf}, so the user can omit these special
+      rules, entirely. For backwards compatibility, this support can be
+      disabled.
+
+\end{itemize}
+
+
+\section{Key ideas}
+
+In addition to a replacement for \texttt{ocamllex}, this thesis presents an
+increment to the theory of regular expression matching. In \cite{pdpat},
+Sulzmann and Lu introduce pattern sub-matching with partial derivatives, and in
+\cite{pdere}, Caron, Champarnaud and Mignot introduce a more efficient method of
+extended regular expression matching. The key increment of this thesis is the
+combination of these two ideas. Another aim is to clarify some of the ideas
+presented in the papers it is based on.
+
+
+\section{Outline}
+
+In chapter \ref{background}, we will explain the background for the ideas on
+which our tool is based. First, we define a basic regular expression syntax,
+which is later extended with additional boolean operators. Brzozowski's
+derivatives will be outlined in the first section, which is followed by a short
+introduction to Antimirov's partial derivatives. In the next section, pattern
+sub-matching as done by Sulzmann and Lu in \cite{pdpat} is detailed. Finally, a
+representation of partial derivatives as disjunctive normal form of terms as
+described in \cite{pdere} is explained and shown by example.
+
+The next chapter (\ref{submatching}) aims to combine the two ideas and
+introduces extended pattern submatching. A pattern matching relation for
+extended regular expression patterns is specified, and in compliance with that,
+the partial derivative operation is defined. Section \label{nfa} uses this
+definition to provide a pattern partial derivative function compatible with the
+one in \cite{pdpat}, and extended by the syntax of \cite{pdere}. It also
+explains how this function can be used to construct a finite state machine from
+a pattern. At the end of this chapter, a language predicate optimisation is
+defined in order to reduce the number of unreachable states produced by the
+automata construction.
+
+Chapter \ref{implementation} describes the implementation details of the
+prototype, which does not support all of \texttt{re2ml}'s input syntax, but
+implements all the required algorithms. The prototype first implemented
+Brzozowski's derivatives, then Antimirov's partial derivatives, which were
+enhanced by Sulzmann and Lu's pattern sub-matching and finally extended with
+intersection and negation. This development process will be followed and
+peculiarities pointed out. After the basic implementation has been detailed,
+some of the more important optimisations will be described.
+
+Following the implementation, chapter \ref{results} presents empirical results
+in the form of timing and comparison with existing tools.
+
+Chapter \ref{discussion} discusses the results of this thesis, as well as some
+results of related work. It draws the distinction between the presented work and
+previous results.
+
+The conclusion in chapter \ref{conclusion}...
 
 
 % vim:tw=80

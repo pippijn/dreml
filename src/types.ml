@@ -51,8 +51,8 @@ type pattern =
   deriving (Show)
 
 type instruction =
-  | Update of string * char
-  | Iterate of pattern
+  | Update of string * letter
+  | Iterate of string list
   | Combine of instruction * instruction
   deriving (Show)
 
@@ -63,7 +63,6 @@ type exprset = regex list deriving (Show)
 type exprsets = exprset list deriving (Show)
 
 type exprset_pat = pattern list
-type exprsets_pat = (exprset_pat * instruction) list
 
 
 let empty_env = []

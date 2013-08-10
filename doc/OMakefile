@@ -3,6 +3,10 @@ Name		= dreml
 
 # Sub-documents
 Parts[] =
+  tex/background/derivatives
+  tex/background/ext-re
+  tex/background/partial
+  tex/background/pattern
   tex/background
   tex/conclusion
   tex/discussion/pcre
@@ -20,13 +24,14 @@ Parts[] =
   tex/submatching
   tex/macros
 
+Bibliography[] =
+  dreml
+
 Images[] =
   img/nfa
 
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)
-
-$(TARGET): graphviz.sty
 
 .PHONY: view
 view: $(TARGET)

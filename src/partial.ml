@@ -2,45 +2,45 @@ open CorePervasives
 open Types
 
 
+(* Deterministic derivative (not partial) computation *)
+let derive_det derive l r =
+  BatList.reduce (fun rs r -> Choice (r, rs)) (derive l r)
+
+
+(* ·\p· :: l -> r -> [r] *)
+let rec derive l : regex -> regex list =
+  let module Enum = List in function
+  | Epsilon
+  | Phi -> [Phi]
+  | Letter l2 ->
+      if l == l2 then
+        [Epsilon]
+      else
+        [Phi]
+  | Choice (r1, r2) ->
+      derive l r1 @ derive l r2
+  | Concat (r1, r2) ->
+      if Language.nullable r1 then
+        [? Concat (r, r2) | r <- derive l r1 ?]
+        @
+        derive l r2
+      else
+        [? Concat (r, r2) | r <- derive l r1 ?]
+  | Star r as star ->
+      [? Concat (r, star) | r <- derive l r ?]
+  | Repeat (r, 1) ->
+      derive l r
+  | Repeat (r, n) ->
+      assert (n > 1);
+      derive l (Concat (r, Repeat (r, n - 1)))
+  (* these degenerate to a derivative computation *)
+  | Not r ->
+      [Not (derive_det derive l r)]
+  | Intersect (r1, r2) ->
+      [Intersect (derive_det derive l r1, derive_det derive l r2)]
+
+
 module Make(Tag : TransitionType) = struct
-
-  (* Deterministic derivative (not partial) computation *)
-  let derive_det derive l r =
-    BatList.reduce (fun rs r -> Choice (r, rs)) (derive l r)
-
-
-  (* ·\p· :: l -> r -> [r] *)
-  let rec derive l : regex -> regex list =
-    let module Enum = List in function
-    | Epsilon -> [Phi]
-    | Phi -> [Phi]
-    | Letter l2 ->
-        if l == l2 then
-          [Epsilon]
-        else
-          [Phi]
-    | Choice (r1, r2) ->
-        derive l r1 @ derive l r2
-    | Concat (r1, r2) ->
-        if Language.nullable r1 then
-          [? Concat (r, r2) | r <- derive l r1 ?]
-          @
-          derive l r2
-        else
-          [? Concat (r, r2) | r <- derive l r1 ?]
-    | Star r as star ->
-        [? Concat (r, star) | r <- derive l r ?]
-    | Repeat (r, 1) ->
-        derive l r
-    | Repeat (r, n) ->
-        assert (n > 1);
-        derive l (Concat (r, Repeat (r, n - 1)))
-    (* these degenerate to a derivative computation *)
-    | Not r ->
-        [Not (derive_det derive l r)]
-    | Intersect (r1, r2) ->
-        [Intersect (derive_det derive l r1, derive_det derive l r2)]
-
 
   (* ·\p· :: l -> p -> [p] *)
   let rec derive_pat l : pattern -> (pattern * Tag.t) list =

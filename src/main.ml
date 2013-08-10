@@ -37,16 +37,23 @@ let main pattern input =
   );
   print_endline ("start state: " ^ Util.string_of_pattern re);
   print_endline ("number of states: " ^ string_of_int (Nfa.cardinal nfa));
-  let final = Timing.time "run nfa" (Nfa.run nfa input) Types.empty_env in
-  let unique = Duplicates.remove_duplicate_results false final in
+  let states = Timing.time "run nfa" (Nfa.run nfa input) Types.empty_env in
+  let unique = Duplicates.remove_duplicate_results false states in
+  let final  = Nfa.filter_final unique in
   if _show_result then (
     print_endline ("finished after string: \"" ^ input ^ "\"");
-    Nfa.show final;
+    Nfa.show states;
     print_endline "unique:";
     Nfa.show unique;
+    print_endline "final:";
+    Nfa.show final;
   );
 
-  Printf.printf "%d vs %d\n" (List.length final) (List.length unique);
+  Printf.printf "%d states, %d unique, %d final\n"
+    (List.length states)
+    (List.length unique)
+    (List.length final)
+    ;
 ;;
 
 let bench () =

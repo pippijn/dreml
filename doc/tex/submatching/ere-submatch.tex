@@ -1,14 +1,14 @@
 \section{Extended regular expression submatching}
 \label{ere-submatch}
 
-The definition of partial derivatives from \cite{pd-pat} has been combined
-with the extended regular expression operators as defined in \cite{pd-ere}.
-The regular expression syntax from Sulzmann and Lu is amended with additional
+The definition of partial derivatives from \cite{pdpat} has been combined with
+the extended regular expression syntax as defined in \cite{pdere}. The regular
+expression pattern syntax from Sulzmann and Lu is amended with additional
 boolean operators for extended regular expressions.
 
 \begin{defn}
    \label{defn-syn}
-   Syntax of extended patterns and regular expressions.
+   Syntax of extended regular expression patterns.
 
    Words:
 
@@ -16,20 +16,6 @@ boolean operators for extended regular expressions.
       $w$	& $::=$	& $\varepsilon$		& Empty word	\\
 		& $|$	& $l \in \Sigma$	& Letters	\\
 		& $|$	& $lw$			& Concatenation	\\
-   \end{tabular}
-
-   Extended regular expressions:
-
-   \begin{tabular}{lrll}
-      $r$	& $::=$	& $r+r$				& Choice		\\
-		& $|$	& $(r,r)$			& Concatenation		\\
-		& $|$	& $r_e \cap r_e$		& Intersection		\\
-        	& $|$	& $\neg r_e$			& Negation		\\
-        	& $|$	& $r_e^n$			& Repetition		\\
-		& $|$	& $r^*$				& Kleene star		\\
-		& $|$	& $\varepsilon$			& Empty word		\\
-		& $|$	& $\phi$			& Empty language	\\
-		& $|$	& $l \in Sigma$			& Letters		\\
    \end{tabular}
 
    Extended patterns:
@@ -49,9 +35,11 @@ boolean operators for extended regular expressions.
 Pattern and expression repetition in the form $r^n$ is essentially the same as
 concatenating the same pattern or expression $n$ times. However, in a pattern,
 this would cause variable binding clashes. For example, when expanding
-$(x:a)^2$ to $(x:a)(x:a)$, the variable $a$ appears twice. Since this is not
-allowed in patterns, the definition of partial derivatives incorporates direct
-support for this form.
+$(x:a)^2$ to $(x:a)(x:a)$, the variable $a$ appears twice. Since we do not
+allow the same variable name to appear in a pattern, the definition of partial
+derivatives incorporates direct support for this form. Variable renaming could
+solve this issue, but defining a pattern matching relation for the repeating
+case is the more straightforward solution.
 
 The partial derivative of a negated pattern is not defined, because it cannot
 be sensibly decided which part of a non-match should be assigned to which
@@ -134,7 +122,7 @@ and $p$ is an instance.
 
 The term $\Sigma^*$ is used as abbreviation for $\{ w | w \in \Sigma^* \}$.
 
-The variable environments are the same as in \cite{pd-pat}, the language
+The variable environments are the same as in \cite{pdpat}, the language
 definition has been extended with the definitions from \cite{pd-ere}.
 Juxtaposition of terms is used interchangably with the explicit pair syntax
 for concatenation, following from the language definition as set product of
