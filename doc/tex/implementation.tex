@@ -309,13 +309,22 @@ expression partial derivative is outside the functor definition.
    end
 \end{lstlisting}
 
+\subsection{Matching strategies}
+
+Without a matching strategy, the engine will collect every possible match for
+every variable. E.g. $(x:a*)(y:a*)$ for $aa$ will yield $\{[(x:aa)], [(x:a),
+(y:a)], [(y:aa)]\}$. For a longer sequence of $a$, the set of results will grow
+exponentially.
+
 
 \section{Extended regular expressions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Support for additional boolean operators was implemented using the DNF extension
-described in section \ref{exprsets}. The relevant types for the sets of
-expression sets and pattern sets are defined in the \texttt{Types} module:
+described in section \ref{exprsets}.  The \texttt{ExprSet} module provides the
+improved sub-matching algorithm based on expression sets.  The relevant types
+for the sets of expression sets and pattern sets are defined in the
+\texttt{Types} module:
 
 \begin{lstlisting}
    (* Types for sets of expression sets. *)
@@ -328,16 +337,78 @@ expression sets and pattern sets are defined in the \texttt{Types} module:
 Sets of pattern sets are parametrised by their transition function type, and
 must therefore be defined in the functor that defines the derivative operation.
 Types \texttt{regex} and \texttt{pattern} are the abstract syntax tree types for
-regular expressions and patterns.
+regular expressions and patterns. The internal \texttt{derive\_pat} function
+returns a \verb!(exprset_pat * Tag.t) list!, which is converted by operator
+$\reOfEset$ to match the interface type \verb!(pattern * Tag.t) list!.
+
+
 
 
 \section{Expression simplification}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+In order to reduce the number of states, we can apply several simplifications to
+the expression structure before and during the automata construction. Since
+minimising an NFA is a very expensive operation, we prefer to reduce the
+expression complexity directly.
+
+Before starting the partial derivative automata construction and after each step
+in the construction, the input terms are recursively simplified by the following
+rules:
+
+\begin{defn}
+   \label{defn-simplify}
+   Simplification rules for expressions and patterns.
+
+   Patterns:
+
+   \begin{tabular}{lrl}
+      $\varepsilon p = p \varepsilon$	& $=$	& $p$				\\
+      $p^{*^*}$				& $=$	& $p^*$				\\
+   \end{tabular}
+
+   Expressions:
+
+   \begin{tabular}{lrl}
+      Intersection:								\\
+      $r \cap r$			& $=$	& $r$				\\
+      $\phi \cap r = r \cap \phi$	& $=$	& $\phi$			\\
+      Concatenation:								\\
+      $\phi r = r \phi$			& $=$	& $\phi$			\\
+      $\varepsilon r = r \varepsilon$	& $=$	& $r$				\\
+      Choice:									\\
+      $r + r$				& $=$	& $r$				\\
+      $\neg\phi + r = r + \neg\phi$	& $=$	& $\neg\phi$			\\
+      Repetition:								\\
+      $r^{*^*}$				& $=$	& $r^*$				\\
+      $\varepsilon^*$			& $=$	& $\varepsilon$			\\
+      $\phi^*$				& $=$	& $\varepsilon$			\\
+      $r^0$				& $=$	& $\varepsilon$			\\
+      $r^1$				& $=$	& $r$				\\
+      Negation:									\\
+      $\neg(\neg r)$			& $=$	& $r$				\\
+      $\neg(\neg r_1 \cap \neg r_2)$	& $=$	& $r_1 + r_2$			\\
+      $\neg(\neg r_1 + \neg r_2)$	& $=$	& $r_1 \cap r_2$		\\
+   \end{tabular}
+\end{defn}
+
+The last two negation rules are De Morgan's rules. All rules are implemented as
+recursive rewrite rules, which means they must produce a strictly smaller
+expression than they receive as input. A \texttt{rewrite} function recursively
+reduces the expression using these rules, until the result converges. If a rule
+produces a larger expression that may later be reduced by another rule, the
+rewrite system may go into an endless loop. Therefore, the rules specified here
+are straightforward in decreasing term size.
+
+Simplification rules are not strictly required, and the automata construction
+works correctly without them. They are only used as an optimisation.
+
 
 \section{Optimisations}
 %%%%%%%%%%%%%%%%%%%%%%%
 \label{opts}
+
+
 
 
 % vim:tw=80
