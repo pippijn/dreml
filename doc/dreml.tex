@@ -19,6 +19,17 @@
 \lstset{language=Caml}
 \lstset{defaultdialect=[Objective]Caml}
 
+\definecolor{dark-red}  {rgb}{0.60, 0.15, 0.15}
+\definecolor{dark-green}{rgb}{0.15, 0.40, 0.15}
+\definecolor{dark-blue} {rgb}{0.15, 0.15, 0.60}
+
+\hypersetup{
+   colorlinks,
+   urlcolor=dark-green,
+   linkcolor=dark-blue,
+   citecolor=dark-red,
+}
+
 % Colours
 \newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
 
@@ -72,6 +83,8 @@
 \begin{document}
 
 \input{tex/macros}
+
+\tableofcontents
 
 \input{tex/intro}
 \input{tex/background}

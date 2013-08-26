@@ -1,0 +1,102 @@
+\section{Declarative asynchronous lexers}
+\label{lexer}
+
+As mentioned in the introduction, sub-matching can be used to declaratively
+specify a lexer for a programming language. We can extract the greedy left-most
+match from the matching environment $\Gamma$ and pass the lexeme information to
+the semantic action code.
+
+One inelegance in the way most lexer functions are written is that they are
+synchronous by design. Characters are read from the input stream until a
+complete lexeme is read and no more characters can be accepted, after which the
+stream position is reset to the end of the valid lexeme. The function returns
+the value of the semantic action with the stream ready for a subsequent lexer
+function call.
+
+Instead of reading a single token at a time and resetting the stream, we can
+define the combined lexer for all lexemes $r_1 \dots r_n$ as $(r_1 + \dots
+r_n)^*$. The key idea here is to have an iterating expression for all lexemes.
+Without any semantic actions, this combined pattern will match a complete valid
+source text. Semantic actions may operate asynchronously, sending complete
+matches to a channel from which a client, such as a parser for a context free
+grammar, can wait, enabling concurrent lexing and parsing.
+
+
+\subsection{Matching functions}
+
+We extend on the idea of named sub-matches and instead of associating a name in
+the matching environment with a sub-match, we associate a function with each
+pattern. Thus, instead of a pattern $(x:r)$ where variable $x$ is associated
+with regular expression $r$, we write the pattern $(f:r)$ in which a function is
+called when the sub-expression is successful.
+
+Now, we need to define what it means for a pattern to be successful. Given for
+instance the pattern $(f_1:A)(f_2:B)+(f_3:AC)$ and the input $AC$, after reading
+an $A$, the sub-pattern $(f_1:A)$ has been matched, but after the next
+character, $C$, the containing pattern fails, so that $f_1$ may not be called.
+
+\subsubsection{Delayed actions}
+
+It is clear that semantic action invocations must be delayed until it is certain
+that the pattern they appeared in succeeds. In a lexer specification $((f_1:r_1)
++ \dots + (f_n:r_n))^*$, the actions should not be delayed until the complete
+input has been consumed, since the input stream may be infinite or very large
+and the storage requirements for delayed actions would be linear in the input
+length. Therefore, the actions should only be delayed for as little time as
+possible.
+
+\begin{defn}
+   Match completeness.
+
+   Supporting definitions.
+   \begin{enumerate}
+
+      \item A toplevel pattern as one that is not enclosed in any other patterns.
+         
+         E.g. in $(f_1:A+(f_2:B))+(f_3:C)$, the sub-patterns associated with
+         $f_1$ and $f_3$ are toplevel patterns, while the one for $f_2$ is not,
+         since it is enclosed in the pattern associated with $f_1$.
+
+      \item Two patterns $p_1$ and $p_2$ are parallel when they consume the same
+         input.
+
+         E.g. in $(f_1:ABC)+(f_2:(f_3:A+B)^*C)$, while consuming $AB$, patterns
+         associated with $f_1$, $f_2$ and $f_3$ are parallel. After consuming
+         $C$, patterns for $f_1$ and $f_2$ are parallel, but the pattern for
+         $f_3$ is no longer consuming any input.
+
+   \end{enumerate}
+
+   A pattern match $p_1$ is complete when
+   \begin{enumerate}
+
+      \item any enclosing pattern match, if such exists, is complete,
+
+      \item it can no longer consume any more input,
+
+      \item there is no incomplete pattern $p_2$ where $p_1$ and $p_2$ are
+         parallel.
+
+   \end{enumerate}
+
+\end{defn}
+
+\subsubsection{Longest match strategy}
+
+A single pattern $p$ under the greedy left-most matching strategy will consume
+as much of the input as possible. However, when using the above-mentioned
+declarative lexer using $p' = p^*$, this is no longer true. Given, for instance,
+a language with lexemes $A$, $B$, and $AB$, the lexer pattern would be $p =
+(f_1:A) + (f_2:B) + (f_3:AB)$. Tokenising the input $AB$ would, under the greedy
+left-most strategy, invoke the semantic action $f_3$.
+
+With the pattern written as $p' = ((f_1:A) + (f_2:B) + (f_3:AB))^*$, the greedy
+left-most match would favour the shorter matches, and an input of $AB$ would
+first complete the match associated with $f_1$ with $A$ and then $f_2$ with $B$.
+
+In order to maintain the matching behaviour of lexers, the toplevel choice over
+all lexemes must follow a longest match policy rather than the greedy left-most
+match used inside lexeme expressions.
+
+
+% vim:tw=80

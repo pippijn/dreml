@@ -18,6 +18,7 @@ Parts[] =
   tex/submatching/brainstorming
   tex/submatching/ere-submatch
   tex/submatching/exprsets
+  tex/submatching/lexer
   tex/submatching/nfa
   tex/submatching/patmatchrel
   tex/submatching/predicates

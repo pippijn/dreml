@@ -36,7 +36,7 @@ found in \cite{pdpat}.
 The definition of pattern partial derivatives is such that it yields a set of
 derivated terms along with a transition or matching function. In the first step
 of the implementation, the match was recorded in the pattern structure, itself,
-builing on the following syntax:
+building on the following syntax:
 
 \begin{defn}
    \label{defn-pat-with-match}
@@ -61,8 +61,8 @@ $\{(b),(c)\}$.
 
 Programming languages usually contain a finite set of keywords and lexical rules
 for different kinds of tokens. OCaml, for instance, specifies that an sequence
-of latin letters, starting with a capital letter, is a module name or a type
-constructor name. A sequence starting with a miniscule is a type or variable
+of Latin letters, starting with a capital letter, is a module name or a type
+constructor name. A sequence starting with a minuscule is a type or variable
 name, unless it is also a keyword. More complex rules exist for string literals,
 character literals and type variables. OCaml comments can be nested, and
 therefore not be matched by a regular expression.
@@ -94,7 +94,7 @@ languages in the form of identifiers.
 The expression above does not yet account for such constructs, so for
 demonstration purposes, we introduce the \textit{identifier} token. The regular
 expression for identifiers in our small lambda language is \verb![a-z]+!,
-allowing only lower case latin letters for simplicity. The lexer pattern now
+allowing only lower case Latin letters for simplicity. The lexer pattern now
 needs to be extended, resulting in
 %
 \[(x_\text{let}:((l,e),t)) + (x_\text{in}:(i,n)) + (x_\text{id}:(a+\dots+z)^n) +
