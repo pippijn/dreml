@@ -37,14 +37,14 @@ let rec string_of_regex = function
   | Letter l -> String.make 1 l
 
 
-let rec string_of_pattern = function
-  | VarBase (name, r) -> "(" ^ name ^ ":" ^ string_of_regex r ^ ")"
-  | VarGroup (name, p) -> "(" ^ name ^ ":" ^ string_of_pattern p ^ ")"
-  | PatIntersect (p1, p2) -> "(" ^ string_of_pattern p1 ^ "∩" ^ string_of_pattern p2 ^ ")"
-  | PatChoice (p1, p2) -> "(" ^ string_of_pattern p1 ^ "+" ^ string_of_pattern p2 ^ ")"
-  | PatConcat (p1, p2) -> "(" ^ string_of_pattern p1 ^ string_of_pattern p2 ^ ")"
-  | PatStar p -> string_of_pattern p ^ "*"
-  | PatRepeat (r, n) -> string_of_pattern r ^ superscript_int n
+let rec string_of_pattern string_of_label = function
+  | VarBase (name, r) -> "(" ^ string_of_label name ^ ":" ^ string_of_regex r ^ ")"
+  | VarGroup (name, p) -> "(" ^ string_of_label name ^ ":" ^ string_of_pattern string_of_label p ^ ")"
+  | PatIntersect (p1, p2) -> "(" ^ string_of_pattern string_of_label p1 ^ "∩" ^ string_of_pattern string_of_label p2 ^ ")"
+  | PatChoice (p1, p2) -> "(" ^ string_of_pattern string_of_label p1 ^ "+" ^ string_of_pattern string_of_label p2 ^ ")"
+  | PatConcat (p1, p2) -> "(" ^ string_of_pattern string_of_label p1 ^ string_of_pattern string_of_label p2 ^ ")"
+  | PatStar p -> string_of_pattern string_of_label p ^ "*"
+  | PatRepeat (r, n) -> string_of_pattern string_of_label r ^ superscript_int n
 
 
 let reduce f = function

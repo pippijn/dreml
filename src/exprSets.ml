@@ -2,7 +2,9 @@ open CorePervasives
 open Types
 
 
-module Make(Tag : TransitionType) = struct
+module Make(Lbl : LabelType)(Tag : TransitionType) = struct
+
+  module Tag = Tag.Make(Lbl)
 
   let string_of_exprset es =
     List.map Util.string_of_regex es
@@ -14,8 +16,9 @@ module Make(Tag : TransitionType) = struct
 
 
   let string_of_exprset_pat es =
-    List.map Util.string_of_pattern es
+    List.map (Util.string_of_pattern Lbl.to_string) es
     |> String.concat " ∩ "
+
 
   let string_of_transition (es, f) =
     string_of_exprset_pat es ^ Tag.to_string f
@@ -164,16 +167,16 @@ module Make(Tag : TransitionType) = struct
 
 
   (* ·\p· :: l -> p -> [p] *)
-  let rec derive_pat l : pattern -> (exprset_pat * Tag.t) list = fun pattern ->
+  let rec derive_pat l : Lbl.t pattern -> (Lbl.t exprset_pat * Tag.t) list = fun pattern ->
     let sets =
       match pattern with
       | VarBase (x, r) ->
-          let f = Tag.update (x, l) in
+          let f = Tag.update x in
           List.map (fun r ->
             [VarBase (x, regex_of_exprset r)], f
           ) (derive l r)
       | VarGroup (x, p) ->
-          let update = Tag.update (x, l) in
+          let update = Tag.update x in
           List.map (fun (p', f) ->
             [VarGroup (x, pattern_of_exprset p')], Tag.combine update f
           ) (derive_pat l p)

@@ -1,5 +1,7 @@
 {
+module Make(Lbl : Types.LabelType) = struct
   (* The type token is defined in parser.mli *)
+  module Parser = Parser.Make(Lbl)
   open Parser
 }
 
@@ -20,3 +22,7 @@ rule token = parse
 | ' '			{ token lexbuf	}
 
 | eof			{ EOF		}
+
+{
+end
+}

@@ -2,6 +2,8 @@
 open Types
 %}
 
+%parameter<Lbl : Types.LabelType>
+
 %token EOF
 %token LPAREN RPAREN LBRACE RBRACE PIPE AND STAR NEGATE CARET QUESTION
 
@@ -9,7 +11,7 @@ open Types
 %token<int> INT
 %token<string> NAME
 
-%start<Types.pattern> start
+%start<Lbl.t Types.pattern> start
 
 %%
 
@@ -43,9 +45,9 @@ pat_branch:
 
 pat_expression:
 	| LPAREN NAME regex RPAREN
-	  { VarBase ($2, $3) }
+	  { VarBase (Lbl.make $2, $3) }
 	| LPAREN NAME pattern RPAREN
-	  { VarGroup ($2, $3) }
+	  { VarGroup (Lbl.make $2, $3) }
 	| LPAREN pattern RPAREN
 	  { $2 }
 	| pat_expression STAR

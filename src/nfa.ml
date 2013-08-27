@@ -1,18 +1,24 @@
+open Types
+
 module type DeriveType = sig
 
-  module Make : functor(Tag : Types.TransitionType) -> sig
-    val derive_pat : Types.letter -> Types.pattern -> (Types.pattern * Tag.t) list
+  module Make : functor(Lbl : LabelType) -> functor(Tag : TransitionType) -> sig
+    val derive_pat : letter -> Lbl.t pattern -> (Lbl.t pattern * Lbl.t Tag.transition) list
   end
 
 end
 
-module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
+module Make(Derive : DeriveType)(Lbl : LabelType)(Tag : TransitionType) = struct
 
   open CorePervasives
-  open Types
 
-  module Derive = Derive.Make(Tag)
+  module Derive = Derive.Make(Lbl)(Tag)
+  module Tag = Tag.Make(Lbl)
 
+
+  type partial_derivative = (Lbl.t pattern * Tag.t) list
+  type transition = partial_derivative array
+  type nfa = (Lbl.t pattern, transition) Hashtbl.t
 
   let _trace = true
 
@@ -20,7 +26,7 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
   let transitions derive p =
     if _trace then
       Printf.printf "transitions for %s:\n"
-        (Util.string_of_pattern p);
+        (Util.string_of_pattern Lbl.to_string p);
     Array.init 256 (fun n ->
       if n < Char.code 'a' || n > Char.code 'd' then [] else
 
@@ -35,7 +41,7 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
         Printf.printf "  on '%s':\n"
           (Char.escaped chr);
         List.iter (fun (pd, f) ->
-          print_endline ("    " ^ Util.string_of_pattern (Simplify.simplify_pat pd))
+          print_endline ("    " ^ Util.string_of_pattern Lbl.to_string (Simplify.simplify_pat pd))
         ) pds;
       );
 
@@ -109,23 +115,14 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
         else
           ""
       in
-      print_endline ("  state: " ^ Util.string_of_pattern p ^ is_final);
-      print_endline ("  env:   " ^ Show.show<env> env);
+      print_endline ("  state: " ^ Util.string_of_pattern Lbl.to_string p ^ is_final);
+      print_endline ("  env:   " ^ Show.show<Lbl.t env> env);
     ) states
 
 
-  let reverse_env states =
-    if Transition._reverse then
-      BatList.map (fun (state, env) ->
-        state, BatList.map (fun (x, w) -> x, List.rev w) env
-      ) states
-    else
-      states
-
-
   let run (nfa, start) input env =
-    BatString.fold_left (fun states c ->
-      BatList.map (fun (state, env) ->
+    BatString.fold_left (fun (pos, states) c ->
+      pos + 1, BatList.map (fun (state, env) ->
         (* get the transition tables for the current states *)
         let table = Hashtbl.find nfa state in
         (* find all transitions on 'c' *)
@@ -134,22 +131,21 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
       (* update envs *)
       |> BatList.map (fun (next, env) ->
            BatList.map (fun (pd, f) ->
-             pd, Tag.execute f env
+             pd, Tag.execute pos f env
            ) next
          )
       (* flatten new state list, as each state may have gone to several other states *)
       |> BatList.flatten
-      |> Duplicates.remove_duplicate_results true
-    ) [start, env] input
-
-    |> reverse_env
+      |> Duplicates.remove_duplicate_results Lbl.unrename true
+    ) (0, [start, env]) input
+    |> snd
 
 
   let run_optimised (nfa, start) input env =
     let (nfa, start, inversion) = optimised (nfa, start) in
 
-    Timing.time "run" (BatString.fold_left (fun states c ->
-      BatList.map (fun (state, env) ->
+    Timing.time "run" (BatString.fold_left (fun (pos, states) c ->
+      pos + 1, BatList.map (fun (state, env) ->
         (* get the transition tables for the current states *)
         let table = nfa.(state) in
         (* find all transitions on 'c' *)
@@ -158,15 +154,15 @@ module Make(Derive : DeriveType)(Tag : Types.TransitionType) = struct
       (* update envs *)
       |> BatList.map (fun (next, env) ->
            BatList.map (fun (pd, f) ->
-             pd, Tag.execute f env
+             pd, Tag.execute pos f env
            ) next
          )
       (* flatten new state list, as each state may have gone to several other states *)
       |> BatList.flatten
-      |> Duplicates.remove_duplicate_results true
-    ) [start, env]) input
+      |> Duplicates.remove_duplicate_results Lbl.unrename true
+    ) (0, [start, env])) input
+    |> snd
 
-    |> reverse_env
     |> BatList.map (fun (state, env) ->
          inversion.(state), env
        )

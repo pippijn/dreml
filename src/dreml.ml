@@ -1,8 +1,8 @@
 open CorePervasives
 open Types
 
-let pat_simplify_list =
-  List.map Simplify.simplify_pat
+let pat_simplify_list l =
+  List.map Simplify.simplify_pat l
 
 
 let pat_funs_simplify_list l =

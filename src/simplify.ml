@@ -85,7 +85,7 @@ let rec simplify_pat = function
   | PatStar p -> PatStar (simplify_pat p)
   | PatRepeat (p, n) -> PatRepeat (simplify_pat p, n)
 
-let simplify_pat = Util.rewrite simplify_pat
+let simplify_pat x = Util.rewrite simplify_pat x
 
 let simplify x : regex = x
-let simplify_pat x : pattern = x
+let simplify_pat x : 'label pattern = x

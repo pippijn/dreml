@@ -8,6 +8,7 @@ install Program ".DEFAULT" [
     "Duplicates";
     "ExprSets";
     "Instruction";
+    "Labels";
     "Language";
     "Lexer";
     "Main";
@@ -33,6 +34,7 @@ install Program ".DEFAULT" [
 
   (* Camlp4 *)
   Flags [
+    "labels.ml",	"-syntax camlp4o";
     "main.ml",		"-syntax camlp4o";
     "nfa.ml",		"-syntax camlp4o";
     "exprSets.ml",	"-syntax camlp4o";

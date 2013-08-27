@@ -19,7 +19,7 @@ let rec vars_of_pattern vars = function
   | PatNot (p) ->
       vars_of_pattern vars p
 
-let vars_of_pattern = vars_of_pattern []
+let vars_of_pattern p = vars_of_pattern [] p
 
 
 let variable_clashes p =
@@ -33,3 +33,39 @@ let variable_clashes p =
       clashes
     )
   ) [] vars
+
+
+let rec number_pattern names = function
+  | VarBase (x, r) ->
+      VarBase (Hashtbl.find names x, r)
+  | VarGroup (x, p) ->
+      VarGroup (Hashtbl.find names x, number_pattern names p)
+  | PatIntersect (p1, p2) ->
+      PatIntersect (number_pattern names p1, number_pattern names p2)
+  | PatChoice (p1, p2) ->
+      PatChoice (number_pattern names p1, number_pattern names p2)
+  | PatConcat (p1, p2) ->
+      PatConcat (number_pattern names p1, number_pattern names p2)
+  | PatStar (p) ->
+      PatStar (number_pattern names p)
+  | PatRepeat (p, n) ->
+      PatRepeat (number_pattern names p, n)
+  | PatNot (p) ->
+      PatNot (number_pattern names p)
+
+
+let number_pattern p =
+  let vars = vars_of_pattern p in
+  (* 'label -> int *)
+  let names = Hashtbl.create (List.length vars) in
+  (* int -> 'label *)
+  let map = Array.make (Hashtbl.length names) (Obj.magic ()) in
+
+  BatList.iteri (fun i var ->
+    Hashtbl.add names var i;
+    map.(i) <- var;
+  ) vars;
+
+  let numbered = number_pattern names p in
+
+  numbered, map

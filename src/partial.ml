@@ -40,16 +40,18 @@ let rec derive l : regex -> regex list =
       [Intersect (derive_det derive l r1, derive_det derive l r2)]
 
 
-module Make(Tag : TransitionType) = struct
+module Make(Lbl : LabelType)(Tag : TransitionType) = struct
+
+  module Tag = Tag.Make(Lbl)
 
   (* ·\p· :: l -> p -> [p] *)
-  let rec derive_pat l : pattern -> (pattern * Tag.t) list =
+  let rec derive_pat l : Lbl.t pattern -> (Lbl.t pattern * Tag.t) list =
     let module Enum = List in function
     | VarBase (x, r) ->
-        let f = Tag.update (x, l) in
+        let f = Tag.update x in
         [? VarBase (x, r), f | r <- derive l r ?]
     | VarGroup (x, p) ->
-        let update = Tag.update (x, l) in
+        let update = Tag.update x in
         [? VarGroup (x, p'), Tag.combine update f | (p', f) <- derive_pat l p ?]
     (*| PatIntersect (p1, p2) ->*)
         (*[PatIntersect (derive_pat l p1, derive_pat l p2)]*)
