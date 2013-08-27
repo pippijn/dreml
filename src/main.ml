@@ -103,4 +103,5 @@ end
 (*module Nfa = Nfa.Make(Partial)(Transition)*)
 (*module Nfa = Nfa.Make(ExprSets)(Transition)*)
 (*module Nfa = Nfa.Make(Partial)(Instruction)*)
+(*module Main = Make(ExprSets)(Labels.String)(Instruction)*)
 module Main = Make(ExprSets)(Labels.Int)(Instruction)

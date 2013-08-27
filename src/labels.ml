@@ -1,25 +1,44 @@
 module Int = struct
-  type t = int deriving (Show)
+  type t = int
 
-  let table : (string, int) Hashtbl.t = Hashtbl.create 10
+  let forward  : (string, int) Hashtbl.t = Hashtbl.create 10
+  let backward : (int, string) Hashtbl.t = Hashtbl.create 10
 
   let make x =
     try
-      Hashtbl.find table x
+      Hashtbl.find forward x
     with Not_found ->
-      let label = Hashtbl.length table + 1 in
-      Hashtbl.add table x label;
+      let label = Hashtbl.length forward + 1 in
+      Hashtbl.add forward  x label;
+      Hashtbl.add backward label x;
       label
 
   let rename = (-) 0
-  let to_string = string_of_int
 
   let unrename x =
     if x < 0 then
       -x
     else
       x
+
+  let to_string x =
+    let label = unrename x in
+    let name = Hashtbl.find backward label in
+
+    if label <> x then
+      "'" ^ name
+    else
+      name
+
+  module Show_t = Deriving_Show.Defaults(struct
+    type a = t
+
+    let format fmt a =
+      Show.format<string> fmt (to_string a)
+  end)
+
 end
+
 
 module String = struct
   type t = string deriving (Show)

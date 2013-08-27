@@ -41,7 +41,12 @@ module Make(Derive : DeriveType)(Lbl : LabelType)(Tag : TransitionType) = struct
         Printf.printf "  on '%s':\n"
           (Char.escaped chr);
         List.iter (fun (pd, f) ->
-          print_endline ("    " ^ Util.string_of_pattern Lbl.to_string (Simplify.simplify_pat pd))
+          print_endline (
+            "    " ^
+            Util.string_of_pattern Lbl.to_string (Simplify.simplify_pat pd) ^
+            "\t" ^
+            Tag.to_string f
+          )
         ) pds;
       );
 
