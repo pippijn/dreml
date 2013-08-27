@@ -71,7 +71,7 @@ module Make(Derive : Nfa.DeriveType)(Lbl : Types.LabelType)(Tag : Types.Transiti
     let nfa = Timing.time "build nfa" Nfa.build re in
     let final = Timing.time "run nfa" (Nfa.run_optimised nfa input) Types.empty_env in
 
-    ()
+    ignore final
   ;;
 
 

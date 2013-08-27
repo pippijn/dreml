@@ -25,14 +25,14 @@ let vars_of_pattern p = vars_of_pattern [] p
 let variable_clashes p =
   let vars = vars_of_pattern p in
   let seen = Hashtbl.create (List.length vars) in
-  List.fold_left (fun clashes var ->
+  BatList.sort_unique compare (List.fold_left (fun clashes var ->
     if Hashtbl.mem seen var then
       var :: clashes
     else (
       Hashtbl.add seen var true;
       clashes
     )
-  ) [] vars
+  ) [] vars)
 
 
 let rec number_pattern names = function
