@@ -1,14 +1,6 @@
 type letter = char
 
-type position = {
-  start_p : int;
-  end_p   : int;
-}
-
-type 'a label =
-  | Name of string
-  | Fun of (position -> 'a)
-  | NumberedFun of (position -> 'a) * int
+type position = Pos of int * int
 
 
 type regex =
@@ -22,18 +14,36 @@ type regex =
   | Phi
   | Letter of letter
 
-type 'a pattern =
-  | VarBase      : 'a label * regex -> 'a pattern
-  | VarGroup     : ('a -> 'b) label * 'a pattern -> 'b pattern
-  | PatIntersect : 'a pattern * 'a pattern -> 'a pattern
-  | PatChoice    : 'a pattern * 'a pattern -> 'a pattern
-  | PatConcat    : 'a pattern * 'b pattern -> ('a * 'b) pattern
-  | PatStar      : 'a pattern -> 'a pattern
-  | PatRepeat    : 'a pattern * int -> 'a pattern
-  | PatNot       : 'a pattern -> 'a pattern
+type 'label pattern =
+  | VarBase      of 'label * regex
+  | VarGroup     of 'label * 'label pattern
+  | PatIntersect of 'label pattern * 'label pattern
+  | PatChoice    of 'label pattern * 'label pattern
+  | PatConcat    of 'label pattern * 'label pattern
+  | PatStar      of 'label pattern
+  | PatRepeat    of 'label pattern * int
+  | PatNot       of 'label pattern
 
 
-type env
+type env = (int * position) list
 
-type 'a exprset = 'a pattern list
-type 'a exprsets = ('a exprset * (env -> env)) list
+type 'label exprset = 'label pattern list
+type 'label exprsets = ('label exprset * (int -> env -> env)) list
+
+type 'label instruction =
+  | Update of 'label
+  | Iterate of 'label list
+  | Compose of 'label instruction * 'label instruction
+
+
+module ExprsetTbl = Hashtbl.Make(struct
+
+  type t = (int exprset * int instruction)
+
+  let equal (a, _) (b, _) =
+    a = b
+
+  let hash (a, _) =
+    Hashtbl.hash a
+
+end)

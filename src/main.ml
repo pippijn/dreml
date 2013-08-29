@@ -59,7 +59,7 @@ module Make(Derive : Nfa.DeriveType)(Lbl : Types.LabelType)(Tag : Types.Transiti
 
   let bench () =
     let re =
-      let lexbuf = Lexing.from_string "(x:a*)*" in
+      let lexbuf = Lexing.from_string "(x:a*)" in
       Parser.start Lexer.token lexbuf
     in
 

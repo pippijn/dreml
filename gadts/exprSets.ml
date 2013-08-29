@@ -2,6 +2,28 @@ open CorePervasives
 open Types
 
 
+let string_of_exprset es =
+  List.map Print.string_of_regex es
+  |> String.concat " ∩ "
+
+let string_of_exprsets ess =
+  List.map string_of_exprset ess
+  |> String.concat " ∪ "
+
+
+let string_of_exprset_pat es =
+  List.map Print.string_of_pattern es
+  |> String.concat " ∩ "
+
+
+let string_of_transition (es, f) =
+  string_of_exprset_pat es
+
+let string_of_exprsets_pat ess =
+  List.map string_of_transition ess
+  |> String.concat " ∪ "
+
+
 let rec exprset_of_regex = function
   | Intersect (r1, r2) -> exprset_of_regex r1 @ exprset_of_regex r2
   | r -> [r]
@@ -28,42 +50,8 @@ let rec pattern_of_exprset = function
   | p :: ps -> PatIntersect (p, pattern_of_exprset ps)
 
 
-let set_union a b =
-  let table = Hashtbl.create (List.length a + List.length b) in
-
-  let unite =
-    List.fold_left (fun union x ->
-      if Hashtbl.mem table x then (
-        union
-      ) else (
-        Hashtbl.add table x ();
-        x :: union
-      )
-    )
-  in
-
-  let union = unite (unite [] a) b in
-
-  List.rev union
-
-
-let set_union_pat a b =
-  let table = ExprsetTbl.create (List.length a + List.length b) in
-
-  let unite =
-    List.fold_left (fun union x ->
-      if ExprsetTbl.mem table x then (
-        union
-      ) else (
-        ExprsetTbl.add table x ();
-        x :: union
-      )
-    )
-  in
-
-  let union = unite (unite [] a) b in
-
-  List.rev union
+let set_union eq a b =
+  BatList.unique ~eq (a @ b)
 
 
 (* circled · *)
@@ -75,20 +63,20 @@ let mul_exprsets_expr_pat ?iterate p1ss p2 =
     List.map (fun p1 -> PatConcat (p1, p2)) p1s,
     match iterate with
     | None -> f
-    | Some iterate -> Tag.compose f iterate
+    | Some iterate -> f % iterate
   ) p1ss
 
 
 (* circled ∩ *)
 let intersect_exprsets ess fss =
   (* unite every es with every fs *)
-  Util.reduce set_union (
+  Util.reduce (set_union (=)) (
     (* for each E set *)
     List.map (fun es ->
       (* for each F set *)
       List.map (fun fs ->
         (* combine the two sets *)
-        set_union es fs
+        set_union (=) es fs
       ) fss
     ) ess
   )
@@ -96,14 +84,14 @@ let intersect_exprsets ess fss =
 
 let intersect_exprsets_pat ess fss =
   (* unite every es with every fs *)
-  Util.reduce set_union_pat (
+  Util.reduce (set_union Util.equal_fst) (
     (* for each E set *)
     List.map (fun (es, e_tag) ->
       (* for each F set *)
       List.map (fun (fs, f_tag) ->
         (* combine the two sets and associated
          * transition functions *)
-        set_union es fs, Tag.compose e_tag f_tag
+        set_union (=) es fs, e_tag % f_tag
       ) fss
     ) ess
   )
@@ -137,85 +125,103 @@ let rec derive l = function
   | Epsilon
   | Letter _ (* otherwise *) -> [[Phi]]
   (* 3 *)
-  | Choice (r1, r2) ->
-      let r1' = derive l r1 in
-      let r2' = derive l r2 in
-      set_union r1' r2'
+  | Choice (e, f) ->
+      set_union (=) (derive l e) (derive l f)
   (* 4 *)
-  | Star (r1) as star ->
-      mul_exprsets_expr (derive l r1) star
+  | Star (e) as star ->
+      mul_exprsets_expr (derive l e) star
   (* 5 *)
-  | Concat (r1, r2) ->
-      let r1' = derive l r1 in
-      let r1'r2 = mul_exprsets_expr r1' r2 in
-      if Language.nullable r1 then
-        set_union
-          r1'r2
-          (derive l r2)
+  | Concat (e, f) ->
+      let e_derived = mul_exprsets_expr (derive l e) f in
+      if Language.nullable e then
+        set_union (=)
+          e_derived
+          (derive l f)
       else
-        r1'r2
+        e_derived
   (* 6 *)
-  | Not r -> not_exprsets (derive l r)
+  | Not e -> not_exprsets (derive l e)
   (* 7 *)
-  | Intersect (r1, r2) ->
-      intersect_exprsets (derive l r1) (derive l r2)
+  | Intersect (e, f) ->
+      intersect_exprsets (derive l e) (derive l f)
   (* additional *)
-  | Repeat (r, 1) ->
-      derive l r
-  | Repeat (r, n) ->
+  | Repeat (e, 1) ->
+      derive l e
+  | Repeat (e, n) ->
       assert (n > 1);
-      derive l (Concat (r, Repeat (r, n - 1)))
+      derive l (Concat (e, Repeat (e, n - 1)))
 
+
+let update x env = env
 
 (* ·\p· :: l -> p -> [p] *)
-let rec derive_pat l p =
-  List.map (fun (p, t) ->
-    List.map Simplify.simplify_pat p, t
-  )
-  begin match p with
+let rec derive_pat : type a. char -> a pattern -> a exprsets = fun l -> function
   | VarBase (x, r) ->
-      let f = Tag.update x in
+      let f = update x in
       List.map (fun r ->
         [VarBase (x, regex_of_exprset r)], f
       ) (derive l r)
   | VarGroup (x, p) ->
-      let update = Tag.update x in
+      let update = update x in
       List.map (fun (p', f) ->
-        [VarGroup (x, pattern_of_exprset p')],
-        Tag.compose update f
+        [VarGroup (x, pattern_of_exprset p')], update % f
       ) (derive_pat l p)
   | PatChoice (p1, p2) ->
-      set_union (derive_pat l p1) (derive_pat l p2)
+      set_union (=) (derive_pat l p1) (derive_pat l p2)
   | PatConcat (p1, p2) ->
       let p1' = derive_pat l p1 in
+      let p2' = derive_pat l p2 in
+      let p1'p2 = mul_exprsets_expr_pat p1' p2 in
+      assert false
+
+let derive_PatConcat : type a b. char -> (a * b) pattern -> (a * b) exprsets * b exprsets = fun l -> function
+  | PatConcat (p1, p2) ->
+      let p1' = derive_pat l p1 in
+      let p2' = derive_pat l p2 in
+      let p1'p2 = mul_exprsets_expr_pat p1' p2 in
+      
+      if Language.nullable (Language.regex_of_pattern p1) then
+        (p1'p2, p2')
+      else
+        (p1'p2, [])
+
+
+(*
+let rec derive_pat : type a. a pattern -> _ = fun p l ->
+  match p with
+  | PatConcat (p1, p2) ->
+      let p1' = derive_pat l p1 in
+      let p2' = derive_pat l p2 in
       let p1'p2 = mul_exprsets_expr_pat p1' p2 in
       if Language.nullable (Language.regex_of_pattern p1) then
-        set_union_pat
+        set_union (=)
           p1'p2
-          (derive_pat l p2)
+          p2'
       else
         p1'p2
   | PatIntersect (p1, p2) ->
       intersect_exprsets_pat (derive_pat l p1) (derive_pat l p2)
-  | PatStar (p) as star ->
-      let iterate = Tag.iterate p in
-      mul_exprsets_expr_pat ~iterate (derive_pat l p) star
-  | PatRepeat (p, 1) ->
-      let iterate = Tag.iterate p in
+  | PatStar (e) as star ->
+      let iterate = iterate e in
+      mul_exprsets_expr_pat ~iterate (derive_pat l e) star
+  | PatRepeat (e, 1) ->
+      let iterate = iterate e in
       List.map (fun (p', f) ->
-        p', Tag.compose f iterate
-      ) (derive_pat l p)
-  | PatRepeat (p, n) ->
+        p', f % iterate
+      ) (derive_pat l e)
+  | PatRepeat (e, n) ->
       assert (n > 1);
-      let iterate = Tag.iterate p in
-      let repeat = PatRepeat (p, n - 1) in
-      mul_exprsets_expr_pat ~iterate (derive_pat l p) repeat
+      let iterate = iterate e in
+      let repeat = PatRepeat (e, n - 1) in
+      mul_exprsets_expr_pat ~iterate (derive_pat l e) repeat
   | PatNot _ ->
       failwith "Negation in pattern must be resolved before derivation"
-  end
+      *)
 
 
+(*
 let derive_pat l p =
   List.map (fun (p, f) ->
     pattern_of_exprset p, f
   ) (derive_pat l p)
+*)

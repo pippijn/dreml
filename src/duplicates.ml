@@ -17,6 +17,7 @@ let unique l =
   unique [] seen l
 
 
+(*
 let rec unique_cmp uniq seen cmp l =
   match l with
   | x :: xs ->
@@ -34,6 +35,11 @@ let rec unique_cmp uniq seen cmp l =
 let unique_cmp ?(cmp=compare) l =
   let seen = BatMap.create cmp in
   unique_cmp [] seen cmp l
+*)
+
+
+let unique_cmp ?(cmp=compare) l =
+  BatList.unique_cmp ~cmp (List.rev l)
 
 
 (* Keep all matches. *)

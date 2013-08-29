@@ -10,7 +10,7 @@ let pat_funs_simplify_list l =
   List.combine (pat_simplify_list patterns) functions
   |> List.filter (
       not
-      -| Language.is_empty_language
-      -| Language.regex_of_pattern
-      -| fst
+      % Language.is_empty_language
+      % Language.regex_of_pattern
+      % fst
     )

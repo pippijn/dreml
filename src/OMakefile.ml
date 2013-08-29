@@ -27,7 +27,7 @@ install Program ".DEFAULT" [
   (* Library dependencies *)
   OCamlRequires [
     "baselib";
-    "batteries.syntax";
+    "pa_comprehension";
     "deriving-ocsigen";
     "deriving-ocsigen.syntax";
   ];

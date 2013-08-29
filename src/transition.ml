@@ -32,7 +32,7 @@ module Make(Lbl : Types.LabelType) = struct
     rename (Pattern.vars_of_pattern p)
 
 
-  let combine = (-|)
+  let combine = (%)
   let execute = identity
   let to_string _ = ""
 

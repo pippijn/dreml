@@ -1,21 +1,13 @@
 install Program ".DEFAULT" [
   (* Target *)
-  Name		"drelex";
+  Name		"drelex-gadts";
 
   (* Sources *)
   Modules [
     "ExprSets";
-    "Instruction";
     "Language";
-    "Lexer";
     "Main";
-    "Nfa";
-    "Parser";
-    "Pattern";
     "Print";
-    "Simplify";
-    "Tag";
-    "Transition";
     "Types";
     "Util";
   ];

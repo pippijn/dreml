@@ -84,5 +84,6 @@ let rec simplify_pat = function
   | PatChoice (p1, p2) -> PatChoice (simplify_pat p1, simplify_pat p2)
   | PatStar p -> PatStar (simplify_pat p)
   | PatRepeat (p, n) -> PatRepeat (simplify_pat p, n)
+  | PatNot (p) -> PatNot (simplify_pat p)
 
 let simplify_pat x = Util.rewrite simplify_pat x

@@ -19,7 +19,7 @@ module Make(Lbl : Types.LabelType) = struct
     match insn with
     | Update x -> Transition.update x pos env
     | Iterate (vars) -> Transition.rename vars env
-    | Combine (i1, i2) -> (execute pos i1 -| execute pos i2) env
+    | Combine (i1, i2) -> (execute pos i1 % execute pos i2) env
 
 
   let rec to_string = function

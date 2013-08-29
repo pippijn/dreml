@@ -54,8 +54,8 @@ module Make(Lbl : LabelType)(Tag : TransitionType) = struct
     | p :: ps -> PatIntersect (p, pattern_of_exprset ps)
 
 
-  let set_union ?(cmp=(=)) a b =
-    BatList.unique ~cmp (a @ b)
+  let set_union ?(eq=(=)) a b =
+    BatList.unique ~eq (a @ b)
 
 
   (* circled · *)
@@ -88,7 +88,7 @@ module Make(Lbl : LabelType)(Tag : TransitionType) = struct
 
   let intersect_exprsets_pat ess fss =
     (* unite every es with every fs *)
-    Util.reduce (set_union ~cmp:Util.equal_fst) (
+    Util.reduce (set_union ~eq:Util.equal_fst) (
       (* for each E set *)
       List.map (fun (es, e_tag) ->
         (* for each F set *)
@@ -109,7 +109,7 @@ module Make(Lbl : LabelType)(Tag : TransitionType) = struct
 
 
   let filter_valid =
-    List.filter (not -| List.exists (Simplify.simplify |- Language.is_empty_language))
+    List.filter (not % List.exists (Simplify.simplify %> Language.is_empty_language))
 
   let simplify =
     List.map (List.map Simplify.simplify)

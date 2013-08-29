@@ -1,29 +1,25 @@
 open CorePervasives
 open Types
 
-type t = Lbl.t transition
-
 
 let update x = Update x
 let iterate p = Iterate (Pattern.vars_of_pattern p)
-let combine i1 i2 = Combine (i1, i2)
+let compose f g = Compose (f, g)
 
-
-let rec execute pos insn env =
-  match insn with
+let rec execute f pos env =
+  match f with
   | Update x -> Transition.update x pos env
-  | Iterate (vars) -> Transition.rename vars env
-  | Combine (i1, i2) -> (execute pos i1 -| execute pos i2) env
+  | Iterate vars -> Transition.rename vars pos env
+  | Compose (f, g) -> execute f pos (execute g pos env)
+
+(*let execute f pos env = env*)
 
 
-let rec to_string = function
-  | Update x ->
-      Lbl.to_string x
-  | Iterate (vars) ->
-      "iterate_{" ^ String.concat "," (List.map Lbl.to_string vars) ^ "}"
-  | Combine (i1, i2) ->
-      to_string i1 ^ "; " ^ to_string i2
+let to_string string_of_label f =
+  let rec to_string = function
+    | Update x -> "update(" ^ string_of_label x ^ ")"
+    | Iterate vars -> "iterate_{" ^ String.concat "," (List.map string_of_label vars) ^ "}"
+    | Compose (f, g) -> to_string f ^ "; " ^ to_string g
+  in
 
-
-let to_string insn =
-  "{" ^ to_string insn ^ "}"
+  "{" ^ to_string f ^ "}"

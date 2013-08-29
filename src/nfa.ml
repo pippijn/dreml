@@ -28,8 +28,6 @@ module Make(Derive : DeriveType)(Lbl : LabelType)(Tag : TransitionType) = struct
       Printf.printf "transitions for %s:\n"
         (Util.string_of_pattern Lbl.to_string p);
     Array.init 256 (fun n ->
-      if n < Char.code 'a' || n > Char.code 'd' then [] else
-
       let chr = Char.chr n in
 
       let pds =
@@ -108,7 +106,7 @@ module Make(Derive : DeriveType)(Lbl : LabelType)(Tag : TransitionType) = struct
 
   let filter_final states =
     List.filter (
-      Language.nullable -| Language.regex_of_pattern -| fst
+      Language.nullable % Language.regex_of_pattern % fst
     ) states
 
 
@@ -150,21 +148,29 @@ module Make(Derive : DeriveType)(Lbl : LabelType)(Tag : TransitionType) = struct
     let (nfa, start, inversion) = optimised (nfa, start) in
 
     Timing.time "run" (BatString.fold_left (fun (pos, states) c ->
-      pos + 1, BatList.map (fun (state, env) ->
-        (* get the transition tables for the current states *)
-        let table = nfa.(state) in
-        (* find all transitions on 'c' *)
-        table.(Char.code c), env
-      ) states
+      let states =
+        BatList.map (fun (state, env) ->
+          (* get the transition tables for the current states *)
+          let table = nfa.(state) in
+          (* find all transitions on 'c' *)
+          table.(Char.code c), env
+        ) states
+      in
+
       (* update envs *)
-      |> BatList.map (fun (next, env) ->
-           BatList.map (fun (pd, f) ->
-             pd, Tag.execute pos f env
-           ) next
-         )
-      (* flatten new state list, as each state may have gone to several other states *)
-      |> BatList.flatten
-      |> Duplicates.remove_duplicate_results Lbl.unrename true
+      let states =
+        List.fold_left (fun flat (next, env) ->
+          List.fold_left (fun flat (pd, f) ->
+            (pd, Tag.execute pos f env) :: flat
+          ) flat next
+        ) [] states
+      in
+
+      let states =
+        Duplicates.remove_duplicate_results Lbl.unrename true states
+      in
+
+      pos + 1, states
     ) (0, [start, env])) input
     |> snd
 
