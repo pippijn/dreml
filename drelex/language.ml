@@ -1,71 +1,55 @@
 open Types
 
 
-let rec is_empty_language r =
-  let result =
-    match r with
-    | Phi -> true
-    | Epsilon
-    | Star _
-    | Letter _ -> false
-    | Repeat (r, n) -> assert (n > 0); is_empty_language r
-    | Choice (r1, r2) -> is_empty_language r1 && is_empty_language r2
-    | Concat (r1, r2) -> is_empty_language r1 || is_empty_language r2
-    | Intersect (r1, r2) -> is_empty_language r1 || is_empty_language r2
+let rec is_empty_language = function
+  | Phi -> true
+  | Epsilon
+  | Star _
+  | Letter _ -> false
+  | Repeat (r, n) -> assert (n > 0); is_empty_language r
+  | Choice (r1, r2) -> is_empty_language r1 && is_empty_language r2
+  | Concat (r1, r2) -> is_empty_language r1 || is_empty_language r2
+  | Intersect (r1, r2) -> is_empty_language r1 || is_empty_language r2
+  | Not p -> not_is_empty_language p
 
-    | Not (Epsilon)
-    | Not (Star _)
-    | Not (Letter _)
-    | Not (Phi) -> false
+and not_is_empty_language = function
+  | Epsilon
+  | Star _
+  | Letter _
+  | Phi -> false
 
-    (* De Morgan *)
-    | Not (Intersect (r1, r2)) -> is_empty_language (Choice (Not r1, Not r2))
-    | Not (Choice (r1, r2)) -> is_empty_language (Intersect (Not r1, Not r2))
+  (* De Morgan *)
+  | Intersect (r1, r2) -> not_is_empty_language r1 || not_is_empty_language r2
+  | Choice (r1, r2) -> not_is_empty_language r1 && not_is_empty_language r2
 
-    (* Double negation *)
-    | Not (Not r) -> is_empty_language r
+  (* Double negation *)
+  | Not r -> is_empty_language r
 
-    | Not (Repeat (r, n)) -> assert (n > 0); is_empty_language (Not r)
+  | Repeat (r, n) -> assert (n > 0); not_is_empty_language r
 
-    (* XXX: correct? *)
-    | Not (Concat (a, b)) -> is_empty_language (Not a) && is_empty_language (Not b)
-  in
-  (*
-  Printf.printf "!! %-20s %s the empty language\n"
-    (Util.string_of_regex r)
-    (if result then "is" else "is [0;32mNOT[0m");
-  *)
-  result
+  (* XXX: correct? *)
+  | Concat (a, b) -> not_is_empty_language a && not_is_empty_language b
 
 
-let rec nullable r =
-  let result =
-    match r with
-    | Epsilon
-    | Star _ -> true
+let rec nullable = function
+  | Epsilon
+  | Star _ -> true
 
-    | Not r -> not (nullable r)
+  | Not r -> not (nullable r)
 
-    | Phi
-    | Letter _ -> false
+  | Phi
+  | Letter _ -> false
 
-    (* e.g. a | a* is nullable *)
-    | Choice (r1, r2) -> nullable r1 || nullable r2
-    (* e.g. a & a* is not nullable *)
-    | Intersect (r1, r2)
-    (* e.g. a a* is not nullable *)
-    | Concat (r1, r2) -> nullable r1 && nullable r2
-    | Repeat (r, n) -> assert (n > 0); nullable r
-  in
-  (*
-  Printf.printf "?? %-20s %s nullable\n"
-    (Util.string_of_regex r)
-    (if result then "is" else "is [0;33mNOT[0m");
-  *)
-  result
+  (* e.g. a | a* is nullable *)
+  | Choice (r1, r2) -> nullable r1 || nullable r2
+  (* e.g. a & a* is not nullable *)
+  | Intersect (r1, r2)
+  (* e.g. a a* is not nullable *)
+  | Concat (r1, r2) -> nullable r1 && nullable r2
+  | Repeat (r, n) -> assert (n > 0); nullable r
 
 
-let rec regex_of_pattern : type a. a pattern -> _ = function
+let rec regex_of_pattern = function
   | VarBase (x, r) ->
       r
   | VarGroup (x, p) ->
