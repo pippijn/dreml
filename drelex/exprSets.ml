@@ -66,6 +66,10 @@ let set_union_pat a b =
   List.rev union
 
 
+let set_union = (@)
+let set_union_pat = (@)
+
+
 (* circled · *)
 let mul_exprsets_expr ess g =
   List.map (List.map (fun e -> Concat (e, g))) ess
@@ -169,9 +173,11 @@ let rec derive l = function
 
 (* ·\p· :: l -> p -> [p] *)
 let rec derive_pat l p =
+  (*
   List.map (fun (p, t) ->
     List.map Simplify.simplify_pat p, t
   )
+  *)
   begin match p with
   | VarBase (x, r) ->
       let f = Tag.update x in
