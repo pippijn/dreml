@@ -173,11 +173,9 @@ let rec derive l = function
 
 (* ·\p· :: l -> p -> [p] *)
 let rec derive_pat l p =
-  (*
   List.map (fun (p, t) ->
     List.map Simplify.simplify_pat p, t
   )
-  *)
   begin match p with
   | VarBase (x, r) ->
       let f = Tag.update x in

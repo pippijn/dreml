@@ -12,7 +12,7 @@ let rec execute f pos env =
   | Iterate vars -> Transition.rename vars pos env
   | Compose (f, g) -> execute f pos (execute g pos env)
 
-(*let execute f pos env = env*)
+let execute f pos env = env
 
 
 let to_string string_of_label f =

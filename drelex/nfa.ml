@@ -158,47 +158,65 @@ let show_internal inversion varmap input states =
   ) states
 
 
-let run (nfa, start) varmap input env =
+let update_envs seen pos env states next =
+  BatList.fold_left (fun states (pd, f) ->
+    if seen.(pd) then (
+      states
+    ) else (
+      seen.(pd) <- true;
+      states @ [(pd, Tag.execute f pos env)]
+    )
+  ) states next
+
+
+let goto_next_states seen pos nfa states c =
+  List.fold_left (fun states (state, env) ->
+    (* get the transition tables for the current states *)
+    let table = nfa.(state) in
+    (* find all transitions on 'c' *)
+    let next = table.(Char.code c) in
+
+    if _trace then (
+      Printf.printf "state %d -> [%s]\n"
+        state (String.concat ";" (List.map (string_of_int % fst) next))
+    );
+
+    (* update envs *)
+    update_envs seen pos env states next
+  ) [] states
+
+
+let clear_seen seen =
+  for i = 0 to Array.length seen - 1 do
+    seen.(i) <- false
+  done
+
+
+let string_fold_lefti f init str =
+  let n = String.length str in
+  let rec string_fold_lefti i result =
+    if i = n then result
+    else string_fold_lefti (i + 1) (f result str.[i] i)
+  in
+  string_fold_lefti 0 init
+
+
+let run (nfa, start) varmap input =
   let (nfa, start, inversion) = optimised (nfa, start) in
   let seen = Array.create (Array.length nfa) false in
 
-  BatString.fold_left (fun (pos, states) c ->
+  string_fold_lefti (fun states c pos ->
     if _trace then print_newline ();
 
-    for i = 0 to Array.length seen - 1 do
-      seen.(i) <- false
-    done;
+    clear_seen seen;
 
-    let states =
-      BatList.fold_left (fun states (state, env) ->
-        (* get the transition tables for the current states *)
-        let table = nfa.(state) in
-        (* find all transitions on 'c' *)
-        let next = table.(Char.code c) in
-
-        if _trace then (
-          Printf.printf "state %d -> [%s]\n"
-            state (String.concat ";" (List.map (string_of_int % fst) next))
-        );
-
-        (* update envs *)
-        BatList.fold_left (fun states (pd, f) ->
-          if seen.(pd) then (
-            states
-          ) else (
-            seen.(pd) <- true;
-            states @ [(pd, Tag.execute f pos env)]
-          )
-        ) states next
-      ) [] states
-    in
+    let states = goto_next_states seen pos nfa states c in
 
     if _trace then (
       Printf.printf "after %s: in %d states\n" (Char.escaped c) (List.length states);
       show_internal inversion varmap input states;
     );
 
-    pos + 1, states
-  ) (0, [start, env]) input
-  |> snd
+    states
+  ) [start, empty_env] input
   |> BatList.map inversion

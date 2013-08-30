@@ -31,4 +31,6 @@ install Program ".DEFAULT" [
   Flags [
     "types.ml",		"-syntax camlp4o";
   ];
+
+  Code "OCAMLOPT_FLAGS += -inline 0";
 ]

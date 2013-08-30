@@ -26,6 +26,7 @@ type 'label pattern =
 
 
 type env = (int * position) list
+let empty_env = []
 
 type 'label exprset = 'label pattern list
 type 'label exprsets = ('label exprset * (int -> env -> env)) list

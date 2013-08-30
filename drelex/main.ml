@@ -19,14 +19,13 @@ let lexer =
 
 
 let input = String.make (10 * 1024 * 1024) 'a' ^ "b"
-let env = []
 
 
 let a () =
   let lexer, varmap = Pattern.number_pattern lexer in
 
   let (nfa, start) = Nfa.build varmap lexer in
-  let states = Nfa.run (nfa, start) varmap input env in
+  let states = Nfa.run (nfa, start) varmap input in
 
   if false then
     Nfa.show varmap input states
@@ -40,7 +39,7 @@ let b pattern input =
   print_endline "br1";
   let (nfa, start) = Nfa.build varmap lexer in
   print_endline "br2";
-  let states = Nfa.run (nfa, start) varmap input env in
+  let states = Nfa.run (nfa, start) varmap input in
 
   if not Nfa._trace then (
     print_endline ("after pattern: " ^ pattern);
