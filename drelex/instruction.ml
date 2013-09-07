@@ -1,6 +1,8 @@
 open CorePervasives
 open Types
 
+type 'a t = 'a instruction
+
 
 let update x = Update x
 let iterate p = Iterate (Pattern.vars_of_pattern p)
@@ -11,8 +13,6 @@ let rec execute f pos env =
   | Update x -> Transition.update x pos env
   | Iterate vars -> Transition.rename vars pos env
   | Compose (f, g) -> execute f pos (execute g pos env)
-
-let execute f pos env = env
 
 
 let to_string string_of_label f =

@@ -41,7 +41,7 @@ let b pattern input =
   print_endline "br2";
   let states = Nfa.run (nfa, start) varmap input in
 
-  if not Nfa._trace then (
+  if false then (
     print_endline ("after pattern: " ^ pattern);
     Nfa.show varmap input states
   )

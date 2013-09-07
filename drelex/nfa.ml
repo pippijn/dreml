@@ -1,14 +1,88 @@
 open CorePervasives
 open Types
 
+(**********************************************************
+ * :: NFA Simulation.
+ **********************************************************)
 
-(*let _trace = true*)
-(*let _trace = false*)
-let _trace =
-  match Sys.argv with
-  | [|_; _; _; "-trace"|] -> true
-  | _ -> false
+type 'tag nfa = {
+  seen : bool array;
+  nfa : (int * 'tag) list array array;
+  input : string;
+  len : int;
+}
 
+let update_envs seen pos env states next =
+  let rec update_envs0 seen pos env states = function
+    | (pd, f) :: tl ->
+        let states =
+          if Array.unsafe_get seen (pd) then (
+            states
+          ) else (
+            Array.unsafe_set seen (pd) true;
+            (* This is slow if there are many states. *)
+            states @ [(pd, Tag.execute f pos env)]
+          )
+        in
+        update_envs0 seen pos env states tl
+
+    | [] ->
+        states
+  in
+  update_envs0 seen pos env states next
+
+
+let goto_next_states nfa pos c curr_states =
+  let rec goto_next_states0 nfa pos c next_states curr_states =
+    match curr_states with
+    | (state, env) :: tl ->
+        (* get the transition tables for the current states *)
+        let table = Array.unsafe_get nfa.nfa (state) in
+        (* find all transitions on 'c' *)
+        let next = Array.unsafe_get table (Char.code c) in
+
+        (* update envs *)
+        let next_states = update_envs nfa.seen pos env next_states next in
+
+        (* recursive call *)
+        goto_next_states0 nfa pos c next_states tl
+
+    | [] ->
+        next_states
+  in
+  goto_next_states0 nfa pos c [] curr_states
+
+
+let clear_seen seen =
+  for i = 0 to Array.length seen - 1 do
+    Array.unsafe_set seen (i) false
+  done
+
+
+let iteration nfa pos states c =
+  clear_seen nfa.seen;
+  goto_next_states nfa pos c states
+
+
+let rec main_loop nfa pos result =
+  if pos = nfa.len then
+    result
+  else
+    let result = iteration nfa pos result (String.unsafe_get nfa.input pos) in
+    main_loop nfa (pos + 1) result
+
+
+let run nfa start input =
+  let seen = Array.create (Array.length nfa) false in
+  let nfa = { nfa; seen; input; len = String.length input; } in
+
+  main_loop nfa 0 [start, empty_env]
+
+
+
+(**********************************************************
+ * :: NFA Construction.
+ **********************************************************)
 
 let filter_nonempty states =
   List.filter (
@@ -158,65 +232,7 @@ let show_internal inversion varmap input states =
   ) states
 
 
-let update_envs seen pos env states next =
-  BatList.fold_left (fun states (pd, f) ->
-    if seen.(pd) then (
-      states
-    ) else (
-      seen.(pd) <- true;
-      states @ [(pd, Tag.execute f pos env)]
-    )
-  ) states next
-
-
-let goto_next_states seen pos nfa states c =
-  List.fold_left (fun states (state, env) ->
-    (* get the transition tables for the current states *)
-    let table = nfa.(state) in
-    (* find all transitions on 'c' *)
-    let next = table.(Char.code c) in
-
-    if _trace then (
-      Printf.printf "state %d -> [%s]\n"
-        state (String.concat ";" (List.map (string_of_int % fst) next))
-    );
-
-    (* update envs *)
-    update_envs seen pos env states next
-  ) [] states
-
-
-let clear_seen seen =
-  for i = 0 to Array.length seen - 1 do
-    seen.(i) <- false
-  done
-
-
-let string_fold_lefti f init str =
-  let n = String.length str in
-  let rec string_fold_lefti i result =
-    if i = n then result
-    else string_fold_lefti (i + 1) (f result str.[i] i)
-  in
-  string_fold_lefti 0 init
-
-
 let run (nfa, start) varmap input =
   let (nfa, start, inversion) = optimised (nfa, start) in
-  let seen = Array.create (Array.length nfa) false in
-
-  string_fold_lefti (fun states c pos ->
-    if _trace then print_newline ();
-
-    clear_seen seen;
-
-    let states = goto_next_states seen pos nfa states c in
-
-    if _trace then (
-      Printf.printf "after %s: in %d states\n" (Char.escaped c) (List.length states);
-      show_internal inversion varmap input states;
-    );
-
-    states
-  ) [start, empty_env] input
+  run nfa start input
   |> BatList.map inversion
