@@ -22,7 +22,7 @@ install Program ".DEFAULT" [
 
   (* Library dependencies *)
   OCamlRequires [
-    "baselib";
+    "corelib";
     "batteries";
     "sexplib.syntax";
   ];

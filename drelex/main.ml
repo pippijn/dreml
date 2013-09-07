@@ -28,7 +28,7 @@ let a () =
   let states = Nfa.run (nfa, start) varmap input in
 
   if false then
-    Nfa.show varmap input states
+    Nfa.Debug.show varmap input states
 ;;
 
 
@@ -36,14 +36,12 @@ let b pattern input =
   let lexer = Parser.start Lexer.token (Lexing.from_string pattern) in
   let lexer, varmap = Pattern.number_pattern lexer in
 
-  print_endline "br1";
   let (nfa, start) = Nfa.build varmap lexer in
-  print_endline "br2";
   let states = Nfa.run (nfa, start) varmap input in
 
-  if false then (
+  if true then (
     print_endline ("after pattern: " ^ pattern);
-    Nfa.show varmap input states
+    Nfa.Debug.show varmap input states
   )
 
 
