@@ -1,0 +1,26 @@
+Source: ocaml-dreml
+Section: ocaml
+Priority: optional
+Maintainer: Pippijn van Steenhoven <pip88nl@gmail.com>
+Uploaders: 
+  Pippijn van Steenhoven <pip88nl@gmail.com>
+Build-Depends:
+  omake,
+  ocaml-nox (>= 3.12),
+  ocaml-findlib,
+  libbaselib-ocaml-dev,
+  dh-ocaml,
+  debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: https://github.com/pippijn/dreml
+Vcs-Git: git://github.com/pippijn/dreml
+Vcs-Browser: https://github.com/pippijn/dreml
+
+Package: dreml
+Architecture: any
+Depends: ${ocaml:Depends}, ${misc:Depends}
+Provides: ${ocaml:Provides}
+Recommends: ocaml-findlib
+Description: Common library for OCaml projects
+ This library contains some common modules I use for
+ most of my projects.

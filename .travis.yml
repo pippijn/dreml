@@ -1,0 +1,16 @@
+language: c
+script: dpkg-buildpackage -b -us -uc
+
+install:
+   - sudo apt-add-repository -y ppa:pippijn/ppa
+   - sudo apt-get update
+   - sudo apt-get install omake noweb rubber graphviz texlive-latex-extra valgrind menhir dh-ocaml libbatteries-ocaml-dev libsexplib-camlp4-dev libderiving-ocsigen-ocaml-dev
+   - wget https://raw.github.com/pippijn/obuild/master/script/travis-depend
+   - chmod +x travis-depend
+   - ./travis-depend baselib
+
+# whitelist
+branches:
+   only:
+      - master
+      - /.*\/staging/
