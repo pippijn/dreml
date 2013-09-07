@@ -191,6 +191,7 @@ can easily be obtained by folding the set of derivated terms into choices:
 This function is used to implement negation and intersection as a natural
 extension to partial derivatives. It is not used in the sets of sets extension.
 
+
 \subsection{Transition function}
 
 The problem with recording the match in the pattern structure is still that we
@@ -241,6 +242,7 @@ using proof assistants to investigate the program. Section \ref{opts} describes
 how different data structure choices affect various performance characteristics
 of automaton simulation.
 
+
 \subsubsection{compose}
 
 The first three functions are constructors for the transition type, two of which
@@ -248,6 +250,7 @@ correspond to operations required in definition \ref{defn-pd-pset}. A third
 function, \texttt{compose}, resembles the mathematical function composition
 operator $\circ$, so that $(f \circ g)(\mathit{env})$ can be directly mapped to
 the OCaml code \texttt{execute (compose f g) env}.
+
 
 \subsubsection{instruction type}
 
@@ -262,6 +265,7 @@ the transition function as data structure.
      | Compose of instruction * instruction
 \end{lstlisting}
 
+
 \subsubsection{iterate}
 
 \texttt{iterate} is a two-step function. In the definition of pattern partial
@@ -275,6 +279,7 @@ once and stored in the transition function. \texttt{Transition} stores the set
 of variables in the closure, and \texttt{Instruction} explicitly stores it in
 the string list of variant \texttt{Iterate}.
 
+
 \subsubsection{update}
 
 Finally, the most important function, \texttt{update (x, l)} records the fact
@@ -282,6 +287,7 @@ that a letter $l$ has been matched by pattern variable $x$. The matching
 environment is a list of pairs containing name and value of matches. Type
 \texttt{env} is \texttt{(string * word) list}, where type \texttt{word = char
 list}.
+
 
 \subsubsection{show}
 
@@ -293,6 +299,7 @@ of function closures cannot normally\footnote{Without using the \texttt{Obj}
 interface} be inspected in OCaml, \texttt{Transition.show} does nothing, so
 \texttt{Instruction.show} can be used to visualise the transition function's
 effects on a passed matching environment.
+
 
 \subsection{Parametrised partial derivative function}
 
@@ -308,6 +315,39 @@ expression partial derivative is outside the functor definition.
      val derive_pat : letter -> pattern -> (pattern * Tag.t) list
    end
 \end{lstlisting}
+
+
+\subsection{Automata construction}
+
+When constructing the automaton, a state is represented by the structure of its
+pattern. Each state is associated with a dense map of input symbol to a set of
+states it can transition to on that input symbol. We thus represent the
+non-deterministic finite automaton $(Q, \Sigma, \Delta, q_0, F)$ as
+
+\begin{lstlisting}
+   type state = pattern
+   type transition = (state * instruction) list
+   type nfa = (state, transition array) map * state
+\end{lstlisting}
+
+In this definition,
+
+\begin{itemize}
+   \item $Q$ is the set of states represented by map's keys.
+   \item $\Sigma$ is the set of bytes between 0 and 255.
+   \item $\Delta$ is the matching relation $Q \times \Sigma \to \mathcal{P}(Q)$,
+      in which $Q$ is the key \texttt{state}, $\Sigma$ is used to index in the
+      mapped \texttt{transition array}, and $\mathcal{P}(Q)$ is the
+      \texttt{transition}, which also contains a matching function for updating
+      the matching environments.
+   \item $q_0$ is the second component of the \texttt{nfa} pair.
+   \item $F$ is implicitly given by $F = \{ q \in Q | \varepsilon \in L(q) \}$.
+\end{itemize}
+
+A state lookup takes $O(n)$ time over the term length and amortised $O(1)$ over
+the number of states ($O(n)$ worst case) with a hash table, or $O(\log n)$ when
+using a tree based map structure.
+
 
 \subsection{Matching strategies}
 
@@ -434,53 +474,72 @@ The last two negation rules are De Morgan's rules. All rules are implemented as
 recursive rewrite rules, which means they must produce a strictly smaller
 expression than they receive as input. A \texttt{rewrite} function recursively
 reduces the expression using these rules, until the result converges. If a rule
-produces a larger expression that may later be reduced by another rule, the
-rewrite system may go into an endless loop. Therefore, the rules specified here
+produces a larger expression that may later be reduced by another rule, this
+rewrite system may go into an endless loop. Therefore, all rules specified here
 are straightforward in decreasing term size.
 
-Simplification rules are not strictly required, and the automata construction
-works correctly without them. They are only used as an optimisation.
+Simplification rules are not strictly required, and the  automata construction
+can work correctly without them. They are only used as an optimisation.
 
 
 \section{Optimisations}
 %%%%%%%%%%%%%%%%%%%%%%%
 \label{opts}
 
+After the initial implementation was found to be very inefficient for various
+obvious and non-obvious reasons, an optimised implementation was created, which
+exhibits roughly five times better performance. The single most important
+optimisation was the elision of all closures in the execution code. This
+optimisation alone gained over 300\% performance. Instead of allocating a
+closure and using it with general purpose higher-order functions such as
+\texttt{map} and \texttt{fold}, all loops, the innermost of which is three
+levels deep, were converted to simple recursive function calls. The cost of
+allocating and calling a closure by far outweighs the cost of passing around all
+required arguments, such as the current input position, states and
+environments, to recursive calls.
+
+Disabling OCaml runtime bounds checking in the arrays gained just about 3\%.
+Approximately 8\% can be gained from using the inlining option in the OCaml
+native compiler. A larger difference can be achieved by tuning the OCaml garbage
+collector. Choosing an appropriate size for the minor heap, in which young
+objects are kept, so that all temporary lists that are created and discarded in
+every iteration can fit in it, can drastically improve performance. Experimental
+results show up to 34\% improvement for small expressions with a minor heap size
+of between 8 and 32 kilobytes. Performing a full collection of the minor and
+major heap, in which old objects reside, before starting execution might help
+for very complex patterns and large inputs, but its cost would outweigh any
+benefits for small inputs.
+
+Higher level optimisations are described in the following sub-sections.
+
+
 \subsection{Automata construction}
 
-When constructing the automaton, a state is represented by the structure of its
-pattern. Each state is associated with a dense map of input symbol to a set of
-states it can transition to on that input symbol. We thus represent the
-non-deterministic finite automaton $(Q, \Sigma, \Delta, q_0, F)$ as
+Representing states as patterns is useful while computing the automaton, but is
+inefficient during execution, since the map lookup is done symbolically over the
+pattern structure.
 
-\begin{lstlisting}
-   type state = pattern
-   type transition = (state * instruction) list
-   type nfa = (state, transition array) map * state
-\end{lstlisting}
-
-In this definition,
-
-\begin{itemize}
-   \item $Q$ is the set of states represented by map's keys.
-   \item $\Sigma$ is the set of bytes between 0 and 255.
-   \item $\Delta$ is the matching relation $Q \times \Sigma \to \mathcal{P}(Q)$,
-      in which $Q$ is the key \texttt{state}, $\Sigma$ is used to index in the
-      mapped \texttt{transition array}, and $\mathcal{P}(Q)$ is the
-      \texttt{transition}, which also contains a matching function for updating
-      the matching environments.
-   \item $q_0$ is the second component of the \texttt{nfa} pair.
-   \item $F$ is implicitly given by $F = \{ q \in Q | \varepsilon \in L(q) \}$.
-\end{itemize}
-
-This representation is useful while computing the automaton, but is inefficient
-during execution, since the map lookup is done symbolically over the pattern
-structure.
-
-Before starting the execution, we first compute a more efficient representation
+Before starting NFA simulation, we first compute a more efficient representation
 by numbering each pattern and replacing the symbolic lookup map with an array.
 In this step, an inverse operation is also produced so that the simulation
-result can be resolved back to a pattern.
+result can be resolved back to a pattern. This numbering and mapping all
+patterns in the original NFA data structure to their associated numbers yields
+the following type of the NFA data structure:
+
+\begin{lstlisting}
+   type state = int
+   type transition = (state * instruction) list
+   type nfa = transition array * state
+\end{lstlisting}
+
+Every state lookup is now done through direct indexing into a single array,
+making it $O(1)$ in both the number of states and the derived expression length.
+A single\footnote{However, this method did not noticably improve performance
+against indexing into an array of arrays.} dense array is used for all states
+for all possible input symbols. This means that indexing is done by $i = q \dot
+|\Sigma| + c$, where $q$ is the state number and $c$ is the input symbol number
+in the ordered set of input symbols $\Sigma$.
+
 
 \subsection{Matching strategies}
 
@@ -496,5 +555,6 @@ a useless update and addition of a state already seen. This method clearly also
 obtains the greedy left-most match. Other matching strategies could similarly be
 implemented directly in the loop for improved performance.
 
+TODO: bitset
 
 % vim:tw=80
