@@ -1,9 +1,19 @@
 open CorePervasives
 open Types
 
-let _trace = false
+let _trace_con = false
+let _trace_run = false
 
 module Debug = struct
+
+  let time label f =
+    let s = Unix.gettimeofday () in
+    let r = f () in
+    let e = Unix.gettimeofday () in
+    Printf.printf "%s: %.06f sec\n" label (e -. s);
+    flush stdout;
+    r
+
 
   let string_of_label varmap label =
     Array.get varmap (label - 1)
@@ -60,8 +70,71 @@ end
  * :: NFA Simulation.
  **********************************************************)
 
+module BitSet = struct
+
+  type bitset = string
+
+  let bitset_create n =
+    let size = n / 8 + (if n mod 8 = 0 then 0 else 1) in
+    String.make size '\000'
+
+  let bitset_mem seen x =
+    let pos = x / 8 in
+    let off = x mod 8 in
+    let c = Char.code (String.unsafe_get seen pos) in
+    (c land (1 lsl off)) <> 0
+
+  let bitset_set seen x =
+    let pos = x / 8 in
+    let off = x mod 8 in
+    let c = Char.code (String.unsafe_get seen pos) in
+    let mask = 1 lsl off in
+    if (c land mask) = 0 then
+      String.unsafe_set seen pos (Char.unsafe_chr (c lor mask))
+
+
+  let bitset_unset seen x =
+    let pos = x / 8 in
+    let off = x mod 8 in
+    let c = Char.code (String.unsafe_get seen pos) in
+    let mask = 1 lsl off in
+    if (c land mask) <> 0 then
+      String.unsafe_set seen pos (Char.unsafe_chr (c lxor mask))
+
+
+  let bitset_clear seen =
+    String.fill seen 0 (String.length seen) '\000'
+
+  let bitset_print seen =
+    for i = 0 to String.length seen * 8 do
+      print_char (
+        if bitset_mem seen i then
+          '1'
+        else
+          '0'
+      )
+    done;
+    print_newline ()
+
+end
+
+type bitset = bool array
+
+let bitset_create n =
+  Array.create n false
+
+let bitset_mem seen x =
+  Array.unsafe_get seen x
+
+let bitset_set seen x =
+  Array.unsafe_set seen x true
+
+let bitset_unset seen x =
+  Array.unsafe_set seen x false
+
+
 type 'tag nfa = {
-  seen : bool array;
+  seen : bitset;
   nfa : (int * 'tag) list array;
   input : string;
   len : int;
@@ -71,10 +144,10 @@ let update_envs seen pos env states next =
   let rec update_envs0 seen pos env states = function
     | (pd, f) :: tl ->
         let states =
-          if Array.unsafe_get seen (pd) then (
+          if bitset_mem seen pd then (
             states
           ) else (
-            Array.unsafe_set seen (pd) true;
+            bitset_set seen pd;
             (* This is slow if there are many states. *)
             states @ [(pd, Tag.execute f pos env)]
           )
@@ -94,7 +167,7 @@ let goto_next_states nfa pos c curr_states =
         (* find all transitions on 'c' for 'state' *)
         let next = Array.unsafe_get nfa.nfa (state * 256 + (Char.code c)) in
 
-        if _trace then (
+        if _trace_run then (
           Printf.printf "state %d -> [%s]\n"
             state (String.concat ";" (List.map (string_of_int % fst) next))
         );
@@ -111,19 +184,21 @@ let goto_next_states nfa pos c curr_states =
   goto_next_states0 nfa pos c [] curr_states
 
 
-let clear_seen seen =
-  for i = 0 to Array.length seen - 1 do
-    Array.unsafe_set seen (i) false
-  done
+let rec clear_seen seen = function
+  | [] -> ()
+  | (number, _) :: states ->
+      bitset_unset seen number;
+      clear_seen seen states
 
 
 let iteration nfa pos states c =
-  clear_seen nfa.seen;
-  goto_next_states nfa pos c states
+  let next = goto_next_states nfa pos c states in
+  clear_seen nfa.seen next;
+  next
 
 
 let rec main_loop inversion varmap nfa pos states =
-  if _trace then
+  if _trace_run then
     print_newline ();
 
   if pos = nfa.len then
@@ -132,7 +207,7 @@ let rec main_loop inversion varmap nfa pos states =
     let c = String.unsafe_get nfa.input pos in
     let states = iteration nfa pos states c in
 
-    if _trace then (
+    if _trace_run then (
       Printf.printf "after %s: in %d states\n" (Char.escaped c) (List.length states);
       Debug.show_internal inversion varmap nfa.input states;
     );
@@ -141,7 +216,7 @@ let rec main_loop inversion varmap nfa pos states =
 
 
 let run inversion varmap nfa start input =
-  let seen = Array.create (Array.length nfa / 256) false in
+  let seen = bitset_create (Array.length nfa / 256) in
   let nfa = { nfa; seen; input; len = String.length input; } in
 
   main_loop inversion varmap nfa 0 [start, empty_env]
@@ -170,8 +245,10 @@ let filter_final states =
 
 
 let transitions varmap p =
-  Printf.printf "transitions for %s:\n"
-    (Debug.string_of_pattern varmap p);
+  if _trace_con then (
+    Printf.printf "transitions for %s:\n"
+      (Debug.string_of_pattern varmap p);
+  );
   Array.init 256 (fun n ->
     let chr = Char.chr n in
 
@@ -180,7 +257,7 @@ let transitions varmap p =
       |> filter_nonempty
     in
 
-    if pds != [] then (
+    if _trace_con && pds != [] then (
       Printf.printf "  on '%s':\n"
         (Char.escaped chr);
       List.iter (fun (pd, f) ->
@@ -205,9 +282,11 @@ let rec build varmap nfa p =
 
 
 let build varmap start =
-  let nfa = Hashtbl.create 10 in
-  build varmap nfa start;
-  nfa, start
+  Debug.time "build" (fun () ->
+    let nfa = Hashtbl.create 10 in
+    build varmap nfa start;
+    nfa, start
+  )
 
 
 
@@ -252,21 +331,18 @@ let optimised (nfa, start) =
   optimised, start, inversion
 
 
-let time f =
-  let s = Unix.gettimeofday () in
-  let r = f () in
-  let e = Unix.gettimeofday () in
-  Printf.printf "time: %.06f sec\n" (e -. s);
-  r
-
-
 let run (nfa, start) varmap input =
   Gc.(set { (Gc.get ()) with
     minor_heap_size = 4096 * 8;
   });
 
-  time (fun () ->
-    let (nfa, start, inversion) = optimised (nfa, start) in
+  let (nfa, start, inversion) =
+    Debug.time "hashcons" (fun () ->
+      optimised (nfa, start)
+    )
+  in
+
+  Debug.time "run" (fun () ->
     run inversion varmap nfa start input
     |> BatList.map inversion
   )
