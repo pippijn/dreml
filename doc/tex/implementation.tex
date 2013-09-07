@@ -290,7 +290,7 @@ representation. We use the OCaml library \texttt{Deriving\_Show} to generate
 functions for every type, and for some types, we provide specialised functions
 that visualise data on a higher semantic level. Since the captured environment
 of function closures cannot normally\footnote{Without using the \texttt{Obj}
-interface} be inspected in OCaml, \texttt{Transition.show} does nothing, but
+interface} be inspected in OCaml, \texttt{Transition.show} does nothing, so
 \texttt{Instruction.show} can be used to visualise the transition function's
 effects on a passed matching environment.
 
@@ -315,6 +315,44 @@ Without a matching strategy, the engine will collect every possible match for
 every variable. E.g. $(x:a*)(y:a*)$ for $aa$ will yield $\{[(x:aa)], [(x:a),
 (y:a)], [(y:aa)]\}$. For a longer sequence of $a$, the set of results will grow
 exponentially.
+
+Each unique NFA state can contain a different environment, which is carried
+along the path the thread takes. When multiple paths come together, it is the
+matching strategy that decides which of the environments is retained. For
+example, considering the pattern $p = (x:a^*) + (y:aa)$ and input string $aa$,
+we would first transition over $a$, which yields the partial derivative $p
+\setminus a = \{ ((x:\varepsilon), (x \mapsto a)), ((x:a^*), (x \mapsto a)),
+((y:\varepsilon a), (y \mapsto a)) \}$. Here, the first component of each pair
+is the expression matching at the next state, and the second component is the
+associated matching environment $\Gamma$. In the next step, we derive each of
+these terms over the next $a$, amending their respective environments, yielding
+a set of new states for each of the three states in $p'$.
+
+\begin{enumerate}
+   \item
+      $(x:\varepsilon) \setminus a = \{ ((x:\phi), (x \mapsto a)) \}$
+   \item
+      $(x:a^*) \setminus a = \{
+         ((x:\varepsilon), (x \mapsto a)),
+         ((x:a^*), (x \mapsto a))
+      \}$
+   \item
+      $(y:\varepsilon a) \setminus a = \{ ((y:\varepsilon), (y \mapsto a)) \}$
+\end{enumerate}
+
+These sets are now merged into a single ordered set, while updating the input
+environments, yielding $p'' = \{ ((x:\varepsilon), (x \mapsto aa)), ((x:a^*), (x
+\mapsto aa)), ((y:\varepsilon), (y \mapsto aa)) \}$. In the process of merging
+the resulting sets, we ignore all states that have reached $\phi$, and are
+therefore in error.
+
+Now, two threads arrived in the same state: $(x:\varepsilon)$ and
+$(y:\varepsilon)$. A matching strategy decides which one is kept. According to
+the greedy left-most matching strategy, that is the first, so that we end up
+with the state-set $\{ ((x:\varepsilon), (x \mapsto aa)), ((x:a^*), (x \mapsto
+aa)) \}$. In order to obtain the final environment, we select the left-most
+final term, where a final term is one where $\varepsilon \in L(p)$, meaning it
+accepts the empty word.
 
 
 \section{Extended regular expressions}
@@ -408,7 +446,55 @@ works correctly without them. They are only used as an optimisation.
 %%%%%%%%%%%%%%%%%%%%%%%
 \label{opts}
 
+\subsection{Automata construction}
 
+When constructing the automaton, a state is represented by the structure of its
+pattern. Each state is associated with a dense map of input symbol to a set of
+states it can transition to on that input symbol. We thus represent the
+non-deterministic finite automaton $(Q, \Sigma, \Delta, q_0, F)$ as
+
+\begin{lstlisting}
+   type state = pattern
+   type transition = (state * instruction) list
+   type nfa = (state, transition array) map * state
+\end{lstlisting}
+
+In this definition,
+
+\begin{itemize}
+   \item $Q$ is the set of states represented by map's keys.
+   \item $\Sigma$ is the set of bytes between 0 and 255.
+   \item $\Delta$ is the matching relation $Q \times \Sigma \to \mathcal{P}(Q)$,
+      in which $Q$ is the key \texttt{state}, $\Sigma$ is used to index in the
+      mapped \texttt{transition array}, and $\mathcal{P}(Q)$ is the
+      \texttt{transition}, which also contains a matching function for updating
+      the matching environments.
+   \item $q_0$ is the second component of the \texttt{nfa} pair.
+   \item $F$ is implicitly given by $F = \{ q \in Q | \varepsilon \in L(q) \}$.
+\end{itemize}
+
+This representation is useful while computing the automaton, but is inefficient
+during execution, since the map lookup is done symbolically over the pattern
+structure.
+
+Before starting the execution, we first compute a more efficient representation
+by numbering each pattern and replacing the symbolic lookup map with an array.
+In this step, an inverse operation is also produced so that the simulation
+result can be resolved back to a pattern.
+
+\subsection{Matching strategies}
+
+In our initial implementation, the set of next states and their associated
+matching environments was first built and subsequently pruned in every state
+transition. This allows for flexibility in the matching strategy, with which the
+automata simulator could be parametrised. However, in subsequent optimising
+iterations, the greedy left-most matching strategy was directly implemented in
+the simulator loop. Instead of adding a duplicate state with its updated
+environment and later removing it again, we keep track of the states already in
+the transition list by adding its state number to a bit-map, and do not perform
+a useless update and addition of a state already seen. This method clearly also
+obtains the greedy left-most match. Other matching strategies could similarly be
+implemented directly in the loop for improved performance.
 
 
 % vim:tw=80
