@@ -2,12 +2,16 @@ language: c
 script: dpkg-buildpackage -b -us -uc
 
 install:
+   # Add PPA to download from.
    - sudo apt-add-repository -y ppa:pippijn/ppa
    - sudo apt-get update
-   - sudo apt-get install omake noweb rubber graphviz texlive-latex-extra valgrind menhir dh-ocaml libbatteries-ocaml-dev libsexplib-camlp4-dev libderiving-ocsigen-ocaml-dev
-   - wget https://raw.github.com/pippijn/obuild/master/script/travis-depend
+   # GitHub dependencies.
+   - sudo apt-get install devscripts equivs
+   - wget https://raw.github.com/pippijn/obuild/master/script/travis-depend?$(date +%s) -O travis-depend
    - chmod +x travis-depend
-   - ./travis-depend baselib
+   - ./travis-depend obuild baselib
+   # Package dependencies.
+   - sudo mk-build-deps -ir
 
 # whitelist
 branches:
