@@ -8,6 +8,7 @@ Build-Depends:
   obuild,
   ocaml-nox (>= 3.12),
   ocaml-findlib,
+  asymptote,
   graphviz,
   noweb,
   libbaselib-ocaml-dev,

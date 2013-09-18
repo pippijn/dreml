@@ -1,4 +1,4 @@
-\section{PCRE}
+\subsection{PCRE}
 
 The Perl Compatible Regular Expressions library is a C library that attempts to
 bring the power of Perl regular expressions to other languages. PCRE and Perl
@@ -8,13 +8,13 @@ whereas PCRE does not include a Perl interpreter and can therefore never
 implement this feature. However, PCRE does provide a way to call C code in named
 ``callout'' points.
 
-\subsection{Automata construction}
+\subsubsection{Automata construction}
 
 PCRE is very fast at compiling a regular expression. The expression is compiled
 to 
 
 
-\subsection{Matching performance}
+\subsubsection{Matching performance}
 
 The default matching algorithm used by the library is based on backtracking. The
 regular expression is translated to a program that operates by processing one
@@ -43,7 +43,7 @@ A pattern that causes particularly bad performance in PCRE is $(a?)^na^*b$. For
 this expression, PCRE takes exponential time, and a DFA takes linear time.
 
 
-\subsection{Accepted syntax}
+\subsubsection{Accepted syntax}
 
 PCRE supports the richest syntax of all investigated regular expression
 implementations. It supports the full syntax as specified by the Perl regular
