@@ -45,7 +45,7 @@ let b pattern input =
   )
 
 
-let () =
+let main () =
   Printexc.record_backtrace true;
 
   match Sys.argv with
@@ -58,3 +58,43 @@ let () =
 
   | _ ->
       a ()
+
+
+let timing1 () =
+  Gc.(set { (Gc.get ()) with
+    minor_heap_size = 4096 * 8;
+  });
+
+  let fh = open_out "results.log" in
+
+  for i = 1 to 30 do
+    Gc.compact ();
+
+    let pattern = ref "" in
+    for n = 1 to i do
+      pattern := !pattern ^ Printf.sprintf "(x%d:a)" n;
+    done;
+
+    let lexer = Parser.start Lexer.token (Lexing.from_string !pattern) in
+    let lexer, varmap = Pattern.number_pattern lexer in
+
+    let min_time = ref 1000.0 in
+
+    for t = 1 to 20 do
+      let s = Unix.gettimeofday () in
+      ignore (Nfa.build varmap lexer);
+      let e = Unix.gettimeofday () in
+
+      if !min_time > (e -. s) then (
+        min_time := e -. s;
+        Printf.printf "%d,%06f\r" i !min_time;
+        flush stdout;
+      );
+    done;
+
+    Printf.fprintf fh "%d,%06f\n" i !min_time;
+  done
+
+
+(*let () = main ()*)
+let () = timing1 ()

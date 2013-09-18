@@ -3,10 +3,12 @@
   open Parser
 }
 
+let id = ['a'-'z''0'-'9''_']+
+
 rule token = parse
 | ['0'-'9']+ as i	{ INT (int_of_string i) }
 | ['a'-'z''A'-'Z'] as c	{ CHAR c	}
-| (['a'-'z']+ as s)':'	{ NAME s	}
+| (id as s)':'		{ NAME s	}
 | '^'			{ CARET		}
 | '?'			{ QUESTION	}
 | '*'			{ STAR		}

@@ -478,8 +478,13 @@ produces a larger expression that may later be reduced by another rule, this
 rewrite system may go into an endless loop. Therefore, all rules specified here
 are straightforward in decreasing term size.
 
-Simplification rules are not strictly required, and the  automata construction
-can work correctly without them. They are only used as an optimisation.
+\begin{rem}
+   Simplification rules are not strictly required, and the automata construction
+   can work correctly without them, if it uses ordered sets as representation of
+   sets of pattern sets. However, since insertion into such sets is inefficient,
+   we use simple lists (ordered multi-sets), and require simplification rules to
+   ensure termination of the algorithm.
+\end{rem}
 
 
 \section{Optimisations}
@@ -508,7 +513,8 @@ results show up to 34\% improvement for small expressions with a minor heap size
 of between 8 and 32 kilobytes. Performing a full collection of the minor and
 major heap, in which old objects reside, before starting execution might help
 for very complex patterns and large inputs, but its cost would outweigh any
-benefits for small inputs.
+benefits for small inputs. Finally, structuring code in inner modules costs 14\%
+performance on the OCaml implementation used\footnote{OCaml version 4.00.1}.
 
 Higher level optimisations are described in the following sub-sections.
 
@@ -536,7 +542,7 @@ Every state lookup is now done through direct indexing into a single array,
 making it $O(1)$ in both the number of states and the derived expression length.
 A single\footnote{However, this method did not noticably improve performance
 against indexing into an array of arrays.} dense array is used for all states
-for all possible input symbols. This means that indexing is done by $i = q \dot
+for all possible input symbols. This means that indexing is done by $i = q \cdot
 |\Sigma| + c$, where $q$ is the state number and $c$ is the input symbol number
 in the ordered set of input symbols $\Sigma$.
 
@@ -555,6 +561,13 @@ a useless update and addition of a state already seen. This method clearly also
 obtains the greedy left-most match. Other matching strategies could similarly be
 implemented directly in the loop for improved performance.
 
-TODO: bitset
+For the bit-map, we use a byte array in the form of an OCaml \texttt{string}.
+The first attempt was using a \texttt{bool array}, which is about twice as fast
+for small automata, but suffers from cache misses when the automaton is larger,
+at which point the byte string, despite slightly more complex access operations,
+is more efficient. A second, non-neglegible effect of using a string rather than
+a boolean array is that the OCaml garbage collector knows not to scan it. This
+effect is particularly noticable for very large automata.
+
 
 % vim:tw=80

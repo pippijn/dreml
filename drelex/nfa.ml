@@ -3,16 +3,20 @@ open Types
 
 let _trace_con = false
 let _trace_run = false
+let _timing = false
 
 module Debug = struct
 
   let time label f =
-    let s = Unix.gettimeofday () in
-    let r = f () in
-    let e = Unix.gettimeofday () in
-    Printf.printf "%s: %.06f sec\n" label (e -. s);
-    flush stdout;
-    r
+    if _timing then
+      let s = Unix.gettimeofday () in
+      let r = f () in
+      let e = Unix.gettimeofday () in
+      Printf.printf "%s: %.06f sec\n" label (e -. s);
+      flush stdout;
+      r
+    else
+      f ()
 
 
   let string_of_label varmap label =
@@ -33,7 +37,7 @@ module Debug = struct
   let show ?(pre="") varmap input states =
     List.iter (fun (p, env) ->
       let is_final =
-        if Language.nullable (Language.regex_of_pattern p) then
+        if Language.nullable_pat p then
           "\t(FINAL)"
         else
           ""
@@ -230,16 +234,14 @@ let run inversion varmap nfa start input =
 let filter_nonempty states =
   List.filter (
     not
-    % Language.is_empty_language
-    % Language.regex_of_pattern
+    % Language.is_empty_language_pat
     % fst
   ) states
 
 
 let filter_final states =
   List.filter (
-    Language.nullable
-    % Language.regex_of_pattern
+    Language.nullable_pat
     % fst
   ) states
 
@@ -249,7 +251,7 @@ let transitions varmap p =
     Printf.printf "transitions for %s:\n"
       (Debug.string_of_pattern varmap p);
   );
-  Array.init 256 (fun n ->
+  let transitions1 n =
     let chr = Char.chr n in
 
     let pds =
@@ -268,16 +270,23 @@ let transitions varmap p =
     );
 
     pds
-  )
+  in
+  Array.init 256 transitions1
 
 
-let rec build varmap nfa p =
+let rec build_next varmap nfa = function
+  | [] -> ()
+  | (pd, _) :: xs ->
+      build varmap nfa pd;
+      build_next varmap nfa xs
+
+and build varmap nfa p =
   if not (Hashtbl.mem nfa p) then (
     let xs = transitions varmap p in
     Hashtbl.add nfa p xs;
-    Array.iter (List.iter (fun (pd, f) ->
-      build varmap nfa pd
-    )) xs
+    for i = 0 to Array.length xs - 1 do
+      build_next varmap nfa (Array.unsafe_get xs i)
+    done;
   )
 
 

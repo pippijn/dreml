@@ -65,6 +65,7 @@ let rec simplify = function
   | Letter _ as r -> r
 
 let simplify = Util.rewrite simplify
+let simplify x = x
 
   
 let rec simplify_pat = function
@@ -87,3 +88,4 @@ let rec simplify_pat = function
   | PatNot (p) -> PatNot (simplify_pat p)
 
 let simplify_pat x = Util.rewrite simplify_pat x
+let simplify_pat x = x

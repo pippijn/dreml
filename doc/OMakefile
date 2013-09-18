@@ -30,6 +30,7 @@ Bibliography[] =
 
 Images[] =
   img/nfa
+  img/results
 
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)
