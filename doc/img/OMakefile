@@ -1,2 +1,2 @@
-results.pdf: results.asy results.log $(ASY)
+%.pdf: %.asy %.log $(ASY)
   $(ASY) -fpdf -o $@ $<

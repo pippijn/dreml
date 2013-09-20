@@ -42,14 +42,14 @@ let subscript_int = transform_int subscript_of_digit
 
 
 let rec string_of_regex = function
-  | Choice (Epsilon, r)
-  | Choice (r, Epsilon) -> string_of_regex r ^ "?"
-  | Choice (r1, r2) -> "(" ^ string_of_regex r1 ^ "+" ^ string_of_regex r2 ^ ")"
-  | Concat (r1, r2) -> string_of_regex r1 ^ string_of_regex r2
+  | Choice (_, Epsilon, r)
+  | Choice (_, r, Epsilon) -> string_of_regex r ^ "?"
+  | Choice (_, r1, r2) -> "(" ^ string_of_regex r1 ^ "+" ^ string_of_regex r2 ^ ")"
+  | Concat (_, r1, r2) -> string_of_regex r1 ^ string_of_regex r2
   | Star r -> "(" ^ string_of_regex r ^ ")*"
-  | Repeat (r, n) -> string_of_regex r ^ superscript_int n
-  | Not r -> "(¬" ^ string_of_regex r ^ ")"
-  | Intersect (r1, r2) -> "(" ^ string_of_regex r1 ^ "∩" ^ string_of_regex r2 ^ ")"
+  | Repeat (_, r, n) -> string_of_regex r ^ superscript_int n
+  | Not (_, r) -> "(¬" ^ string_of_regex r ^ ")"
+  | Intersect (_, r1, r2) -> "(" ^ string_of_regex r1 ^ "∩" ^ string_of_regex r2 ^ ")"
   | Epsilon -> "ε"
   | Phi -> "Ø"
   | Letter l -> String.make 1 l
@@ -57,21 +57,21 @@ let rec string_of_regex = function
 
 let string_of_pattern string_of_label =
   let rec string_of_pattern = function
-    | VarBase (f, r) ->
+    | VarBase (_, f, r) ->
         "(" ^ string_of_label f ^ ":" ^ string_of_regex r ^ ")"
-    | VarGroup (f, p) ->
+    | VarGroup (_, f, p) ->
         "(" ^ string_of_label f ^ ":" ^ string_of_pattern p ^ ")"
-    | PatIntersect (p1, p2) ->
+    | PatIntersect (_, p1, p2) ->
         string_of_pattern p1 ^ "∩" ^ string_of_pattern p2
-    | PatConcat (p1, p2) ->
+    | PatConcat (_, p1, p2) ->
         string_of_pattern p1 ^ string_of_pattern p2
-    | PatChoice (p1, p2) ->
+    | PatChoice (_, p1, p2) ->
         string_of_pattern p1 ^ "+" ^ string_of_pattern p2
     | PatStar (p) ->
         "(" ^ string_of_pattern p ^ ")*"
-    | PatRepeat (p, n) ->
+    | PatRepeat (_, p, n) ->
         string_of_pattern p ^ superscript_int n
-    | PatNot (p) ->
+    | PatNot (_, p) ->
         "(¬" ^ string_of_pattern p ^ ")"
   in
   string_of_pattern

@@ -26,11 +26,11 @@ let rec is_empty_language = function
   | Epsilon
   | Star _
   | Letter _ -> false
-  | Repeat (r, n) -> assert (n > 0); is_empty_language r
-  | Choice (r1, r2) -> is_empty_language r1 && is_empty_language r2
-  | Concat (r1, r2) -> is_empty_language r1 || is_empty_language r2
-  | Intersect (r1, r2) -> is_empty_language r1 || is_empty_language r2
-  | Not p -> not_is_empty_language p
+  | Repeat (_, r, n) -> assert (n > 0); is_empty_language r
+  | Choice (_, r1, r2) -> is_empty_language r1 && is_empty_language r2
+  | Concat (_, r1, r2) -> is_empty_language r1 || is_empty_language r2
+  | Intersect (_, r1, r2) -> is_empty_language r1 || is_empty_language r2
+  | Not (_, p) -> not_is_empty_language p
 
 and not_is_empty_language = function
   | Epsilon
@@ -39,85 +39,181 @@ and not_is_empty_language = function
   | Phi -> false
 
   (* De Morgan *)
-  | Intersect (r1, r2) -> not_is_empty_language r1 || not_is_empty_language r2
-  | Choice (r1, r2) -> not_is_empty_language r1 && not_is_empty_language r2
+  | Intersect (_, r1, r2) -> not_is_empty_language r1 || not_is_empty_language r2
+  | Choice (_, r1, r2) -> not_is_empty_language r1 && not_is_empty_language r2
 
   (* Double negation *)
-  | Not r -> is_empty_language r
+  | Not (_, r) -> is_empty_language r
 
-  | Repeat (r, n) -> assert (n > 0); not_is_empty_language r
+  | Repeat (_, r, n) -> assert (n > 0); not_is_empty_language r
 
   (* XXX: correct? *)
-  | Concat (a, b) -> not_is_empty_language a && not_is_empty_language b
+  | Concat (_, a, b) -> not_is_empty_language a && not_is_empty_language b
 
 
 let rec is_empty_language_pat = function
-  | VarBase (x, r) ->
+  | VarBase (_, x, r) ->
       is_empty_language r
-  | VarGroup (x, p) ->
+  | VarGroup (_, x, p) ->
       is_empty_language_pat p
 
   | PatStar _ -> false
-  | PatRepeat (r, n) -> assert (n > 0); is_empty_language_pat r
-  | PatChoice (r1, r2) -> is_empty_language_pat r1 && is_empty_language_pat r2
-  | PatConcat (r1, r2) -> is_empty_language_pat r1 || is_empty_language_pat r2
-  | PatIntersect (r1, r2) -> is_empty_language_pat r1 || is_empty_language_pat r2
-  | PatNot p -> not_is_empty_language_pat p
+  | PatRepeat (_, r, n) -> assert (n > 0); is_empty_language_pat r
+  | PatChoice (_, r1, r2) -> is_empty_language_pat r1 && is_empty_language_pat r2
+  | PatConcat (_, r1, r2) -> is_empty_language_pat r1 || is_empty_language_pat r2
+  | PatIntersect (_, r1, r2) -> is_empty_language_pat r1 || is_empty_language_pat r2
+  | PatNot (_, p) -> not_is_empty_language_pat p
 
 and not_is_empty_language_pat = function
-  | VarBase (x, r) ->
+  | VarBase (_, x, r) ->
       not_is_empty_language r
-  | VarGroup (x, p) ->
+  | VarGroup (_, x, p) ->
       not_is_empty_language_pat p
 
   | PatStar _ -> false
 
   (* De Morgan *)
-  | PatIntersect (r1, r2) -> not_is_empty_language_pat r1 || not_is_empty_language_pat r2
-  | PatChoice (r1, r2) -> not_is_empty_language_pat r1 && not_is_empty_language_pat r2
+  | PatIntersect (_, r1, r2) -> not_is_empty_language_pat r1 || not_is_empty_language_pat r2
+  | PatChoice (_, r1, r2) -> not_is_empty_language_pat r1 && not_is_empty_language_pat r2
 
   (* Double negation *)
-  | PatNot r -> is_empty_language_pat r
+  | PatNot (_, r) -> is_empty_language_pat r
 
-  | PatRepeat (r, n) -> assert (n > 0); not_is_empty_language_pat r
+  | PatRepeat (_, r, n) -> assert (n > 0); not_is_empty_language_pat r
 
   (* XXX: correct? *)
-  | PatConcat (a, b) -> not_is_empty_language_pat a && not_is_empty_language_pat b
+  | PatConcat (_, a, b) -> not_is_empty_language_pat a && not_is_empty_language_pat b
 
 
-let rec nullable = function
+let nullable = function
+  | Not ((Yes | No as null), _)
+  | Choice ((Yes | No as null), _, _)
+  | Intersect ((Yes | No as null), _, _)
+  | Concat ((Yes | No as null), _, _)
+  | Repeat ((Yes | No as null), _, _) ->
+      null
+
   | Epsilon
-  | Star _ -> true
-
-  | Not r -> not (nullable r)
+  | Star _ -> Yes
 
   | Phi
-  | Letter _ -> false
+  | Letter _ -> No
+
+  | r -> failwith (Print.string_of_regex r)
+
+
+let nullable_pat = function
+  | PatStar _ -> Yes
+
+  | VarBase ((Yes | No as null), _, _)
+  | VarGroup ((Yes | No as null), _, _)
+  | PatChoice ((Yes | No as null), _, _)
+  | PatIntersect ((Yes | No as null), _, _)
+  | PatConcat ((Yes | No as null), _, _)
+  | PatRepeat ((Yes | No as null), _, _)
+  | PatNot ((Yes | No as null), _) ->
+      null
+
+  | _ -> assert false
+
+
+let rec compute_nullable = function
+  | Epsilon -> Epsilon, Yes
+  | Star p -> Star (fst (compute_nullable p)), Yes
+
+  | Phi
+  | Letter _ as p -> p, No
+
+  | Not (Maybe, r) ->
+      let r, null = compute_nullable r in
+      let null = not3 null in
+      Not (null, r), null
 
   (* e.g. a | a* is nullable *)
-  | Choice (r1, r2) -> nullable r1 || nullable r2
+  | Choice (Maybe, r1, r2) ->
+      let r1, null1 = compute_nullable r1 in
+      let r2, null2 = compute_nullable r2 in
+      let null = null1 ||| null2 in
+      Choice (null, r1, r2), null
+
   (* e.g. a & a* is not nullable *)
-  | Intersect (r1, r2)
+  | Intersect (Maybe, r1, r2) ->
+      let r1, null1 = compute_nullable r1 in
+      let r2, null2 = compute_nullable r2 in
+      let null = null1 &&& null2 in
+      Intersect (null, r1, r2), null
+
   (* e.g. a a* is not nullable *)
-  | Concat (r1, r2) -> nullable r1 && nullable r2
-  | Repeat (r, n) -> assert (n > 0); nullable r
+  | Concat (Maybe, r1, r2) ->
+      let r1, null1 = compute_nullable r1 in
+      let r2, null2 = compute_nullable r2 in
+      let null = null1 &&& null2 in
+      Concat (null, r1, r2), null
+
+  | Repeat (Maybe, r, n) ->
+      assert (n > 0);
+      let r, null = compute_nullable r in
+      assert (null != Maybe);
+      Repeat (null, r, n), null
+
+  | Not ((Yes | No as null), _)
+  | Choice ((Yes | No as null), _, _)
+  | Intersect ((Yes | No as null), _, _)
+  | Concat ((Yes | No as null), _, _)
+  | Repeat ((Yes | No as null), _, _) as p ->
+      p, null
 
 
-let rec nullable_pat = function
-  | VarBase (x, r) ->
-      nullable r
-  | VarGroup (x, p) ->
-      nullable_pat p
+let rec compute_nullable_pat = function
+  | VarBase (Maybe, x, r) ->
+      let r, null = compute_nullable r in
+      VarBase (null, x, r), null
+  | VarGroup (Maybe, x, p) ->
+      let p, null = compute_nullable_pat p in
+      VarGroup (null, x, p), null
 
-  | PatStar _ -> true
+  | PatStar p -> PatStar (fst (compute_nullable_pat p)), Yes
 
   (* e.g. a | a* is nullable *)
-  | PatChoice (p1, p2) -> nullable_pat p1 || nullable_pat p2
-  (* e.g. a & a* is not nullable *)
-  | PatIntersect (p1, p2)
-  (* e.g. a a* is not nullable *)
-  | PatConcat (p1, p2) -> nullable_pat p1 && nullable_pat p2
-  | PatRepeat (p, n) -> assert (n > 0); nullable_pat p
+  | PatChoice (Maybe, p1, p2) ->
+      let p1, null1 = compute_nullable_pat p1 in
+      let p2, null2 = compute_nullable_pat p2 in
+      let null = null1 ||| null2 in
+      PatChoice (null, p1, p2), null
 
-  | PatNot (p) ->
-      not (nullable_pat p)
+  (* e.g. a & a* is not nullable *)
+  | PatIntersect (Maybe, p1, p2) ->
+      let p1, null1 = compute_nullable_pat p1 in
+      let p2, null2 = compute_nullable_pat p2 in
+      let null = null1 &&& null2 in
+      PatIntersect (null, p1, p2), null
+
+  (* e.g. a a* is not nullable *)
+  | PatConcat (Maybe, p1, p2) ->
+      let p1, null1 = compute_nullable_pat p1 in
+      let p2, null2 = compute_nullable_pat p2 in
+      let null = null1 &&& null2 in
+      PatConcat (null, p1, p2), null
+
+  | PatRepeat (Maybe, p, n) ->
+      assert (n > 0);
+      let p, null = compute_nullable_pat p in
+      PatRepeat (null, p, n), null
+
+  | PatNot (Maybe, p) ->
+      let p, null = compute_nullable_pat p in
+      let null = not3 null in
+      PatNot (null, p), null
+
+  | VarBase ((Yes | No as null), _, _)
+  | VarGroup ((Yes | No as null), _, _)
+  | PatChoice ((Yes | No as null), _, _)
+  | PatIntersect ((Yes | No as null), _, _)
+  | PatConcat ((Yes | No as null), _, _)
+  | PatRepeat ((Yes | No as null), _, _)
+  | PatNot ((Yes | No as null), _) as p ->
+      p, null
+
+
+let compute_nullable r = fst (compute_nullable r)
+let compute_nullable_pat r = fst (compute_nullable_pat r)

@@ -1,11 +1,118 @@
 \chapter{Discussion and related work}
 \label{discussion}
 
+\section{Real world regular expressions}
+
+
+\subsection{Extra syntax}
+
+In this paper, we have discussed a minimal regular expression syntax, for the
+sake of simplification. However, most applications using regular expressions
+assume a superset of this syntax. In this section, we will discuss how popular
+extensions to the regular expression syntax presented in this paper can be
+transformed to that syntax.
+
+\begin{itemize}
+
+   \item We have discussed the Kleene star $r^*$, which allows any sequence of
+      $r$ including the empty sequence. Often, it is necessary to have at least
+      one $r$ in the sequence, which brings us to the Kleene plus $r^+$. This
+      operator is implemented simply with the rewrite rule $r^+ \mapsto (r,
+      r^*)$, i.e. an $r$ followed by any number of $r$ or nothing.
+
+   \item Character classes, such as \verb'[a-z]' are often used to specify
+      ranges of accepted symbols. For instance, an identifier or type name in
+      OCaml might be matched by the regular expression \verb'[a-z_][a-zA-Z_]+'.
+      Enumerating all the characters in a choice expression would be cumbersome,
+      producing $(a+b+c+\dots+z+\_)(a+\dots+z+A+\dots+Z+\_)^+$. Therefore, \reml
+      supports character classes as well as ranges and internally converts them
+      to the longer choice expression.
+      
+      Inverted character classes such as \verb'[^cde]' match any symbol from
+      $\Sigma$, except the ones after the caret. In this case, the language
+      described by the expression would be $L(\Sigma) \setminus L((c+d+e))$.
+      Such character classes are first converted to positive character classes,
+      after which they are then converted to a choice using the above method.
+
+   \item The wildcard character \verb'.' or in \ocamllex \verb'_' is implemented
+      as a predefined full character class containing all of $\Sigma$. It is
+      equivalent to \verb'[^]', the character class exempting no symbols.
+
+   \item Backreferences are found in several regular expression dialects,
+      including Perl and PCRE. In GNU \texttt{egrep}, the expression
+      \verb'(a*)b\1' describes the language $S \to b | a S a$, which belongs to
+      the class of context-free grammars and no longer to the class of regular
+      grammars.
+
+      A more complex example that does not even fall into the class of CFGs is
+      \verb'([abc]*)b\1', which matches any sequence of $a \dots c$, followed by
+      $b$, followed by the same sequence matched before the $b$. E.g. $abcbabc$
+      could be matched by this expression.
+
+      Since nondeterministic finite automata cannot recognise context-free
+      grammars, let alone context-sensitive grammars, backreferences are not
+      supported in this partial derivatives based approach.
+      
+\end{itemize}
+
+
+\subsection{Syntax in software tools}
+
+The abstract syntax and terminology presented here is generally not what is used
+in software implementing regular expression matching. There are several syntaxes
+in wide use that differ not only in accepted language constructs but also in
+handling of meta-characters.
+
+POSIX uses a different terminology to define what basic and extended regular
+expressions are. POSIX Basic Regular Expressions (BRE) take a conservative
+approach and define fewer meta-characters than Extended Regular Expressions
+(ERE):
+
+\begin{itemize}
+   \item \verb'^' matches with zero width at the beginning of a line.
+   \item \verb'$' matches with zero width at the end of a line.
+   \item \verb'.' represents the wildcard character as discussed above.
+   \item \verb'*' represents the Kleene star.
+   \item Character classes such as \verb'[abc]' are recognised.
+\end{itemize}
+
+Matching these characters requires escaping them by a backslash. Other operators
+also require the backslash character to be recognised as meta-character:
+
+\begin{itemize}
+   \item \verb'\{n,m\}' with integers $n$ and $m$ matches the preceding
+      expression at least $n$ and at most $m$ times, so that e.g.
+      \verb'a\{1,2\}' matches $a$ or $aa$. The upper bound may be omitted, in
+      which case the expression matches at least $n$ times with no restriction
+      beyond that.
+   \item \verb'\(r\)' defines a capturing group, which can be referenced by
+      backreferences of the form \verb'\1' where any digit between 1 and 9 is a
+      valid backreference.
+   \item \verb'\+' is an extension accepted in some implementations that is
+      equivalent to \verb'\{1,\}'.
+   \item \verb'\?' is also an extension equivalent to \verb'\{0,1\}'. Both
+      extensions are not part of the POSIX standard, but accepted by e.g. GNU
+      \texttt{grep}.
+\end{itemize}
+
+The difference between Basic and Extended regular expressions in POSIX is that
+the latter does not require backslashes for the above meta-characters, and
+operators \verb'+' and \verb'?' are supported by the standard. Backslashes have
+the opposite effect in ERE, in that they are used to escape the above
+meta-characters so that they may be used in a literal match.
+
+Furthermore, while the grouping operator in POSIX ERE does create an atomic
+expression, which can be used as an argument to other operators, backreferences
+are not supported in ERE.
+
+
 \section{Other efficient sub-matching algorithms}
 
 \subsection{Tagged NFA/DFA}
 
-Laurikari.
+In his Master's Thesis \cite{laurikari}, Ville Laurikari describes a method of
+constructing tagged nondeterministic finite automata (TNFA) and their conversion
+to tagged deterministic finite automata (TDFA).
 
 
 \subsection{Submatching with OBDDs}

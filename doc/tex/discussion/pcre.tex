@@ -1,5 +1,15 @@
 \subsection{PCRE}
 
+\begin{itemize}
+
+   \item Support extended regular expressions in the form of both positive and
+      negative look-ahead and look-behind assertions.
+
+   \item Backtracking based approach.
+
+\end{itemize}
+
+
 The Perl Compatible Regular Expressions library is a C library that attempts to
 bring the power of Perl regular expressions to other languages. PCRE and Perl
 differ in a few instances, but their semantics and syntax are mostly equivalent.
@@ -11,7 +21,7 @@ implement this feature. However, PCRE does provide a way to call C code in named
 \subsubsection{Automata construction}
 
 PCRE is very fast at compiling a regular expression. The expression is compiled
-to 
+to a byte-code program, which is optionally compiled to machine code.
 
 
 \subsubsection{Matching performance}
@@ -46,8 +56,29 @@ this expression, PCRE takes exponential time, and a DFA takes linear time.
 \subsubsection{Accepted syntax}
 
 PCRE supports the richest syntax of all investigated regular expression
-implementations. It supports the full syntax as specified by the Perl regular
-expression man page.
+implementations. It aims to support the full syntax as specified by the Perl
+regular expression man page \texttt{perlre}. For obvious reasons, inline Perl
+code is not supported by PCRE, but the syntax allows for extension points, which
+can call arbitrary C functions after a sub-expression has been matched.
+
+Negation is supported in various ways, through negative zero-width look-ahead
+assertions written \verb'(?!pattern)', where \verb'foo(?!bar)' matches "foo", if
+it is not followed by a "bar". PCRE look-ahead assertions are zero-width, so
+they do not consume any input, unlike the negation in our extended regular
+expressions. However, negative look-ahead can achieve the same effect, so that
+our introductory example pattern matching C comments can be written as
+\verb'/\*((?!\*/).)*\*/' in PCRE.
+
+However, this expression will fail to match long comments, causing a stack
+overflow in the engine. In PCRE version 8.31 on AMD64 Linux with an 8MiB stack,
+the engine fails to match comments longer than 6KiB. Disabling the capture group
+makes it slightly better, so that the expression \verb'/\*(?:(?!\*/).)*\*/'
+fails at 11KiB comments. Since comments are often used to disable large code
+blocks, such behaviour is unacceptable, and one is forced to write the more
+convoluted term \verb'/\*(([^*]|\*[^/])*)\*/'. The expression with negation does
+require linear time in PCRE, but also uses linear stack space, quickly running
+out. An automata based approach will achieve linear time and constant space for
+this expression.
 
 
 % vim:tw=80

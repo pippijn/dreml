@@ -31,6 +31,7 @@ This function is an approximation in that if it yields \true, then $L(r) =
 \emptyset$, but if it yields \false, $L(r) \neq \emptyset$ may not follow. For
 instance, $\isempty(a \cap b) = 0$, but $L(a \cap b) = \emptyset$.
 
+\needspace{5cm}
 \begin{defn}
    \label{defn-isempty}
    Approximation for $L(r) = \emptyset$.
@@ -96,6 +97,8 @@ removing valid transitions from the resulting automaton.
          in cases yielding \true.
 
       \item
+         If one of the intersecting languages is empty, then the intersection is
+         also empty. \\
          $L(r_1 \cap r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) \cap L(r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
@@ -103,6 +106,9 @@ removing valid transitions from the resulting automaton.
          $\Leftrightarrow \isempty(r_1 \cap r_2)$
 
       \item
+         If one of the choices is not empty, then the expression is not empty,
+         thus both choices must be empty for the expression to be considered
+         empty. \\
          $L(r_1 + r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) \cup L(r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \wedge L(r_2) = \emptyset$ \\
@@ -110,6 +116,10 @@ removing valid transitions from the resulting automaton.
          $\Leftrightarrow \isempty(r_1 + r_2)$
 
       \item
+         If the left expression does not recognise any language, then the
+         complete expression does not. If it does, but the right expression does
+         not, then after matching the left expression, the complete expression
+         runs into an error state, therefore not recognising any language. \\
          $L((r_1, r_2)) = \emptyset$ \\
          $\Leftrightarrow \{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \} = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
@@ -117,6 +127,9 @@ removing valid transitions from the resulting automaton.
          $\Leftrightarrow \isempty(r_1 \cap r_2)$
 
       \item
+         If $r$ recognises a language, then any number of consecutive $r$ also
+         does so. Conversely, if $L(r)$ is the empty language, then no number of
+         consecutive $r$ will fix that. \\
          $L(r^n) = \emptyset$ \\
          $\Leftrightarrow \{ w_1 \dots w_n | w_i \in L(r) \} = \emptyset$ \\
          $\Leftrightarrow L(r) = \emptyset$ \\
@@ -143,7 +156,8 @@ removing valid transitions from the resulting automaton.
          $\Leftrightarrow \isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
          $\Leftrightarrow \isemptyneg(r_1 + r_2)$
 
-      \item TODO: $L(\neg(r_1, r_2)) = \emptyset$
+      %\item TODO
+         %$L(\neg(r_1, r_2)) = \emptyset$
 
       \item
          $L(\neg\neg r) = L(r)$, thus $\isempty(\neg\neg r) = \isempty(r)$.

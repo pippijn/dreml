@@ -29,7 +29,11 @@ Bibliography[] =
   dreml
 
 Images[] =
+  img/a
+  img/b
+  img/astar
   img/nfa
+  img/opt
   img/results
 
 TARGET = $(latex-document)

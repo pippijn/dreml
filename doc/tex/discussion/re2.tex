@@ -1,5 +1,14 @@
 \subsection{RE2}
 
+\begin{itemize}
+
+   \item Does not support extended regular expressions, only basic RE.
+
+   \item Automata based approach.
+
+\end{itemize}
+
+
 The RE2 engine by Russ Cox is a regular expression matcher based on finite
 automata. In the first step, it constructs an NFA from the expression. When
 matching an input string, it constructs a DFA on the fly and caches the states.

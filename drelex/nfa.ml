@@ -37,7 +37,7 @@ module Debug = struct
   let show ?(pre="") varmap input states =
     List.iter (fun (p, env) ->
       let is_final =
-        if Language.nullable_pat p then
+        if Language.nullable_pat p = Yes then
           "\t(FINAL)"
         else
           ""
@@ -240,9 +240,8 @@ let filter_nonempty states =
 
 
 let filter_final states =
-  List.filter (
-    Language.nullable_pat
-    % fst
+  List.filter (fun (p, _) ->
+    Language.nullable_pat p = Yes
   ) states
 
 
@@ -253,6 +252,11 @@ let transitions varmap p =
   );
   let transitions1 n =
     let chr = Char.chr n in
+    (*
+    if chr <> 'a' then
+      []
+    else
+    *)
 
     let pds =
       ExprSets.derive_pat chr p

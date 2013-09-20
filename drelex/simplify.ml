@@ -4,29 +4,29 @@ open Types
 (* 4.1 Weaker notions of RE equivalence *)
 let rec simplify = function
   (* & *)
-  | Intersect (r1, r2) when r1 = r2 -> r1
+  | Intersect (_, r1, r2) when r1 = r2 -> r1
 
-  | Intersect (Phi, _)
-  | Intersect (_, Phi) -> Phi
+  | Intersect (_, Phi, _)
+  | Intersect (_, _, Phi) -> Phi
 
-  | Intersect (Not Phi, r)
-  | Intersect (r, Not Phi) -> r
+  | Intersect (_, Not (_, Phi), r)
+  | Intersect (_, r, Not (_, Phi)) -> r
 
   (* juxtaposition *)
-  | Concat (Phi, _)
-  | Concat (_, Phi) -> Phi
+  | Concat (_, Phi, _)
+  | Concat (_, _, Phi) -> Phi
 
-  | Concat (Epsilon, r)
-  | Concat (r, Epsilon) -> r
+  | Concat (_, Epsilon, r)
+  | Concat (_, r, Epsilon) -> r
 
   (* + *)
-  | Choice (r1, r2) when r1 = r2 -> r1
+  | Choice (_, r1, r2) when r1 = r2 -> r1
 
-  | Choice (Not Phi, _)
-  | Choice (_, Not Phi) -> Not Phi
+  | Choice (_, Not (null, Phi), _)
+  | Choice (_, _, Not (null, Phi)) -> Not (null, Phi)
 
-  | Choice (Phi, r)
-  | Choice (r, Phi) -> r
+  | Choice (_, Phi, r)
+  | Choice (_, r, Phi) -> r
 
   (* * *)
   | Star (Star _ as inner) -> inner
@@ -34,10 +34,10 @@ let rec simplify = function
   | Star Phi -> Epsilon
 
   (* ~(~r) -> r *)
-  | Not (Not r) -> r
+  | Not (_, Not (_, r)) -> r
 
   (* ~eps -> phi *)
-  | Not Epsilon -> Phi
+  | Not (_, Epsilon) -> Phi
 
 
   (* XXX: this simplification makes this testcase trivial and useless:
@@ -48,16 +48,16 @@ let rec simplify = function
   (*| Not (Intersect (Not r1, Not r2)) -> Choice (r1, r2)*)
   (*| Not (Choice (Not r1, Not r2)) -> Intersect (r1, r2)*)
 
-  | Repeat (_, 0) -> Epsilon
-  | Repeat (r, 1) -> r
+  | Repeat (_, _, 0) -> Epsilon
+  | Repeat (_, r, 1) -> r
 
   (* Recursive simplify *)
-  | Concat (r1, r2) -> Concat (simplify r1, simplify r2)
-  | Choice (r1, r2) -> Choice (simplify r1, simplify r2)
-  | Intersect (r1, r2) -> Intersect (simplify r1, simplify r2)
+  | Concat (null, r1, r2) -> Concat (null, simplify r1, simplify r2)
+  | Choice (null, r1, r2) -> Choice (null, simplify r1, simplify r2)
+  | Intersect (null, r1, r2) -> Intersect (null, simplify r1, simplify r2)
   | Star r -> Star (simplify r)
-  | Repeat (r, n) -> Repeat (simplify r, n)
-  | Not r -> Not (simplify r)
+  | Repeat (null, r, n) -> Repeat (null, simplify r, n)
+  | Not (null, r) -> Not (null, simplify r)
 
   (* Keep atoms *)
   | Phi
@@ -70,22 +70,22 @@ let simplify x = x
   
 let rec simplify_pat = function
   (* We need to catch this here to ensure termination *)
-  | PatConcat (VarBase (_, Epsilon), r)
-  | PatConcat (r, VarBase (_, Epsilon)) -> r
+  | PatConcat (_, VarBase (_, _, Epsilon), r)
+  | PatConcat (_, r, VarBase (_, _, Epsilon)) -> r
 
   (* * *)
   | PatStar (PatStar _ as inner) -> inner
 
   (* Recursive simplify *)
-  | VarBase (x, r) -> VarBase (x, simplify r)
-  | VarGroup (x, p) -> VarGroup (x, simplify_pat p)
+  | VarBase (null, x, r) -> VarBase (null, x, simplify r)
+  | VarGroup (null, x, p) -> VarGroup (null, x, simplify_pat p)
 
-  | PatIntersect (p1, p2) -> PatIntersect (simplify_pat p1, simplify_pat p2)
-  | PatConcat (p1, p2) -> PatConcat (simplify_pat p1, simplify_pat p2)
-  | PatChoice (p1, p2) -> PatChoice (simplify_pat p1, simplify_pat p2)
+  | PatIntersect (null, p1, p2) -> PatIntersect (null, simplify_pat p1, simplify_pat p2)
+  | PatConcat (null, p1, p2) -> PatConcat (null, simplify_pat p1, simplify_pat p2)
+  | PatChoice (null, p1, p2) -> PatChoice (null, simplify_pat p1, simplify_pat p2)
   | PatStar p -> PatStar (simplify_pat p)
-  | PatRepeat (p, n) -> PatRepeat (simplify_pat p, n)
-  | PatNot (p) -> PatNot (simplify_pat p)
+  | PatRepeat (null, p, n) -> PatRepeat (null, simplify_pat p, n)
+  | PatNot (null, p) -> PatNot (null, simplify_pat p)
 
 let simplify_pat x = Util.rewrite simplify_pat x
 let simplify_pat x = x

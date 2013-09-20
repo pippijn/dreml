@@ -1,9 +1,29 @@
 \chapter{Empirical results}
 \label{results}
 
-hehe 10
+\newcommand\tabbox[1]{\parbox[b]{8cm}{#1}}
 
-\img{img/results}{7cm}
+\begin{tabular}{ll}
+   \tabbox{Automata construction for $(x_i:a)^n$. \\
+   I.e. $(x_1:a)(x_2:a)\dots(x_n:a)$.}
+   & \tabbox{Automata construction for $(x:a^n)$.} \\
+   \img{img/results}{6cm} &
+   \img{img/b}{6cm} \\
+
+   \tabbox{Automata construction for pre-expanded $(x:a^n)$. \\
+   I.e. $(x:aaa\dots)$, $n$ times.}
+   & \tabbox{Automata construction for pre-expanded $(x:a^n)$,
+    using an optimisation where derivatives are only
+    computed for the characters that can potentially
+    be matched. An over-estimate is used, though in
+    this case, the estimate is exact.} \\
+   \img{img/a}{6cm} &
+   \img{img/opt}{6cm} \\
+
+   \tabbox{Running $(x:a^*)$ on a string of 'a' of length $n * 1024$.} \\
+   \img{img/astar}{6cm}
+
+\end{tabular}
 
 
 % vim:tw=80

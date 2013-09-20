@@ -1,31 +1,56 @@
 open CorePervasives
 open Types
 
+let not3 = function
+  | No -> Yes
+  | Yes -> No
+  | Maybe -> failwith "Maybe in not3"
+
+let (|||) a b =
+  match a, b with
+  | No, No -> No
+  | _, Yes
+  | Yes, _ -> Yes
+  | _, Maybe
+  | Maybe, _ -> failwith "Maybe in |||"
+
+let (&&&) a b =
+  match a, b with
+  | Yes, Yes -> Yes
+  | No, _
+  | _, No -> No
+  | _, Maybe
+  | Maybe, _ -> failwith "Maybe in &&&"
+
 
 let rec exprset_of_regex = function
-  | Intersect (r1, r2) -> exprset_of_regex r1 @ exprset_of_regex r2
+  | Intersect (_, r1, r2) -> exprset_of_regex r1 @ exprset_of_regex r2
   | r -> [r]
 
 let rec exprsets_of_regex = function
-  | Choice (r1, r2) -> exprsets_of_regex r1 @ exprsets_of_regex r2
+  | Choice (_, r1, r2) -> exprsets_of_regex r1 @ exprsets_of_regex r2
   | r -> [exprset_of_regex r]
 
 
 let rec regex_of_exprset = function
   | [] -> failwith "empty exprset" (* Phi? *)
   | [r] -> r
-  | r :: rs -> Intersect (r, regex_of_exprset rs)
-
-let rec regex_of_exprsets = function
-  | [] -> failwith "empty exprsets" (* Phi? *)
-  | [x] -> regex_of_exprset x
-  | x :: xs -> Choice (regex_of_exprset x, regex_of_exprsets xs)
-
+  | r1 :: rs ->
+      let r2 = regex_of_exprset rs in
+      Intersect (
+        Language.nullable r1 &&& Language.nullable r2,
+        r1, r2
+      )
 
 let rec pattern_of_exprset = function
   | [] -> failwith "empty exprset" (* Phi? *)
   | [p] -> p
-  | p :: ps -> PatIntersect (p, pattern_of_exprset ps)
+  | p1 :: ps ->
+      let p2 = pattern_of_exprset ps in
+      PatIntersect (
+        Language.nullable_pat p1 &&& Language.nullable_pat p2,
+        p1, p2
+      )
 
 
 let set_union a b =
@@ -99,7 +124,7 @@ let rec rev_mapx2 accu f x1 x2 = function
 (* circled · *)
 let mul_exprsets_expr ess g =
   let fun_2 g e =
-    Concat (e, g)
+    Concat (Language.nullable e &&& Language.nullable g, e, g)
   in
   let fun_1 g es =
     mapx1 fun_2 g es
@@ -108,7 +133,7 @@ let mul_exprsets_expr ess g =
 
 let mul_exprsets_expr_pat p1ss p2 =
   let fun_2 p2 p1 =
-    PatConcat (p1, p2)
+    PatConcat (Language.nullable_pat p1 &&& Language.nullable_pat p2, p1, p2)
   in
   let fun_1 p2 (p1s, f) =
     (mapx1 fun_2 p2 p1s, f)
@@ -117,7 +142,7 @@ let mul_exprsets_expr_pat p1ss p2 =
 
 let mul_exprsets_expr_pat_iter iterate p1ss p2 =
   let fun_2 p2 p1 =
-    PatConcat (p1, p2)
+    PatConcat (Language.nullable_pat p1 &&& Language.nullable_pat p2, p1, p2)
   in
   let fun_1 p2 iterate (p1s, f) =
     (mapx1 fun_2 p2 p1s, Tag.compose f iterate)
@@ -160,7 +185,7 @@ let intersect_exprsets_pat ess fss =
 (* circled ¬ *)
 let not_exprsets sets =
   let fun_2 e =
-    [Not e]
+    [Not (not3 (Language.nullable e), e)]
   in
   let fun_1 set =
     List.map fun_2 set
@@ -191,7 +216,7 @@ let rec derive l = function
   | Epsilon
   | Letter _ (* otherwise *) -> [[Phi]]
   (* 3 *)
-  | Choice (r1, r2) ->
+  | Choice (_, r1, r2) ->
       let r1' = derive l r1 in
       let r2' = derive l r2 in
       set_union r1' r2'
@@ -199,26 +224,27 @@ let rec derive l = function
   | Star (r1) as star ->
       mul_exprsets_expr (derive l r1) star
   (* 5 *)
-  | Concat (r1, r2) ->
+  | Concat (_, r1, r2) ->
       let r1' = derive l r1 in
       let r1'r2 = mul_exprsets_expr r1' r2 in
-      if Language.nullable r1 then
+      if Language.nullable r1 = Yes then
         set_union
           r1'r2
           (derive l r2)
       else
         r1'r2
   (* 6 *)
-  | Not r -> not_exprsets (derive l r)
+  | Not (_, r) -> not_exprsets (derive l r)
   (* 7 *)
-  | Intersect (r1, r2) ->
+  | Intersect (_, r1, r2) ->
       intersect_exprsets (derive l r1) (derive l r2)
   (* additional *)
-  | Repeat (r, 1) ->
+  | Repeat (_, r, 1) ->
       derive l r
-  | Repeat (r, n) ->
+  | Repeat (null, r, n) ->
       assert (n > 1);
-      derive l (Concat (r, Repeat (r, n - 1)))
+      assert (null != Maybe);
+      derive l (Concat (null, r, Repeat (null, r, n - 1)))
 
 
 (* ·\p· :: l -> p -> [p] *)
@@ -227,46 +253,76 @@ let rec derive_pat l p =
     List.map Simplify.simplify_pat p, t
   )
   begin match p with
-  | VarBase (x, r) ->
-      let f = Tag.update x in
-      mapx2 (fun x f r ->
-        [VarBase (x, regex_of_exprset r)], f
-      ) x f (derive l r)
-  | VarGroup (x, p) ->
-      let update = Tag.update x in
-      mapx2 (fun x update (p', f) ->
-        [VarGroup (x, pattern_of_exprset p')],
-        Tag.compose update f
-      ) x update (derive_pat l p)
-  | PatChoice (p1, p2) ->
-      set_union (derive_pat l p1) (derive_pat l p2)
-  | PatConcat (p1, p2) ->
-      let p1' = derive_pat l p1 in
-      let p1'p2 = mul_exprsets_expr_pat p1' p2 in
-      if Language.nullable_pat p1 then
-        set_union_pat
-          p1'p2
-          (derive_pat l p2)
-      else
-        p1'p2
-  | PatIntersect (p1, p2) ->
-      intersect_exprsets_pat (derive_pat l p1) (derive_pat l p2)
+  | VarBase (_, x, r) ->
+      derive_VarBase l x r
+  | VarGroup (_, x, p) ->
+      derive_VarGroup l x p
+  | PatChoice (_, p1, p2) ->
+      derive_PatChoice l p1 p2
+  | PatConcat (_, p1, p2) ->
+      derive_PatConcat l p1 p2
+  | PatIntersect (_, p1, p2) ->
+      derive_PatIntersect l p1 p2
   | PatStar (p) as star ->
-      let iterate = Tag.iterate p in
-      mul_exprsets_expr_pat_iter iterate (derive_pat l p) star
-  | PatRepeat (p, 1) ->
-      let iterate = Tag.iterate p in
-      mapx1 (fun iterate (p', f) ->
-        p', Tag.compose f iterate
-      ) iterate (derive_pat l p)
-  | PatRepeat (p, n) ->
-      assert (n > 1);
-      let iterate = Tag.iterate p in
-      let repeat = PatRepeat (p, n - 1) in
-      mul_exprsets_expr_pat_iter iterate (derive_pat l p) repeat
+      derive_PatStar l p star
+  | PatRepeat (_, p, 1) ->
+      derive_PatRepeat1 l p
+  | PatRepeat (null, p, n) ->
+      derive_PatRepeat l null p n
   | PatNot _ ->
       failwith "Negation in pattern must be resolved before derivation"
   end
+
+and derive_VarBase l x r =
+  let f = Tag.update x in
+  mapx2 (fun x f r ->
+    let r' = regex_of_exprset r in
+    [VarBase (Language.nullable r', x, r')], f
+  ) x f (derive l r)
+
+and derive_VarGroup l x p =
+  let update = Tag.update x in
+  mapx2 (fun x update (p', f) ->
+    let p' = pattern_of_exprset p' in
+    [VarGroup (Language.nullable_pat p', x, p')],
+    Tag.compose update f
+  ) x update (derive_pat l p)
+
+and derive_PatChoice l p1 p2 =
+  set_union
+    (derive_pat l p1)
+    (derive_pat l p2)
+
+and derive_PatConcat l p1 p2 =
+  let p1' = derive_pat l p1 in
+  let p1'p2 = mul_exprsets_expr_pat p1' p2 in
+  if Language.nullable_pat p1 = Yes then
+    set_union_pat
+      p1'p2
+      (derive_pat l p2)
+  else
+    p1'p2
+
+and derive_PatIntersect l p1 p2 =
+  intersect_exprsets_pat
+    (derive_pat l p1)
+    (derive_pat l p2)
+
+and derive_PatStar l p star =
+  let iterate = Tag.iterate p in
+  mul_exprsets_expr_pat_iter iterate (derive_pat l p) star
+
+and derive_PatRepeat1 l p =
+  let iterate = Tag.iterate p in
+  mapx1 (fun iterate (p', f) ->
+    p', Tag.compose f iterate
+  ) iterate (derive_pat l p)
+
+and derive_PatRepeat l null p n =
+  assert (n > 1);
+  let iterate = Tag.iterate p in
+  let repeat = PatRepeat (null, p, n - 1) in
+  mul_exprsets_expr_pat_iter iterate (derive_pat l p) repeat
 
 
 let derive_pat l p =
