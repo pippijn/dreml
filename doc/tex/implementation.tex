@@ -15,7 +15,7 @@ sub-matching, supported by \texttt{ocamllex}.
 \section{Grammar}
 %%%%%%%%%%%%%%%%%
 
-The lexical grammar in the prototype supports only latin letters, $a$ through
+The lexical grammar in the prototype supports only Latin letters, $a$ through
 $z$ in upper and lower case, for matches. This limitation is rather arbitrary
 but removes the need for escape sequences. The \texttt{re2ml} tool supports any
 character, as well as unicode escape sequences, which are translated to a UTF-8
@@ -92,10 +92,11 @@ The parser also allows for '$\cap$' (U+2229) to be used as intersection operator
 '\&', as well as '+' for the choice operator '$|$' and '$\neg$' (U+00AC) for
 negation '$\sim$'. The two syntaxes for counted repetition are equivalent.  The
 repetition operator is not supported in \texttt{ocamllex}, but \texttt{re2ml}
-allows it. It should be noted that since a finite state machine does not have a
-memory, the repetition operator yields the same automaton as an expanded
-expression with the expression under repetition actually repeated $n$ times.
-Thus, the number of states required by the automaton grows linearly with $n$.
+allows it. It should be noted that since a finite state machine does not have
+any storage besides the states it consists of, the repetition operator yields
+the same automaton as an expanded expression with the expression under
+repetition actually repeated $n$ times.  Thus, the number of states required by
+the automaton grows linearly with $n$.
 
 
 \section{Derivatives}
@@ -476,7 +477,7 @@ expression than they receive as input. A \texttt{rewrite} function recursively
 reduces the expression using these rules, until the result converges. If a rule
 produces a larger expression that may later be reduced by another rule, this
 rewrite system may go into an endless loop. Therefore, all rules specified here
-are straightforward in decreasing term size.
+straightforwardly decrease term size.
 
 \begin{rem}
    Simplification rules are not strictly required, and the automata construction
@@ -505,16 +506,18 @@ environments, to recursive calls.
 
 Disabling OCaml runtime bounds checking in the arrays gained just about 3\%.
 Approximately 8\% can be gained from using the inlining option in the OCaml
-native compiler. A larger difference can be achieved by tuning the OCaml garbage
-collector. Choosing an appropriate size for the minor heap, in which young
-objects are kept, so that all temporary lists that are created and discarded in
-every iteration can fit in it, can drastically improve performance. Experimental
-results show up to 34\% improvement for small expressions with a minor heap size
-of between 8 and 32 kilobytes. Performing a full collection of the minor and
-major heap, in which old objects reside, before starting execution might help
-for very complex patterns and large inputs, but its cost would outweigh any
-benefits for small inputs. Finally, structuring code in inner modules costs 14\%
-performance on the OCaml implementation used\footnote{OCaml version 4.00.1}.
+native compiler. A larger difference can be achieved by tuning the OCaml
+generational garbage collector. The OCaml GC has a minor heap, in which recently
+allocated objects reside, and a major heap for objects that survived a minor
+garbage collection. Choosing an appropriate size for the minor heap so that
+temporary lists created in several iterations can fit in it can drastically
+improve performance. Experimental results show up to 34\% improvement for small
+expressions with a minor heap size of between 8 and 32 kilobytes. Performing a
+full collection of the minor and major heap, in which old objects reside, before
+starting execution might help for very complex patterns and large inputs, but
+its cost would outweigh any benefits for small inputs. Finally, structuring code
+in inner modules costs 14\% performance on the OCaml implementation
+used\footnote{OCaml version 4.00.1}.
 
 Higher level optimisations are described in the following sub-sections.
 

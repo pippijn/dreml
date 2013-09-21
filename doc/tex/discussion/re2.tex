@@ -52,7 +52,7 @@ complexity of a full NFA state subset construction.
 
 Using an automata based approach, RE2 avoids exponential time complexity for
 regular expression matching, which a backtracking algorithm exposes for example
-when matching $a^n$ with the expression $a?^na^n$. Russ Cox explains this
+when matching $a^n$ with the expression $(a?)^na^n$. Russ Cox explains this
 runtime behaviour in more detail in \cite{regexp1}. Common case optimisations
 help RE2 outperform PCRE on large inputs, and the engine is not much slower than
 PCRE on small strings.

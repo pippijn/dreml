@@ -35,7 +35,7 @@ found in \cite{pdpat}.
 
 The definition of pattern partial derivatives is such that it yields a set of
 derivated terms along with a transition or matching function. In the first step
-of the implementation, the match was recorded in the pattern structure, itself,
+of the implementation, the match was recorded in the pattern structure itself,
 building on the following syntax:
 
 \begin{defn}
@@ -69,8 +69,8 @@ therefore not be matched by a regular expression.
 
 When building a compiler for a programming language, one of the first steps
 consists in tokenising or lexing the input. Considering a language containing
-the keywords \verb!let! and \verb!in!, and the operators \verb!=! and \verb!+!,
-we can create a regular expression
+the keywords \verb!let! and \verb!in!, as well as the operators \verb!=! and
+\verb!+!, we can create a regular expression
 %
 \[((l,e),t) + (i,n) + \verb'=' + \verb'+'\]
 %

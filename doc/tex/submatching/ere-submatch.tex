@@ -38,8 +38,8 @@ this would cause variable binding clashes. For example, when expanding
 $(x:a)^2$ to $(x:a)(x:a)$, the variable $a$ appears twice. Since we do not
 allow the same variable name to appear in a pattern, the definition of partial
 derivatives incorporates direct support for this form. Variable renaming could
-solve this issue, but defining a pattern matching relation for the repeating
-case is the more straightforward solution.
+solve this issue, but defining a pattern matching relation for the case of
+repetition is the more straightforward solution.
 
 The partial derivative of a negated pattern is not defined, because it cannot
 be sensibly decided which part of a non-match should be assigned to which
@@ -125,8 +125,9 @@ The term $\Sigma^*$ is used as abbreviation for $\{ w | w \in \Sigma^* \}$.
 The variable environments are the same as in \cite{pdpat}, the language
 definition has been extended with the definitions from \cite{pdere}.
 Juxtaposition of terms is used interchangeably with the explicit pair syntax
-for concatenation, following from the language definition as set product of
-the languages of the concatenated terms.
+for concatenation. This shortened syntax follows from the language definition
+for term concatenation, which is the set product of the two languages of the
+term operands.
 
 
 % vim:tw=78
