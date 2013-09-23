@@ -39,6 +39,8 @@ let b pattern input =
   let lexer = Language.compute_nullable_pat lexer in
 
   let (nfa, start) = Nfa.build varmap lexer in
+  Printf.printf "%d states\n" (Hashtbl.length nfa);
+  flush stdout;
   let states = Nfa.run (nfa, start) varmap input in
 
   if true then (
@@ -109,7 +111,7 @@ let timing2 () =
 
   let fh = open_out "b.log" in
 
-  for i = 1 to 50 do
+  for i = 1 to 30 do
     let pattern = "(x:a^" ^ string_of_int i ^ ")" in
 
     let lexer = Parser.start Lexer.token (Lexing.from_string pattern) in
@@ -119,7 +121,7 @@ let timing2 () =
 
     let min_time = ref 1000.0 in
 
-    for t = 1 to 20 do
+    for t = 1 to 2000 do
       Gc.compact ();
       let s = Unix.gettimeofday () in
       ignore (Nfa.build varmap lexer);
@@ -246,10 +248,68 @@ let timing5 () =
   close_out fh
 
 
+let timing6 () =
+  let fh = open_out "dfa-exp.log" in
+
+  for i = 1 to 50 do
+    let pattern = Printf.sprintf "(x:(a+b)b(a+b)^%d)" i in
+
+    let lexer = Parser.start Lexer.token (Lexing.from_string pattern) in
+    let lexer, varmap = Pattern.number_pattern lexer in
+
+    let lexer = Language.compute_nullable_pat lexer in
+
+    let min_time = ref 1000.0 in
+
+    for t = 1 to 200 do
+      Gc.compact ();
+      let s = Unix.gettimeofday () in
+      ignore (Nfa.build varmap lexer);
+      let e = Unix.gettimeofday () in
+
+      if !min_time > (e -. s) then (
+        min_time := e -. s;
+        Printf.printf "%d,%06f\r" i !min_time;
+        flush stdout;
+      );
+    done;
+
+    Printf.fprintf fh "%d,%06f\n" i !min_time;
+  done;
+
+  close_out fh
+
+
+let timing7 () =
+  let fh = open_out "dfa-exp-states.log" in
+
+  for i = 1 to 50 do
+    let pattern = Printf.sprintf "(x:\
+    ((a+b)*a(a+b)^%d) &\
+    ((~((~a)+(~b)))*a(a+b)^%d) )" i i in
+
+    let lexer = Parser.start Lexer.token (Lexing.from_string pattern) in
+    let lexer, varmap = Pattern.number_pattern lexer in
+
+    let lexer = Language.compute_nullable_pat lexer in
+
+    let (nfa, start) = Nfa.build varmap lexer in
+
+    Printf.printf "%d,%d\n" i (Hashtbl.length nfa);
+    flush stdout;
+
+    Printf.fprintf fh "%d,%d\n" i (Hashtbl.length nfa);
+  done;
+
+  close_out fh
+
+
 
 (*let () = main ()*)
 (*let () = timing1 ()*)
 (*let () = timing2 ()*)
 (*let () = timing3 ()*)
-let () = timing4 ()
+(*let () = timing4 ()*)
 (*let () = timing5 ()*)
+(*let () = timing6 ()*)
+let () = timing7 ()

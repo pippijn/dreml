@@ -47,8 +47,7 @@ and not_is_empty_language = function
 
   | Repeat (_, r, n) -> assert (n > 0); not_is_empty_language r
 
-  (* XXX: correct? *)
-  | Concat (_, a, b) -> not_is_empty_language a && not_is_empty_language b
+  | Concat (_, a, b) -> false
 
 
 let rec is_empty_language_pat = function

@@ -8,12 +8,833 @@ automaton can be built by computing partial derivatives of patterns and regular
 expressions. The partial derivatives computation used is based on a
 representation of regular expressions as sets of expression sets.
 
-\input{tex/submatching/ere-submatch}
-\input{tex/submatching/patmatchrel}
-\input{tex/submatching/exprsets}
-\input{tex/submatching/nfa}
-\input{tex/submatching/predicates}
-\input{tex/submatching/lexer}
+
+\section{Extended regular expression sub-matching}
+\label{ere-submatch}
+
+The definition of partial derivatives from \cite{pdpat} has been combined with
+the extended regular expression syntax as defined in \cite{pdere}. The regular
+expression pattern syntax from Sulzmann and Lu is amended with additional
+boolean operators for extended regular expressions.
+
+\begin{defn}
+   \label{defn-syn}
+   Syntax of extended regular expression patterns.
+
+   Words:
+
+   \begin{tabular}{lrll}
+      $w$	& $::=$	& $\varepsilon$		& Empty word	\\
+		& $|$	& $l \in \Sigma$	& Letters	\\
+		& $|$	& $lw$			& Concatenation	\\
+   \end{tabular}
+
+   Extended patterns:
+
+   \begin{tabular}{lrll}
+      $p$	& $::=$	& $(x:r)$			& Variables Base	\\
+		& $|$	& $(x:p)$			& Variables Group	\\
+		& $|$	& $p+p$				& Choice		\\
+		& $|$	& $(p,p)$			& Concatenation		\\
+		& $|$	& $p_e \cap p_e$		& Intersection		\\
+        	& $|$	& $p_e^n$			& Repetition		\\
+		& $|$	& $p^*$				& Kleene star		\\
+   \end{tabular}
+\end{defn}
+
+
+Pattern and expression repetition in the form $r^n$ is essentially the same as
+concatenating the same pattern or expression $n$ times. However, in a pattern,
+this would cause variable binding clashes. For example, when expanding
+$(x:a)^2$ to $(x:a)(x:a)$, the variable $a$ appears twice. Since we do not
+allow the same variable name to appear in a pattern, the definition of partial
+derivatives incorporates direct support for this form. Variable renaming could
+solve this issue, but defining a pattern matching relation for the case of
+repetition is the more straightforward solution.
+
+The partial derivative of a negated pattern is not defined, because it cannot
+be sensibly decided which part of a non-match should be assigned to which
+pattern variable. The assignment is decidable if and only if every sub-pattern
+always consumes the complete input, but for these patterns, their negation can
+be pushed into the pattern. For variables base, $\neg(x:p) \equiv (x:\neg p)$,
+and for pattern intersection, by De Morgan's law $\neg((x:p_1) \cap (y:p_2))
+\equiv (x:\neg p_1) + (y:\neg p_2)$. Variable assignment can not be decided
+for other patterns. E.g. when matching the string ``ccc'' with the pattern
+$\neg((x:a)(y:b))$, it is impossible to decide which part of the string should
+be assigned to $x$ and which to $y$. Therefore, we represent a subset of
+pattern negations in terms of a negation normal form transformation that must
+be applied before beginning the pattern match.
+
+\needspace{6cm}
+
+\begin{defn}
+   \label{defn-negnorm}
+   Negation normal form.
+
+   \begin{tabular}{lll}
+      $\negnorm(\neg(x : r))$		& $=$	& $(x : \neg r)$					\\
+      $\negnorm(\neg(x : p))$		& $=$	& $(x : \negnorm(\neg p)$				\\
+      Double negation:			&	&							\\
+      $\negnorm(\neg(\neg p))$		& $=$	& $\negnorm(p)$						\\
+      De Morgan's laws:			&	&							\\
+      $\negnorm(\neg(p_1 \cap p_2))$	& $=$	& $(\negnorm(\neg p_1) + \negnorm(\neg p_2)$		\\
+      $\negnorm(\neg(p_1 + p_2))$	& $=$	& $(\negnorm(\neg p_1) \cap \negnorm(\neg p_2)$		\\
+      Distributive laws:		&	&							\\
+      $\negnorm(x : p)$			& $=$	& $(x : \negnorm p)$					\\
+      $\negnorm(p_1 + p_2)$		& $=$	& $\negnorm(p_1) + \negnorm(p_2)$			\\
+      $\negnorm(p_1 \cap p_2)$		& $=$	& $\negnorm(p_1) \cap \negnorm(p_2)$			\\
+      $\negnorm(p_1, p_2)$		& $=$	& $(\negnorm(p_1), \negnorm(p_2))$			\\
+      $\negnorm(p_1^*)$			& $=$	& $\negnorm(p_1)^*$					\\
+      $\negnorm(p_1^n)$			& $=$	& $\negnorm(p_1)^n$					\\
+      Trivial atomic pattern:		&	&							\\
+      $\negnorm(x : r)$			& $=$	& $(x : r)$						\\
+   \end{tabular}
+\end{defn}
+
+We do not define negation of patterns containing concatenation and iteration,
+since there is no sensible way to assign pattern variables to sub-matches.
+
+In the remainder of this paper, we will use the term ``regular expression''
+for extended regular expressions, and refer to their instances as $r$ instead
+of $r_e$.  Analogously, the term ``pattern'' is used for ``extended pattern''
+and $p$ is an instance.
+
+\begin{defn}
+   \label{defn-lang}
+   Matching environments and language of regular expressions.
+
+   Environments:
+
+   \begin{tabular}{lrll}
+      $\Gamma$	& $::=$	& $\{x:w\}$			& Variable binding	\\
+		& $|$	& $\Gamma \uplus \Gamma$	& Ordered multi-set of
+							  variable bindings	\\
+   \end{tabular}
+
+   Language:
+
+   \begin{tabular}{lll}
+      $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
+      $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
+      $L(r_1 \cap r_2)$	& $=$	& $L(r_1) \cap L(r_2)$					\\
+      $L(\neg r)$	& $=$	& $\Sigma^* \setminus L(r)$				\\
+      $L(r^*)$		& $=$	&
+         $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
+         \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
+      $L(r^n)$		& $=$	&
+         $\{ w_1 \dots w_n | w_n \in L(r) \}$	\\
+      $L(l)$		& $=$	& $\{l\}$						\\
+      $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
+      $L(\phi)$		& $=$	& $\emptyset$						\\
+   \end{tabular}
+\end{defn}
+
+% TODO: prove L(r^n)
+
+The term $\Sigma^*$ is used as abbreviation for $\{ w | w \in \Sigma^* \}$.
+
+The variable environments are the same as in \cite{pdpat}, the language
+definition has been extended with the definitions from \cite{pdere}.
+Juxtaposition of terms is used interchangeably with the explicit pair syntax
+for concatenation. This shortened syntax follows from the language definition
+for term concatenation, which is the set product of the two languages of the
+term operands.
+
+
+\section{Pattern matching relation}
+\label{patmatchrel}
+
+We write the union of pattern match environments as $\uplus$, which is, since we
+use ordered multi-sets to represent an environment, equivalent to list
+concatenation. We formalise the pattern matching relation $w \vdash p \leadsto
+\Gamma$ based on the definition in \cite{pdpat}, extending it with
+intersection. We do not define a relation on pattern negation, since at this
+point, these must have been put in the negation normal form using $\negnorm$.
+
+\begin{minipage}[t]{0.4\textwidth}
+   \[\text{(VarBase)} \frac
+      {w \in L(r)}
+      {w \vdash x : r \leadsto \{x : w\}}
+   \]
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+   \[\text{(VarGroup)} \frac
+      {w \vdash p \leadsto \Gamma}
+      {w \vdash x : p \leadsto \{x : w\} \uplus \Gamma}
+   \]
+\end{minipage}
+
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(Concat)} \frac
+   {\begin{array}{c}
+      w = w_1 w_2 \\
+      w_1 \vdash p_1 \leadsto \Gamma_1 \\
+      w_2 \vdash p_2 \leadsto \Gamma_2
+   \end{array}}     
+   {w \vdash (p_1, p_2) \leadsto \Gamma_1 \uplus \Gamma_2}
+\]
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(Star)} \frac
+   {\begin{array}{c}
+      w = w_1 \dots w_n \\
+      w_i \vdash p \leadsto \Gamma_i \text{ for } i = 1 \dots n
+   \end{array}}     
+   {w \vdash p^* \leadsto \Gamma_1 \uplus \dots \uplus \Gamma_n}
+\]
+\end{minipage}
+
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(ChoiceL)} \frac
+   {w \vdash p_1 \leadsto \Gamma_1}
+   {w \vdash p_1 + p_2 \leadsto \Gamma_1}
+\]
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+\[\text{(ChoiceR)} \frac
+   {w \vdash p_2 \leadsto \Gamma_2}
+   {w \vdash p_1 + p_2 \leadsto \Gamma_2}
+\]
+\end{minipage}
+
+\[\text{(Intersect)} \frac
+   {\begin{array}{c}
+      w \vdash p_1 \leadsto \Gamma_1 \\
+      w \vdash p_2 \leadsto \Gamma_2
+   \end{array}}     
+   {w \vdash p_1 \cap p_2 \leadsto \Gamma_1 \uplus \Gamma_2}
+\]
+
+As described in section \ref{ere-submatch}, the matching function yielded by the
+pattern partial derivative can be customised with an $\iterate$. If this
+function is defined as one that keeps all matches, the number of possible
+matches can become exponential, if the pattern matching relation is defined as
+above.
+
+We consider the pattern $(x:A^*)$ and the input $A^n$. This pattern has one
+possible match, which is the complete input $A^n$. If we now add an iterating
+operator $p^*$ to the pattern, we match with the pattern $(x:A^*)^*$. The number
+of possible matches is now $2^{n-1}$, namely all combinations of the set $\{
+A^1, \dots, A^n \}$ that yield the original input $A^n$.
+
+If the Kleene star is applied again, the number of matches does not change, but
+the number of states the automaton ends with will be $m^{n-1}$ where $m$ is the
+number of kleene stars in tetration: $S((x:A^*)^{^m*}, A^n) = m^{n-1}$.
+
+This exponential number of matches can be reduced if instead of an ordered
+multi-set of matches, we use an unordered multi-set for the matching
+environment. E.g. the match $\{ x:A; x:AA \}$ and $\{ x:AA; x:A \}$ will be
+equivalent and counted only once. The resulting match-sets will be the set of
+parts of all partitions of $n$ represented as $A^n$. Consequently, the number of
+match-sets will be equal to the cardinality of the set of sets of parts of all
+partitions of $n$. % This number is polynomial. TODO: really? and how many?
+
+We can reduce the number of matches to one by defining a deterministic pattern
+matching relation. The most commonly used disambiguation strategy used is the
+greedy left-most matching strategy as used by Perl style regular expression
+engines. A different strategy is used by POSIX, which favours the longest word
+match. We employ the Perl strategy, which is natural for partial derivatives, as
+we can simply take the first matched variable from the ordered multi-set that is
+the matching environment.
+
+
+\section{Partial derivatives}
+\label{exprsets}
+
+The syntax of patterns and regular expressions, as well as the formal
+specification of the pattern matching relation can now be used to define the
+pattern partial derivative function.
+
+\subsubsection{Sets of pattern sets}
+
+The partial derivative operations are defined on extended regular expressions
+and result in sets of expression sets. Pattern partial derivatives as defined in
+\cite{pdpat} result in a list of pairs containing the derivated term as well as
+a transition function $x \mapsto l$ recording the fact that the letter $l$ has
+been consumed by a pattern under a variable $x$. This function must be recorded
+in the set of pattern sets, as well. Since the equivalent of a derivated term is
+the expression set $\eset$, we define the set of pattern sets as: $\{ (\{ p \},
+x \to l) \}$, the set of pairs containing an expression set and the associated
+transition function. Sets of pattern sets are defined similarly to sets of
+expression sets in definition \ref{defn-esets}.
+
+\begin{defn}
+   \label{defn-psets}
+   Syntax for sets of pattern sets.
+
+   \begin{tabular}{lll}
+      $\pset$	& $::=$ & $(\{r_1, r_2, \dots, r_n\}, x \to l)$ \\
+      $\psets$	& $::=$ & $\{\pset_1, \pset_2, \dots, \pset_n\}$ \\
+   \end{tabular}
+\end{defn}
+
+Similarly to the additional requirement for Sulzmann and Lu's pattern partial
+derivatives, our sets of pattern sets are in fact ordered sets, ordered by their
+origin. That means the pattern $(x:ac)(y:ab)$ represented as set of pattern sets
+is $\{\{x:ac\}, \{y:ab\}\}$, exactly in that order. This post-condition is
+required to ensure that matching strategies such as the greedy left-most and
+POSIX match operate correctly.
+
+
+\subsubsection{Conversions}
+
+The operators $\esetOfRe$ and $\reOfEset$ can be defined analogously for
+patterns to construct pattern sets and reconstruct the pattern from them.
+
+\begin{defn}
+   \label{defn-re2pset}
+   Conversions from patterns to pattern sets.
+
+   Pattern set from expression pattern:
+   $\cdot\esetOfRe :: p \to \pset$
+
+   \begin{tabular}{lll}
+      $(p_1 \cap p_2)\esetOfRe$	& $=$	& $p_1\esetOfRe \cup p_2\esetOfRe$	\\
+      $p\esetOfRe$			& $=$	& $\{p\}$			\\
+   \end{tabular}
+\end{defn}
+
+It should be noted that in order to break a pattern or expression into a set of
+pattern or expression sets, the highest level operator must be choice or
+intersection. In particular, a pattern group $(x:p)$ at the highest level of the
+syntax tree makes it impossible to break a pattern into pieces.
+
+For a pattern group containing a choice operator, it would be possible to split
+it into multiple pattern groups with the same variable name, each containing one
+choice. However, this would break the invariant that every variable name exists
+exactly once in the pattern, so splitting would require variable renaming and
+tracking.
+
+The inverse operator is defined analogously to definition \ref{defn-re2esets}.
+
+\begin{defn}
+   \label{defn-re2psets}
+   Conversions from pattern sets back to patterns.
+
+   Pattern from pattern set:
+   $\cdot\reOfEset :: \pset \to r$
+
+   \begin{tabular}{lll}
+      $\{p\}\reOfEset$			& $=$	& $p$				\\
+      $(\{p\} \cup \pset)\reOfEset$	& $=$	& $p \cap \pset\reOfEset$	\\
+   \end{tabular}
+\end{defn}
+
+We do not define $\esetsOfRe$ and $\reOfEsets$ for sets of pattern sets, and
+there is no need for them, but the final pattern derivative as set of patterns
+with transition functions can be obtained from a pattern using the function
+$\cdot \setminus_p \cdot$ detailed and illustrated in section \ref{nfa}.
+
+
+\subsubsection{Operators on sets of pattern sets}
+
+The expression set operators from definition \ref{defn-eset-ops} must be defined
+for pattern derivatives, but since pattern derivatives carry a transition
+function $f$, these must be sensibly combined in the set operators.
+
+\begin{defn}
+   \label{defn-pset-ops}
+   Distributive laws on sets of pattern sets.
+
+   \begin{tabular}{lll}
+      $\psets \circledcdot_{mod} p_2$
+         & $=$
+         & $\{ (\{ (p_1, p_2) | p_1 \in \eset \}, f \circ mod) | (\eset, f) \in \psets \}$
+         \\
+
+      $\psets_1 \circledcap \psets_2$
+         & $=$
+         & $\{
+              (\eset_1 \cup \eset_2, f_1 \circ f_2)
+              | (\eset_1, f_1) \in \psets_1, (\eset_2, f_2) \in \psets_2
+           \}$
+         \\
+   \end{tabular}
+\end{defn}
+
+In $\circledcdot$, the $mod$ function can modify the environment before passing
+it to the transition function.  The operator $\circledneg$ is not defined for
+sets of pattern sets, since there is no negation for patterns.
+
+
+\subsection{Pattern partial derivatives}
+
+We define the partial derivative of an extended pattern expression using the
+operators $\circledcdot$ and $\circledcap$, omitting negation. This definition
+is an extension of definition \ref{defn-pd-eset} with the semantics from the
+pattern matching relation in definition \ref{patmatchrel}.
+
+\begin{defn}
+   \label{defn-pd-pset}
+   Pattern partial derivatives as sets of pattern sets.
+
+   \[\nr{1p}\quad \dda(x:r)
+      = \{ (\{ \eset\reOfEset \}, \updatexa) | \eset \in \dda(r) \}\]
+   \[\nr{2p}\quad \dda(x:p)
+      = \{ (\{ (x:\pset\reOfEset) \}, \updatexa \circ f) | (\pset, f) \in \dda(p) \}\]
+   \[\nr{3p}\quad \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
+   \[\nr{4p}\quad \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
+   \[\nr{5p}\quad \dda((p_1, p_2)) =
+       \begin{cases}
+          \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\reOfEsets) \\
+          \dda(r_1) \circledcdot_{id} p_2 \cup \dda(p_2) & \text{otherwise}
+       \end{cases}
+   \]
+   \[\nr{6p}\quad \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
+   \[\nr{7p}\quad \dda(p^n) =
+       \begin{cases}
+          \{ (\pset, f \circ \iterate) | (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
+          \dda(p) \circledcdot_{\iterate} p^{n-1} & \text{otherwise}
+       \end{cases}
+   \]
+\end{defn}
+
+In \nr{5p}, the identity function is given as modifier to the $\circledcdot$
+operator, keeping the environment as is before passing it to the transition
+function. The $\iterate$ function can modify the environment for the two
+iterating patterns $p^*$ and $p^n$. It can choose to keep only the last match or
+all matches, by renaming past recorded match variables. This function is
+described in more detail in section 5.1 of \cite{pdpat}. The $\fv(p)$ function
+finds all free variables used in the pattern, and is defined in section 3.1 of
+the same paper.
+
+
+\section{The sub-match automaton}
+\label{nfa}
+
+Given the definition of the partial derivative of a sub-matching pattern $\dda$,
+which yields a set of expression sets, we can define a function yielding the
+partial derivative for a pattern $p$: $\cdot \setminus_p \cdot :: p \to l \to
+\{(p, x \to l)\}$
+
+\begin{defn}
+   Pattern partial derivative as set of tagged transitions.
+
+   \[p \setminus_p l = \{ (\mathcal{P}\downarrow, f) | (\mathcal{P}, f) \in \dd{l}(p) \}\]
+\end{defn}
+
+Using this function, the sub-matching automaton can be constructed by
+iteratively constructing the partial derivative of the input pattern over each
+letter in the alphabet. The resulting set of derivated terms is then filtered to
+remove all those that describe the empty language. This filtered set is then
+used as input and each term is derived over each letter again. This is done
+until no new terms appear or all terms yield the empty language, i.e. $L(p) =
+\emptyset$.
+
+\begin{eg}
+   Given the alphabet $\Sigma = \{a, b, c\}$ and the pattern expression $p =
+   (x:a, p_2)$ where $p_2 = (y:\neg c, p_3)$ and $p_3 = (z:ab + ac)$, we can
+   construct the automaton as follows:
+
+   \begin{tabular}{lll}
+      $\dda(a)$
+      & $=_{\nr{2}}$ &
+         $\{\{ \varepsilon \}\}$
+   \end{tabular}
+
+   \begin{tabular}{lll}
+      $\dda(((x:a), p_2))$
+      & $=_{\nr{5p}}$ &
+         $\dda(x:a) \circledcdot_{\id} p_2$
+      \\ & $=_{\nr{1p}}$ &
+         $\{ (\{ \eset\reOfEset \}, \updatexa) | \eset \in \dda(a) \}
+            \circledcdot_{\id} p_2$
+      \\ & $=$ &
+         $\{ (\{ \varepsilon \}, \updatexa) \}
+            \circledcdot_{\id} p_2$
+      \\ \multicolumn{3}{l}
+         {By definition \ref{defn-pset-ops}, and we cancel the identity function
+         in the update chain.}
+      \\ & $=$ &
+         $\{ (\{ (\varepsilon, p_2) \}, \updatexa) \}$
+      \\ \multicolumn{3}{l}
+         {Simplification $(\varepsilon, p) = p$:}
+      \\ & $=$ &
+         $\{ (\{ p_2 \}, \updatexa) \}$
+   \end{tabular}
+
+   The resulting set of pattern sets contains the partial derivative over the
+   letter $a$. The partial derivative over $b$ and $c$ will yield the empty
+   language $\{ (\{ (\phi, p_2) \}, \updatexa) \}$. These are filtered out at
+   the end of the iteration. The remaining sets are converted to partial
+   derivatives according to the $\cdot \setminus_p \cdot$ operator, resulting in
+   $p \setminus_p a = \{ (p_2, \updatexa) \}$. In the next iteration, we
+   continue with the set of derivated terms from the previous iteration, in this
+   case just $p_2$.
+
+   \begin{tabular}{lll}
+      $\dda(\neg c)$
+      & $=_{\nr{8}}$ &
+         $\circledneg (\dda(c))$
+      \\ & $=_{\nr{1}}$ &
+         $\circledneg (\{\{\phi\}\})$
+      \\ \multicolumn{3}{l}
+         {By definition \ref{defn-eset-ops}:}
+      \\ & $=$ &
+         $\{\{\neg\phi\}\}$
+   \end{tabular}
+
+   \begin{tabular}{lll}
+      $\dda(((y:\neg c), p_3))$
+      & $=_{\nr{5p}}$ &
+         $\dda(y:\neg c) \circledcdot_{\id} p_3 \cup \dda(p_3)$
+      \\ & $=_{\nr{1p}}$ &
+         $\{ (\{ \eset\reOfEset \}, \update{y}{a}) | \eset \in \dda(\neg c) \}
+            \circledcdot_{\id} p_3 \cup \dda(p_3)$
+      \\ & $=$ &
+         $\{ (\{ \neg\phi \}, \update{y}{a}) \}
+            \circledcdot_{\id} p_3 \cup \dda(p_3)$
+      \\ & $=$ &
+         $\{ (\{ (\neg\phi, p_3) \}, \update{y}{a}) \} \cup \dda(p_3)$
+   \end{tabular}
+
+   Since $\varepsilon \in L(\neg c)$, we also need to compute $\dda(p_3)$ and
+   unite the resulting set of pattern sets with $\dda(y:\neg c)$.
+
+   \begin{tabular}{lll}
+      $\dda(ab + ac)$
+      & $=_{\nr{3}}$ &
+         $\dda(ab) \cup \dda(ac)$
+      \\ & $=_{\nr{5}}$ &
+         $\dda(a) \circledcdot b \cup \dda(a) \circledcdot c$
+      \\ & $=_{\nr{2}}$ &
+         $\{\{\varepsilon\}\} \circledcdot b \cup \{\{\varepsilon\}\} \circledcdot c$
+      \\ & $=$ &
+         $\{\{\varepsilon b\}\} \cup \{\{\varepsilon c\}\}$
+      \\ & $=$ &
+         $\{\{\varepsilon b\}, \{\varepsilon c\}\}$
+   \end{tabular}
+
+   \begin{tabular}{lll}
+      $\dda(z:ab + ac)$
+      & $=_{\nr{1p}}$ &
+         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) | \eset \in \dda(ab + ac) \}$
+      \\ & $=$ &
+         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) | \eset \in \{\{\varepsilon b\}, \{\varepsilon c\}\} \}$
+      \\ & $=$ &
+         $\{ (\{ \varepsilon b \}, \update{z}{a}), (\{ \varepsilon c \}, \update{z}{a}) \}$
+      \\ \multicolumn{3}{l}
+         {Simplification $(\varepsilon, p) = p$:}
+      \\ & $=$ &
+         $\{ (\{ b \}, \update{z}{a}), (\{ c \}, \update{z}{a}) \}$
+   \end{tabular}
+
+   The resulting set of pattern sets is
+   \[\dda(\neg c) \cup \dda(z:ab + ac) = \{ (\{ (\neg\phi, p_3) \},
+   \update{y}{a}), (\{ b \}, \update{z}{a}), (\{ c \}, \update{z}{a}) \}\].
+
+   After using the same method to iteratively construct the entire automaton,
+   the states and transitions will be as in the following graph:
+
+   \img{img/nfa}{16cm}
+
+\end{eg}
+
+
+\section{Language predicates}
+
+As an optimisation, we detect whether it is worth computing the partial
+derivative of an expression by testing whether the expression accepts any
+language, at all. If it does not, we can save the time spent on examining that
+path. E.g. for the expression $a^n \cap a^*$, the NFA construction yields $2n +
+1$ states, for $(a+b)^n \cap (a+b)^*$ it yields $4n + 1$ states. With the empty
+language filter, the automaton for both expression only contains $n + 1$ states.
+
+In order to test whether a regular expression describes the empty language, we
+define a boolean predicate $\isempty :: r \to \{0, 1\}$, which is an
+approximation of $L(r) = \emptyset$. An exact solution to this problem is, for
+negation, equivalent to testing whether the language under negation accepts
+$\Sigma^*$. As shown by \cite{stoc73}, this problem is PSPACE-complete. The
+approximation described here requires linear time and constant space.
+
+Since $\isempty(r) \neq \neg\isempty(\neg r)$, we need to expand the negated
+case. We define a separate predicate $\isemptyneg :: r \to \{0, 1\}$ for this
+case so we can trivially prove termination of the predicate, since the argument
+to the recursive call is a strict subset of the function argument.
+
+In other words, if a language is non-empty, one can not directly derive that its
+negation is empty. For example, considering the simple atomic regular expression
+$r = a$ matching a single letter from the alphabet, the language of the
+negation, $L(\neg a)$ is in fact $\Sigma^* \setminus a$. Conversely, however,
+the negation of the empty language, regardless of its form as regular
+expression, is always $\Sigma^*$, so that e.g. $L(\neg(a \cap b)) =
+L(\neg(\phi)) = \Sigma^* \setminus \phi = \Sigma^*$.
+
+This function is an approximation in that if it yields \true, then $L(r) =
+\emptyset$, but if it yields \false, $L(r) \neq \emptyset$ may not follow. For
+instance, $\isempty(a \cap b) = 0$, but $L(a \cap b) = \emptyset$.
+
+\needspace{5cm}
+\begin{defn}
+   \label{defn-isempty}
+   Approximation for $L(r) = \emptyset$.
+
+   \begin{tabular}{lll}
+      $\isempty(\phi)$	& 	$=$ & $1$ \\
+      $\isempty(\varepsilon) = \isempty(r^*) = \isempty(l)$
+         & $=$ & $0$ \\
+      $\isempty(r^n)$		& $=$ & $\isempty(r)$ \\
+      $\isempty(r_1 + r_2)$	& $=$ & $\isempty(r_1) \wedge \isempty(r_2)$ \\
+      $\isempty((r_1, r_2))$	& $=$ & $\isempty(r_1) \vee \isempty(r_2)$ \\
+      $\isempty(r_1 \cap r_2)$	& $=$ & $\isempty(r_1) \vee \isempty(r_2)$ \\
+      $\isempty(\neg r)$	& $=$ & $\isemptyneg(r)$ \\
+   \end{tabular}
+
+   $\isemptyneg(r)$ is the specialisation for negation, which has the meaning of
+   $\isempty(\neg r)$. Although $\neg(\Sigma^*)$ describes the empty language, we
+   do not filter it here, since this is an approximation.
+
+   \begin{tabular}{lll}
+      $\isemptyneg(\varepsilon)$	& $=$ & $0$ \\
+      $\isemptyneg(r^*)$		& $=$ & $0$ \\
+      $\isemptyneg(l)$			& $=$ & $0$ \\
+      $\isemptyneg(\phi)$		& $=$ & $0$ \\
+      $\isemptyneg((r_1, r_2))$		& $=$ & $0$ \\
+   \end{tabular}
+
+   De Morgan's laws:
+
+   \begin{tabular}{lll}
+      $\isemptyneg(r_1 \cap r_2)$	& $=$ & $\isemptyneg(r_1) \wedge \isemptyneg(r_2)$ \\
+      $\isemptyneg(r_1 + r_2)$		& $=$ & $\isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
+   \end{tabular}
+
+   Double negation:
+
+   \begin{tabular}{lll}
+      $\isemptyneg(\neg r)$	& $=$ & $\isempty(r)$ \\
+   \end{tabular}
+\end{defn}
+
+We provide a partial proof for the above definition by showing that
+$\isempty(r)$ iff $L(r) = \emptyset$. The assertion that conversely, $L(r) =
+\emptyset$ iff $\neg\isempty(r)$ and therefore $\neg\isempty(r) \Rightarrow L(r)
+\neq \emptyset$ is not required for the approximation, since the function is
+only necessary to rule out false positives and therefore the possibility of
+removing valid transitions from the resulting automaton.
+
+\begin{lem}
+   $\isempty(r) \Rightarrow L(r) = \emptyset$
+
+   It must be shown that for every instance of $r$ in which $\isempty(r)$ is
+   \true, it holds that $L(r) = \emptyset$. We assume that $\Sigma$ is not empty,
+   so that $\Sigma^* \setminus \{\varepsilon\} \neq \emptyset$. The premise for
+   each part of the proof is that $L(r) = \emptyset$. If it is not, then
+   $\isempty(r)$ is not \true.
+
+   \begin{enumerate}[label=\textbf{(\arabic*)}]
+      \item
+         $L(\phi) = \emptyset \Leftarrow \isempty(\phi)$
+
+      \item
+         The cases for $L(\varepsilon)$, $L(r^*)$ and $L(l)$, as well as their
+         negations and $L(\neg \phi)$ are omitted, since although their
+         correctness can be proven, it is irrelevant, as we are only interested
+         in cases yielding \true.
+
+      \item
+         If one of the intersecting languages is empty, then the intersection is
+         also empty. \\
+         $L(r_1 \cap r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) \cap L(r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(r_1) \vee \isempty(r_2)$ \\
+         $\Leftrightarrow \isempty(r_1 \cap r_2)$
+
+      \item
+         If one of the choices is not empty, then the expression is not empty,
+         thus both choices must be empty for the expression to be considered
+         empty. \\
+         $L(r_1 + r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) \cup L(r_2) = \emptyset$ \\
+         $\Leftrightarrow L(r_1) = \emptyset \wedge L(r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(r_1) \wedge \isempty(r_2)$ \\
+         $\Leftrightarrow \isempty(r_1 + r_2)$
+
+      \item
+         If the left expression does not recognise any language, then the
+         complete expression does not. If it does, but the right expression does
+         not, then after matching the left expression, the complete expression
+         runs into an error state, therefore not recognising any language. \\
+         $L((r_1, r_2)) = \emptyset$ \\
+         $\Leftrightarrow \{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \} = \emptyset$ \\
+         $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(r_1) \vee \isempty(r_2)$ \\
+         $\Leftrightarrow \isempty(r_1 \cap r_2)$
+
+      \item
+         If $r$ recognises a language, then any number of consecutive $r$ also
+         does so. Conversely, if $L(r)$ is the empty language, then no number of
+         consecutive $r$ will fix that. \\
+         $L(r^n) = \emptyset$ \\
+         $\Leftrightarrow \{ w_1 \dots w_n | w_i \in L(r) \} = \emptyset$ \\
+         $\Leftrightarrow L(r) = \emptyset$ \\
+         $\Leftarrow \isempty(r)$ \\
+         $\Leftrightarrow \isempty(r^n)$
+
+      \item
+         $L(\neg(r_1 \cap r_2)) = \emptyset$ \\
+         De Morgan's law: \\
+         $\Leftrightarrow L(\neg r_1 + \neg r_2) = \emptyset$ \\
+         $\Leftrightarrow L(\neg r_1) \cup L(\neg r_2) = \emptyset$ \\
+         $\Leftrightarrow L(\neg r_1) = \emptyset \wedge L(\neg r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(\neg r_1) \wedge \isempty(\neg r_2)$ \\
+         $\Leftrightarrow \isemptyneg(r_1) \wedge \isemptyneg(r_2)$ \\
+         $\Leftrightarrow \isemptyneg(r_1 \cap r_2)$
+
+      \item
+         $L(\neg(r_1 + r_2)) = \emptyset$ \\
+         De Morgan's law: \\
+         $\Leftrightarrow L(\neg r_1 \cap \neg r_2) = \emptyset$ \\
+         $\Leftrightarrow L(\neg r_1) \cap L(\neg r_2) = \emptyset$ \\
+         $\Leftrightarrow L(\neg r_1) = \emptyset \vee L(\neg r_2) = \emptyset$ \\
+         $\Leftarrow \isempty(\neg r_1) \vee \isempty(\neg r_2)$ \\
+         $\Leftrightarrow \isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
+         $\Leftrightarrow \isemptyneg(r_1 + r_2)$
+
+      %\item TODO
+         %$L(\neg(r_1, r_2)) = \emptyset$
+
+      \item
+         $L(\neg\neg r) = L(r)$, thus $\isempty(\neg\neg r) = \isempty(r)$.
+
+   \end{enumerate}
+\end{lem}
+
+
+In the derivation of $(r,r)$, i.e. expression or pattern concatenation, we need
+to know whether the first expression may derive $\varepsilon$, the empty word.
+In this case, we consider the second expression for the derivative, as well. For
+the same reason we have a predicate for $L(r) = \emptyset$, we create a function
+for $\varepsilon \in L(r)$. The two predicates have the same time and space
+complexity. Unlike the above predicate, however, the $\nullable$ function is
+exact. Its termination can be proved in the same way as above. Note that the
+$\nullable$ predicate is merely a special case of the word problem.
+
+\begin{defn}
+   \label{defn-nullable}
+   Exact function for $\varepsilon \in L(r)$.
+
+   \begin{tabular}{lll}
+      $\nullable(\phi)$		& $=$ & $0$ \\
+      $\nullable(\varepsilon)$	& $=$ & $1$ \\
+      $\nullable(r^*)$		& $=$ & $1$ \\
+      $\nullable(r^n)$		& $=$ & $\nullable(r)$ \\
+      $\nullable(r_1 + r_2)$	& $=$ & $\nullable(r_1) \vee \nullable(r_2)$ \\
+      $\nullable((r_1, r_2))$	& $=$ & $\nullable(r_1) \wedge \nullable(r_2)$ \\
+      $\nullable(r_1 \cap r_2)$	& $=$ & $\nullable(r_1) \wedge \nullable(r_2)$ \\
+      $\nullable(\neg r)$	& $=$ & $\neg\nullable(r)$ \\
+   \end{tabular}
+
+\end{defn}
+
+Unlike the predicate from definition \ref{defn-isempty}, the $\nullable$
+predicate does not require a specialisation for $\neg r$, since the language $L$
+of a negated regular expression $r$ is, as defined in \ref{defn-lang}, $\Sigma^*
+\setminus L(r)$, i.e. every word, except the ones in $L(r)$. Therefore, the
+question whether a symbol or word is in a language is equivalent to the question
+whether it is not in the negated language.
+
+
+\section{Declarative asynchronous lexers}
+\label{lexer}
+
+As mentioned in the introduction, sub-matching can be used to declaratively
+specify a lexer for a programming language. We can extract the greedy left-most
+match from the matching environment $\Gamma$ and pass the lexeme information to
+the semantic action code.
+
+One inelegance in the way most lexer functions are written is that they are
+synchronous by design. Characters are read from the input stream until a
+complete lexeme is read and no more characters can be accepted, after which the
+stream position is reset to the end of the valid lexeme. The function returns
+the value of the semantic action with the stream ready for a subsequent lexer
+function call.
+
+Instead of reading a single token at a time and resetting the stream, we can
+define the combined lexer for all lexemes $r_1 \dots r_n$ as $(r_1 + \dots
+r_n)^*$. The key idea here is to have an iterating expression for all lexemes.
+Without any semantic actions, this combined pattern will match a complete valid
+source text. Semantic actions may operate asynchronously, sending complete
+matches to a channel from which a client, such as a parser for a context free
+grammar, can wait, enabling concurrent lexing and parsing.
+
+
+\subsection{Matching functions}
+
+We extend on the idea of named sub-matches and instead of associating a name in
+the matching environment with a sub-match, we associate a function with each
+pattern. Thus, instead of a pattern $(x:r)$ where variable $x$ is associated
+with regular expression $r$, we write the pattern $(f:r)$ in which a function is
+called when the sub-expression is successful.
+
+Now, we need to define what it means for a pattern to be successful. Given for
+instance the pattern $(f_1:A)(f_2:B)+(f_3:AC)$ and the input $AC$, after reading
+an $A$, the sub-pattern $(f_1:A)$ has been matched, but after the next
+character, $C$, the containing pattern fails, so that $f_1$ may not be called.
+
+\subsubsection{Delayed actions}
+
+It is clear that semantic action invocations must be delayed until it is certain
+that the pattern they appeared in succeeds. In a lexer specification $((f_1:r_1)
++ \dots + (f_n:r_n))^*$, the actions should not be delayed until the complete
+input has been consumed, since the input stream may be infinite or very large
+and the storage requirements for delayed actions would be linear in the input
+length. Therefore, the actions should only be delayed for as little time as
+possible.
+
+\begin{defn}
+   Match completeness.
+
+   Supporting definitions.
+   \begin{enumerate}
+
+      \item A toplevel pattern as one that is not enclosed in any other patterns.
+         
+         E.g. in $(f_1:A+(f_2:B))+(f_3:C)$, the sub-patterns associated with
+         $f_1$ and $f_3$ are toplevel patterns, while the one for $f_2$ is not,
+         since it is enclosed in the pattern associated with $f_1$.
+
+      \item Two patterns $p_1$ and $p_2$ are parallel when they consume the same
+         input.
+
+         E.g. in $(f_1:ABC)+(f_2:(f_3:A+B)^*C)$, while consuming $AB$, patterns
+         associated with $f_1$, $f_2$ and $f_3$ are parallel. After consuming
+         $C$, patterns for $f_1$ and $f_2$ are parallel, but the pattern for
+         $f_3$ is no longer consuming any input.
+
+   \end{enumerate}
+
+   A pattern match $p_1$ is complete when
+   \begin{enumerate}
+
+      \item any enclosing pattern match, if such exists, is complete,
+
+      \item it can no longer consume any more input,
+
+      \item there is no incomplete pattern $p_2$ where $p_1$ and $p_2$ are
+         parallel.
+
+   \end{enumerate}
+
+\end{defn}
+
+\subsubsection{Longest match strategy}
+
+A single pattern $p$ under the greedy left-most matching strategy will consume
+as much of the input as possible. However, when using the above-mentioned
+declarative lexer using $p' = p^*$, this is no longer true. Given, for instance,
+a language with lexemes $A$, $B$, and $AB$, the lexer pattern would be $p =
+(f_1:A) + (f_2:B) + (f_3:AB)$. Tokenising the input $AB$ would, under the greedy
+left-most strategy, invoke the semantic action $f_3$.
+
+With the pattern written as $p' = ((f_1:A) + (f_2:B) + (f_3:AB))^*$, the greedy
+left-most match would favour the shorter matches, and an input of $AB$ would
+first complete the match associated with $f_1$ with $A$ and then $f_2$ with $B$.
+
+In order to maintain the matching behaviour of lexers, the toplevel choice over
+all lexemes must follow a longest match policy rather than the greedy left-most
+match used inside lexeme expressions.
 
 
 % vim:tw=80

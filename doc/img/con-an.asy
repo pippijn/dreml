@@ -1,6 +1,6 @@
 import graph;
 
-size (10cm, 8cm, IgnoreAspect);
+size (16cm, 5cm, IgnoreAspect);
 
 marker mark = marker (unitcircle);
 
@@ -21,7 +21,8 @@ void draw_graph (string data, pen pen, string name = "") {
   }
 }
 
-draw_graph ("opt.log", black);
+draw_graph ("con-an-dreml.log", black, "re2ml");
+draw_graph ("con-an-ulex.log", brown, "ml-ulex");
 
 xaxis ("$n$", Bottom, LeftTicks);
 xaxis (Top);

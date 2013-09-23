@@ -3,25 +3,12 @@ Name		= dreml
 
 # Sub-documents
 Parts[] =
-  tex/background/derivatives
-  tex/background/ext-re
-  tex/background/partial
-  tex/background/pattern
   tex/background
   tex/conclusion
-  tex/discussion/pcre
-  tex/discussion/re2
   tex/discussion
   tex/implementation
   tex/intro
   tex/results
-  tex/submatching/brainstorming
-  tex/submatching/ere-submatch
-  tex/submatching/exprsets
-  tex/submatching/lexer
-  tex/submatching/nfa
-  tex/submatching/patmatchrel
-  tex/submatching/predicates
   tex/submatching
   tex/macros
 
@@ -29,12 +16,11 @@ Bibliography[] =
   dreml
 
 Images[] =
-  img/a
-  img/b
   img/astar
+  img/con-an
+  img/dfa-exp
+  img/dfa-states
   img/nfa
-  img/opt
-  img/results
 
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)

@@ -1,2 +1,8 @@
+%.pdf: %.asy %-dreml.log %-ulex.log %-perl.log %-pcre.log $(ASY)
+  $(ASY) -fpdf -o $@ $<
+
+%.pdf: %.asy %-dreml.log %-ulex.log $(ASY)
+  $(ASY) -fpdf -o $@ $<
+
 %.pdf: %.asy %.log $(ASY)
   $(ASY) -fpdf -o $@ $<

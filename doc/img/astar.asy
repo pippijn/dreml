@@ -1,6 +1,6 @@
 import graph;
 
-size (10cm, 8cm, IgnoreAspect);
+size (16cm, 5cm, IgnoreAspect);
 
 marker mark = marker (unitcircle);
 
@@ -21,7 +21,10 @@ void draw_graph (string data, pen pen, string name = "") {
   }
 }
 
-draw_graph ("astar.log", black);
+draw_graph ("astar-dreml.log", black, "re2ml");
+draw_graph ("astar-ulex.log", brown, "ml-ulex");
+draw_graph ("astar-perl.log", darkgreen, "perl");
+draw_graph ("astar-pcre.log", darkblue, "pcre");
 
 xaxis ("$n$", Bottom, LeftTicks);
 xaxis (Top);

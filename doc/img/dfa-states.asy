@@ -1,6 +1,6 @@
 import graph;
 
-size (10cm, 8cm, IgnoreAspect);
+size (16cm, 5cm, IgnoreAspect);
 
 marker mark = marker (unitcircle);
 
@@ -21,11 +21,12 @@ void draw_graph (string data, pen pen, string name = "") {
   }
 }
 
-draw_graph ("a.log", black);
+draw_graph ("dfa-states-dreml.log", black, "re2ml");
+draw_graph ("dfa-states-ulex.log", brown, "ml-ulex");
 
 xaxis ("$n$", Bottom, LeftTicks);
 xaxis (Top);
-yaxis ("$t$[sec]", Left, RightTicks (trailingzero));
+yaxis ("states", Left, RightTicks (trailingzero));
 yaxis (Right);
 
 add (legend (), point (E), 20E, UnFill);

@@ -1,0 +1,43 @@
+#!/usr/bin/env perl
+
+use common::sense;
+use Time::HiRes 'gettimeofday';
+
+my ($calibrate, $n);
+if ($ARGV[0] eq '--calibrate') {
+   $n = 500;
+   $calibrate = 0;
+   shift @ARGV;
+} else {
+   $n = -1;
+   open my $fh, '<', "calibrate.txt"
+      or die "calibrate.txt: $!";
+   $calibrate = <$fh>;
+}
+
+my $parent = $$;
+if (not fork) {
+   while (<STDIN>) {
+      kill 15, $parent;
+      exit;
+   }
+}
+
+my ($min, $i) = (100, 0);
+while ($n--) {
+   $i++;
+   my $s = gettimeofday;
+   system "@ARGV > /dev/null";
+   my $e = gettimeofday - $calibrate;
+   if ($min > $e - $s) {
+      $min = $e - $s;
+      printf "$i: %.06f\r", $min;
+   }
+}
+print "\n";
+
+if (not $calibrate) {
+   open my $fh, '>', "calibrate.txt"
+      or die "calibrate.txt: $!";
+   print $fh $min;
+}
