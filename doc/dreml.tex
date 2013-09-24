@@ -1,4 +1,4 @@
-\documentclass[10pt,a4paper,headsepline,twoside]{scrbook}
+\documentclass[12pt,a4paper,headsepline,oneside]{scrbook}
 \usepackage{framed}
 \usepackage[utf8x]{inputenc}
 \usepackage{enumerate}
@@ -9,16 +9,19 @@
 \usepackage{color}
 \usepackage{amsmath}
 \usepackage{amsthm}
+\usepackage{thmtools}
 \usepackage{amsfonts}
 \usepackage{textcomp}
-\usepackage[left=3cm]{geometry}
+\usepackage[a4paper,left=3cm,right=3cm,top=3.5cm,bottom=2cm]{geometry}
 \usepackage{tikz}
+\usepackage[section]{placeins}
+%\usepackage{setspace}
 %\usepackage[scaled=.8]{DejaVuSansMono}
 
 % Listings settings
 \lstset{language=Caml}
 \lstset{defaultdialect=[Objective]Caml}
-%\lstset{basicstyle=\ttfamily,breaklines=true}
+%\lstset{basicstyle=\footnotesize,breaklines=true}
 
 \definecolor{dark-red}  {rgb}{0.60, 0.15, 0.15}
 \definecolor{dark-green}{rgb}{0.15, 0.40, 0.15}
@@ -31,20 +34,31 @@
    citecolor=dark-red,
 }
 
+% Line distance
+%\renewcommand{\baselinestretch}{1.25}\normalsize
+%\onehalfspacing
+
 % Colours
 \newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
 
 % Images
-\newcommand{\img}[2]{\includegraphics[width=#2]{#1.pdf}}
+\newcommand{\img}[3]{
+   \begin{figure}
+      \centering
+      \includegraphics[width=#2]{img/#1}
+      \caption{#3}
+      \label{img-#1}
+   \end{figure}
+}
 
 % Theorems
 \theoremstyle{definition}
 
-\newtheorem{thmbase}{\optcolor{1,0,0}{Theorem}}
-\newtheorem{lembase}[thmbase]{\optcolor{1,0,0}{Lemma}}
-\newtheorem{defnbase}[thmbase]{\optcolor{0,0,1}{Definition}}
-\newtheorem{egbase}{\optcolor{0,0.5,0}{Example}}
-\newtheorem{rembase}{Remark}
+\declaretheorem[name=\optcolor{1,0,0}{Theorem}]{thmbase}
+\declaretheorem[name=\optcolor{1,0,0}{Lemma},sibling=thmbase]{lembase}
+\declaretheorem[name=\optcolor{0,0,1}{Definition},sibling=thmbase]{defnbase}
+\declaretheorem[name=\optcolor{0,0.5,0}{Example}]{eg}
+\declaretheorem[name=Remark]{rem}
 
 \newlength{\topsepbackup}
 
@@ -71,8 +85,8 @@
 \newboxenv{thm}{thmbase}{0.9}{0.97,0.97,0.97}
 \newboxenv{lem}{lembase}{0.9}{0.97,0.97,0.97}
 \newboxenv{defn}{defnbase}{0.91}{0.97,0.97,0.97}
-\newboxenv{eg}{egbase}{0.91}{1,1,1}
-\newboxenv{rem}{rembase}{0.91}{1,1,1}
+%\newboxenv{eg}{egbase}{0.91}{1,1,1}
+%\newboxenv{rem}{rembase}{0.91}{1,1,1}
 
 \parskip=4pt
 \parindent=0pt
@@ -83,6 +97,7 @@
 
 \tableofcontents
 
+\input{tex/syntax}
 \input{tex/intro}
 \input{tex/background}
 \input{tex/submatching}
@@ -90,6 +105,9 @@
 \input{tex/results}
 \input{tex/discussion}
 \input{tex/conclusion}
+
+\listoftheorems[ignoreall,show={defnbase,lembase}]
+\listoffigures
 
 \bibliographystyle{alpha}
 \bibliography{dreml}

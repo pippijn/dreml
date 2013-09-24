@@ -1,24 +1,42 @@
 \chapter{Introduction}
 
-Regular expressions are a key component of modern software development. Many
-applications nowadays are inconceivable without the efficient pattern matching
-provided by regular expression engines. Ever more clever optimisations and ever
-more features are implemented in engines used by Perl, Java and many other
-programming languages. Most programming languages have at least one engine
-written in it, or have bindings to a popular C regular expression engine, such
-as PCRE.
+Regular expressions, often abbreviated as "regex", are a key component of modern
+software development. Many applications nowadays are inconceivable without the
+efficient pattern matching provided by regular expression engines.
 
-Most of these engines share a common deficiency: they are slow. Naturally, they
-are fast for most common expressions because that is what they were optimised
-for. However, for almost every regular expression engine, a class of expressions
-exists for which the engine is slow. Slow, in this context, means that it takes
-exponential execution time, and that means that even for relatively small
-inputs, the time taken for a match can exceed a human lifetime.
+Regexes are used in NIDS\footnote{Network Intrusion Detection System} to match
+network packets in real time, in compilers to tokenise source code, in online
+search engines, and many other fields of everyday computing. It is often
+required to not only decide whether a pattern matched an input, but also to
+extract information from it. This is where pattern submatching comes into play.
 
-C\# can compile regular expressions to CIL byte code, which is then compiled to
-native code by the .NET Just-In-Time compiler. PCRE contains a JIT mode, as
-well, but these optimisations, while very useful, only reduce the runtime by a
-constant factor.
+Pattern submatching is the extraction of matched subexpressions from the input.
+E.g. given the input \textit{``My name is Jack''} and pattern \textit{``My name
+is (x:Jack$|$Jill)''}\footnote{The $|$ operator means ``or''.}, we want to know
+which name, Jack or Jill, was provided, so we can retrieve the submatch
+information stored in $x$ and do further processing without having to re-parse
+the input.
+
+It is apparent that regular expression matchers should be both efficient and
+robust, so ever more clever optimisations and ever more features are implemented
+in engines used by Perl, Java and many other programming languages. Most
+programming languages have at least one engine written in it, or have bindings
+to a popular C regular expression engine, such as PCRE\footnote{Perl Compatible
+Regular Expressions}.
+
+However, most of these engines share a common deficiency: they are slow.
+Naturally, they are fast for most common expressions because that is what they
+were optimised for. However, for almost every regular expression engine, a class
+of expressions exists for which the engine is slow. Slow, in this context, means
+that it takes exponential execution time, and that means that even for
+relatively small inputs, the time taken for a match can exceed a human lifetime.
+
+C\# can compile regular expressions to CIL\footnote{Common Intermediate
+Language, the byte code used by the Microsoft .NET Framework} byte code, which
+is then compiled to native code by the .NET Just-In-Time compiler. PCRE contains
+a JIT\footnote{Just-In-Time compilation: generating machine code just before
+execution} mode, as well, but these optimisations, while very useful, only
+reduce the runtime by a constant factor.
 
 Why do these engines have such inefficient edge-cases? The reason is that all of
 them implement a superset of regular languages. In order to implement these
@@ -51,32 +69,55 @@ matching. The ideas this work extends is mostly covered in the following works:
 
 \begin{itemize}
       
-   \item In \cite{pdpat}, Martin Sulzmann and Kenny Zhuo Ming Lu introduce
-      pattern sub-matching with partial derivatives.
+   \item In \cite{pdpat}, Martin Sulzmann and Kenny Zhuo Ming Lu incorporate
+      pattern submatching with partial derivatives.
+
+      Partial derivatives are an elegant method of constructing an efficient
+      nondeterministic finite automaton. Section \ref{pd} explains this concept
+      in detail.
 
    \item Scott Owens, John Reppy and Aaron Turon introduce extended regular
       expressions to derivatives in \cite{re-deriv}.
 
-   \item Pascal Caron, Champarnaud and Mignot introduce a method of extended
+      Extended regular expressions are regular expressions with additional
+      boolean operators $\cap$ (intersection) and $\neg$ (negation). The theory
+      of this paper was implemented in \mlulex, part of the
+      SML/NJ\footnote{Standard ML of New Jersey} distribution. To our knowledge,
+      it is the only widely available tool that supports this type of extended
+      regular expressions.
+
+   \item Pascal Caron, Champarnaud and Mignot describe a method of extended
       regular expression matching with partial derivatives that does not reduce
       to a derivative computation\cite{pdere}.
 
+      They present a very elegant way to mathematically define the partial
+      derivative of an extended regular expression.
+
 \end{itemize}
 
-In particular, the contributions presented by this thesis are:
+In particular, our contributions are:
 
 \begin{itemize}
 
-   \item Pattern sub-matching based on partial derivatives with extended regular
-      expressions.
+   \item Pattern submatching based on partial derivatives with extended regular
+      expressions. We use a variation of the method presented by Caron et al.
+      combined with Sulzmann and Lu's pattern submatching.
 
    \item Clarification of some of the ideas presented in the papers this thesis
       is based on.
 
-   \item A generic sub-matching engine based on partial derivatives and
+   \item A generic submatching engine based on partial derivatives and
       incorporating extended regular patterns.
+      
+      This engine is written in OCaml, so it may more easily be compared to the
+      existing \mlulex{} tool. Sulzmann and Lu implemented their submatching
+      engine in Haskell, a lazy purely functional language, whereas \mlulex{}
+      was written in SML, an eager impure functional language. OCaml, also being
+      an eager impure functional language, gives us the opportunity for an
+      expressive performance evaluation.
 
-   \item A lexer tool compatible with \ocamllex{} built with the generic engine.
+   \item A lexer tool compatible with \ocamllex\footnote{The lexer generator
+      shipped with OCaml.} built with the generic engine.
 
 \end{itemize}
 
@@ -95,12 +136,6 @@ several serious drawbacks:
 
       It is not possible to list all C keywords in the lexer description, since
       the program will refuse to generate a large automaton.
-
-   \item Pattern sub-matching can increase the automaton size considerably.
-
-      When adding sub-matches such as \verb!(i:[0-9])(s:[lLuU]*)! for the C
-      programming language, \ocamllex{} output increases in size. With many
-      sub-match patterns, the tool can run into internal limits.
 
    \item Expression syntax is weak.
 
@@ -125,9 +160,10 @@ several serious drawbacks:
 
 \end{itemize}
 
-In the course of this thesis, a new tool name \reml{} was developed, which is
-fully backwards compatible with \ocamllex{}, but solves all of the above
-drawbacks.
+In the course of this thesis, we developed a new tool named
+\dreml\footnote{(Partial) \textbf{D}erivatives based \textbf{R}egular
+\textbf{E}xpressions for \textbf{ML}}, which is fully backwards compatible with
+\ocamllex, but solves all of the above drawbacks.
 
 \begin{itemize}
 
@@ -135,37 +171,37 @@ drawbacks.
 
       The presented approach is based on non-deterministic finite automata,
       constructed from partial derivatives. The automaton size is therefore
-      linear in the expression length. A lexer generated by \reml{} from a
+      linear in the expression length. A lexer generated by \dreml{} from a
       grammar twice as long will be twice as large. The tool can easily support
       thousands of keywords without the automaton growing to impractical sizes.
 
-   \item Pattern sub-matching is fully integrated.
+   \item Pattern submatching is fully integrated.
 
       Tagged transitions do not considerably increase the automaton size. There
-      is no limit to the number of sub-matches. In fact, rules in \reml{} are
-      implemented as sub-matches, internally.
+      is no limit to the number of submatches. In fact, rules in \dreml{} are
+      implemented as submatches, internally.
 
    \item Richer expression syntax.
 
       The integration of extended regular expression syntax, as well as some
-      other commonly found extensions, give \reml{} users the power to describe
+      other commonly found extensions, give \dreml{} users the power to describe
       their lexical grammar in a more expressive way.
 
    \item Grammar compositing.
 
-      \reml{} has direct support for importing definitions and even entire
+      \dreml{} has direct support for importing definitions and even entire
       grammars from other files.
 
    \item Direct support for line numbers.
 
-      Every transition on the new-line character automatically calls
-      \texttt{Lexing.new\_line lexbuf}, so the user can omit these special rules
+      Every transition that can occur on the new-line character automatically
+      calls \texttt{Lexing.new\_line}, so the user can omit these special rules
       entirely. For backwards compatibility, this support can be disabled.
 
 \end{itemize}
 
 
-\section{Pattern sub-matching}
+\section{Pattern submatching}
 
 The C programming language specifies integer literals as a number followed by
 zero or more type suffixes, \texttt{l} standing for \texttt{long}, \texttt{u}
@@ -173,8 +209,8 @@ for \texttt{unsigned}. In a C compiler, it is therefore useful to extract the
 parts directly during the lexical analysis, in order to reduce duplication of
 knowledge.
 
-Perhaps an even better example for a case where pattern sub-matching is useful
-is in C preprocessor directives, particularly the \verb!#include! directive. A
+Perhaps an even better example for a case where pattern submatching is useful is
+in C preprocessor directives, particularly the \verb!#include! directive. A
 parser or preprocessor is only interested in the name of the included file,
 which can be extracted using a pattern such as $\texttt{\#include } W^*
 \texttt{"} (f:(\Sigma \setminus \{\texttt{"}\})^*) \texttt{"}$.
@@ -216,27 +252,34 @@ derivatives. This method does not create a disjunction over all expressions, but
 rather preserves each of them in a vector, so that the expressions $r_1 \dots
 r_n$ form the regular vector $(r_1, \dots, r_n)$. The derivative operation is
 performed component-wise, so that $\dda(r_1, \dots, r_n) = (\dda r_1, \dots \dda
-r_n)$. DFA states are labelled with regular vectors instead of regular
-expressions. A final state is defined as a state labelled with a vector
-containing at least one regular expression $r$ with $\varepsilon \in L(r)$, that
-is, it accepts the empty word, and the error state is the one in which every
-vector member $r$ represents the empty language, that is $L(r) = \emptyset$.
+r_n)$. DFA\footnote{Deterministic Finite Automaton} states are labelled with
+regular vectors instead of regular expressions. A final state is defined as a
+state labelled with a vector containing at least one regular expression $r$ with
+$\varepsilon \in L(r)$, that is, it accepts the empty word, and the error state
+is the one in which every vector member $r$ represents the empty language, that
+is $L(r) = \emptyset$.
 
-It can be recognised that the goal achieved by using regular vectors is very
-similar to sub-matching. In fact, the problem can easily be described in terms
-of sub-matching. Using a generic sub-matching engine, one can elegantly declare
-a scanner for lexeme patterns $(x_1:r_1) \dots (x_n:r_n)$ as a disjunction
+We can recognise that the goal achieved by using regular vectors is very similar
+to submatching. In fact, the problem can easily be described in terms of
+submatching. Using a generic submatching engine, one can elegantly declare a
+scanner for lexeme patterns $(x_1:r_1) \dots (x_n:r_n)$ as a disjunction
 $((x_1:r_1) + \dots + (x_n:r_n))$. The greedy left-most match then yields the
 same result as the regular vector or the ad-hoc state switch approach.
+
+We implemented a prototype of this method in the tool \texttt{drelex}, part of
+\dreml.
 
 
 \section{Extended regular expressions}
 
-This thesis combines pattern sub-matching with extended regular expressions,
+This thesis combines pattern submatching with extended regular expressions,
 i.e. including the additional boolean operators $\neg$ for negation and $\cap$
 for intersection. Expression negation is useful for C comments of the form
 \verb!/* ... */!. A pattern matching C comments and extracting the comment text
-may be written as $\texttt{/*}(x:\neg(\Sigma^*\texttt{*/}\Sigma^*))\texttt{*/}$.
+may be written as
+\[
+  \texttt{/*}(x:\neg(\Sigma^*\texttt{*/}\Sigma^*))\texttt{*/}
+\]
 Describing the same language without negation would require a longer
 expression\footnote{Taken from \cite{re-deriv}.}:
 \[
@@ -255,56 +298,69 @@ could specify a base pattern for C integer literals, not including hexadecimal
 literals, as $p_{\mathit{int}} = (\mathit{num}:(0 \dots 9)^n)
 (\mathit{suf}:(l+L+u+U)^*)$, where $n \in \mathbb{N} \setminus \{0\}$, after
 which \textit{num} contains the number and \textit{suf} the type suffix. Next,
-the pattern for octal integer literals can be restricted by requiring it to
-begin with a zero followed by anything not containing digits 8 or 9:
-$p_{\mathit{oct}} = p_{\mathit{int}} \cap (0, \Sigma \setminus \{8, 9\})$.
+we can restrict the pattern for octal integer literals by requiring it to begin
+with a zero followed by anything not containing digits 8 or 9: $p_{\mathit{oct}}
+= p_{\mathit{int}} \cap (0, \Sigma \setminus \{8, 9\})$.
 
 This is particularly useful in the presence of composed regular grammars. A
 library of standard regular expressions may define a set of valid C identifiers,
-which may then be restricted in specialised lexers used to verify a coding
-style or perform syntax highlighting based on coding conventions.
+which may then be restricted in specialised lexers used to verify a coding style
+or perform syntax highlighting based on coding conventions.
 
 
 \section{Outline}
 
-Chapter \ref{background} will explain the background for the ideas on which the
-developed tool is based. A basic regular expression syntax is defined and later
-extended with additional boolean operators. Brzozowski's derivatives will be
-outlined in the first section, which is followed by a short introduction to
-Antimirov's partial derivatives. In the next section, pattern sub-matching as
-done by Sulzmann and Lu in \cite{pdpat} is introduced in some detail. Finally, a
-representation of partial derivatives as disjunctive normal form of terms as
-described in \cite{pdere} is explained and shown by example.
+\begin{description}
 
-The next chapter (\ref{submatching}) aims to combine the two ideas and
-introduces extended pattern submatching. A pattern matching relation for
-extended regular expression patterns is specified, and in compliance with that,
-the partial derivative operation is defined. Section \ref{nfa} uses this
-definition to provide a pattern partial derivative function compatible with the
-one in \cite{pdpat}, and extended by the syntax of \cite{pdere}. It also
-explains how this function can be used to construct a finite state machine from
-a pattern. At the end of this chapter, a language predicate optimisation is
-defined in order to reduce the number of unreachable states produced by the
-automata construction.
+   \item[Chapter \ref{background}] will explain the background for the ideas on
+      which the developed tool is based. A basic regular expression syntax is
+      defined and later extended with additional boolean operators. Brzozowski's
+      derivatives will be outlined in the first section, which is followed by a
+      short introduction to Antimirov's partial derivatives. In the next
+      section, pattern submatching as done by Sulzmann and Lu in \cite{pdpat} is
+      introduced in some detail. Finally, a representation of partial
+      derivatives as disjunctive normal form of terms as described in
+      \cite{pdere} is explained and shown by example.
 
-Chapter \ref{implementation} describes the implementation details of the generic
-sub-matching engine, which does not support all of \reml's input syntax, but
-implements all the required algorithms. The prototype first implemented
-Brzozowski's derivatives, then Antimirov's partial derivatives, which were
-enhanced by Sulzmann and Lu's pattern sub-matching and finally extended with
-intersection and negation. This development process will be followed and
-peculiarities pointed out. After the basic implementation has been described in
-detail, some of the more important optimisations will be described.
+   \item[Chapter \ref{submatching}] aims to combine the two ideas and introduces
+      extended pattern submatching. A pattern matching relation for extended
+      regular expression patterns is specified, and in compliance with that, the
+      partial derivative operation is defined. Section \ref{nfa} uses this
+      definition to provide a pattern partial derivative function compatible
+      with the one in \cite{pdpat}, and extended by the syntax of \cite{pdere}.
+      It also explains how this function can be used to construct a finite state
+      machine from a pattern. At the end of this chapter, a language predicate
+      optimisation is defined in order to reduce the number of unreachable
+      states produced by the automata construction.
 
-Following the implementation, chapter \ref{results} presents empirical results
-in the form of timing and comparison with existing tools and algorithms.
+   \item[Chapter \ref{implementation}] describes the implementation details of
+      the generic submatching engine, which does not support all of \dreml's
+      input syntax, but implements all the required algorithms. The prototype
+      first implemented Brzozowski's derivatives, then Antimirov's partial
+      derivatives, which were enhanced by Sulzmann and Lu's pattern submatching
+      and finally extended with intersection and negation. This development
+      process will be followed and peculiarities pointed out. After the basic
+      implementation has been described in detail, some of the more important
+      optimisations will be described.
 
-Chapter \ref{discussion} discusses the results of this thesis, as well as some
-results of related work. It draws the distinction between the presented work and
-previous results.
+   \item[Chapter \ref{results}] follows the implementation, presenting empirical
+      results in the form of timing and comparison with existing tools and
+      algorithms. We compare our implementation with the \mlulex{} tool and
+      evaluate both compile time of the expression and runtime of the matching
+      automaton.
 
-The conclusion in chapter \ref{conclusion} reiterates the presented ideas and
-suggests some directions in which future development could go.
+   \item[Chapter \ref{discussion}] discusses the results of this thesis, as well
+      as some results of related work. It draws the distinction between the
+      presented work and previous results. In this chapter, we also clarify the
+      difference between what POSIX calls ``Extended Regular Expressions'' (ERE)
+      and what we understand them to be. This is to avoid confusion to a reader
+      more accustomed to the terminology commonly found in manuals of tools
+      based on POSIX regular expressions.
+
+   \item[Chapter \ref{conclusion},] the conclusion, reiterates the presented
+      ideas and suggests some directions in which future development could go.
+
+\end{description}
 
 
 % vim:tw=80

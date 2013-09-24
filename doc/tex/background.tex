@@ -11,16 +11,17 @@ The language this automaton accepts is the same as the language accepted by an
 automaton constructed from a Brzozowski derivative over $l$.
 
 Constructing a DFA from a regular expression by the method described in
-\cite{thompson} generally goes via an epsilon NFA by computing an epsilon
-closure and then performing a subset construction of NFA states into DFA states.
-On the contrary, Brzozowski's derivative method directly results in a DFA.
+\cite{thompson} generally goes via an epsilon NFA\footnote{Nondeterministic
+Finite Automaton} by computing an epsilon closure and then performing a subset
+construction of NFA states into DFA states. On the contrary, Brzozowski's
+derivative method directly results in a DFA.
 
 The derivative operation is defined on basic regular expressions $r$ with an
 input alphabet $\Sigma$.
 
-\begin{defn}
+\begin{defn}[Basic regular expression syntax]
    \label{defn-bre}
-   Basic regular expression syntax.
+   Abstract syntax:
 
    \begin{tabular}{lrll}
       $r$	& $::=$	& $r+r$				& Choice		\\
@@ -34,9 +35,9 @@ input alphabet $\Sigma$.
 
 On this syntax, Brzozowski defines the left derivative.
 
-\begin{defn}
+\begin{defn}[Brzozowski's regular expression derivative]
    \label{defn-deriv}
-   Brzozowski's regular expression derivative
+   Abstract syntax:
 
    \begin{tabular}{lrl}
       $\phi \setminus l$	& $=$	& $phi$	\\
@@ -68,6 +69,7 @@ can become a lengthy operation.
 
 
 \section{Partial derivatives}
+\label{pd}
 
 In order to reduce the time spent in constructing the matching automaton,
 Valentin M. Antimirov developed the concept of partial derivatives of regular
@@ -94,10 +96,10 @@ may be cached in order to lazily perform a subset construction, resulting in a
 deterministic finite automaton.
 
 
-\section{Pattern sub-matching}
+\section{Pattern submatching}
 
 Based on the ideas by Brzozowski and Antimirov, Martin Sulzmann and Kenny Zhuo
-Ming Lu introduced the notion of regular expression sub-matching to partial
+Ming Lu introduced the notion of regular expression submatching to partial
 derivatives. In addition to solving the word problem, that is to determine
 whether a regular expression matches the input, this advancement allows to
 assign parts of the matched sequence to different variables. By inspecting the
@@ -110,9 +112,9 @@ and replace functionality in editors.
 In \cite{pdpat}, Sulzmann and Lu define the abstract syntax for expression
 patterns:
 
-\begin{defn}
+\begin{defn}[Regular expression patterns]
    \label{defn-pat}
-   Syntax of regular expression patterns.
+   Syntax:
 
    \begin{tabular}{lrll}
       $p$	& $::=$	& $(x:r)$	& Variables Base	\\
@@ -134,9 +136,9 @@ derivated terms along with a transition or matching function. In the first step
 of the implementation, the match was recorded in the pattern structure itself,
 building on the following syntax:
 
-\begin{defn}
+\begin{defn}[Regular expression patterns with match]
    \label{defn-pat-with-match}
-   Syntax of regular expression patterns with match.
+   Syntax:
 
    \begin{tabular}{lrll}
       $p$	& $::=$	& $(x|w:r)$	& Variables Base  with match $m$	\\
@@ -171,16 +173,16 @@ the keywords \verb!let! and \verb!in!, as well as the operators \verb!=! and
 \[((l,e),t) + (i,n) + \verb'=' + \verb'+'\]
 %
 which matches a single lexical element of the language. However, without
-sub-matching, we can not know which of the elements it actually is. In
+submatching, we can not know which of the elements it actually is. In
 \cite{pdpat}, Sulzmann and Lu describe an efficient method for constructing a
 tagged NFA that can answer this question.
 
-With sub-matching, we can write the above expression as the pattern
+With submatching, we can write the above expression as the pattern
 %
 \[(x_\text{let}:((l,e),t)) + (x_\text{in}:(i,n)) + (x_\text{eq}:\verb'=') +
 (x_\text{plus}:\verb'+')\]
 %
-The sub-matching automaton will yield a matching environment in which exactly
+The submatching automaton will yield a matching environment in which exactly
 one of the variables $x_i$ is defined, allowing us to decide what kind of token
 was matched and extract the precise spelling of that token. The latter is useful
 in the presence of multiple spellings, which exists in the C programming
@@ -203,7 +205,7 @@ partial derivatives by \cite{pdpat}.
 
 \subsection{Matching strategies}
 
-Matching strategies define the observable sub-matching semantics on the pattern
+Matching strategies define the observable submatching semantics on the pattern
 syntax. Sulzmann and Lu introduce two possible strategies: Greedy Left-Most and
 POSIX matching. Greedy Left-Most is the way Perl and most other common matching
 algorithms resolve ambiguities. It is conceptionally simple: the first matching
@@ -232,9 +234,9 @@ normal form of derivated terms.
 
 First, we define the abstract syntax of extended regular expressions.
 
-\begin{defn}
+\begin{defn}[Extended regular expressions]
    \label{defn-ere-syn}
-   Syntax of extended regular expressions.
+   Syntax:
 
    \begin{tabular}{lrll}
       $r$	& $::=$	& $r+r$				& Choice		\\
@@ -259,9 +261,9 @@ derivative as a set of expression sets in which the expression sets represent
 the intersection of terms, and the sets of expression sets represent their
 union.
 
-\begin{defn}
+\begin{defn}[Sets of expression sets]
    \label{defn-esets}
-   Syntax for sets of expression sets.
+   Syntax:
 
    \begin{tabular}{lll}
       $\eset$	& $::=$ & $\{r_1, r_2, \dots, r_n\}$ \\
@@ -279,9 +281,9 @@ the sets of sets representation. Let $\esets$ be a set of expression sets,
 $\eset$ an expression set, and $r$ an expression, then we can define the
 following operators:
 
-\begin{defn}
+\begin{defn}[Regular expression to expression sets]
    \label{defn-re2esets}
-   Conversions from regular expressions to expression sets.
+   Conversions from regular expressions.
 
    Expression set from regular expression:
    $\cdot\esetOfRe :: r \to \eset$
@@ -303,6 +305,7 @@ following operators:
 The following example shows how a regular expression is transformed into the DNF
 representation of atomic expressions.
 
+\needspace{2cm}
 \begin{eg}
    $((aa \cap a^*) + b)\esetsOfRe$
 
@@ -325,7 +328,7 @@ case: $\neg((aa \cap a^*) + b)\esetsOfRe = \{\{\neg((aa \cap a^*) + b)\}\}$
 The inverse operation, translating a set of expression sets back to a regular
 expression, can be defined analogously.
 
-\begin{defn}
+\begin{defn}[Expression sets to regular expressions]
    \label{defn-esets2re}
    Conversions from expression sets back to regular expressions.
 
@@ -354,9 +357,9 @@ Caron et al. define several operators on sets of expression sets and use them to
 define the partial derivative of an extended regular expression\cite{pdere}. We
 define these operators in the syntax used in \cite{pdpat}.
 
-\begin{defn}
+\begin{defn}[Distributive laws on sets of expression sets]
    \label{defn-eset-ops}
-   Distributive laws on sets of expression sets.
+   The normal distributive laws can be extended to sets of expression sets.
 
    \begin{tabular}{lll}
       $\esets \circledcdot r_2$
@@ -387,6 +390,7 @@ $\circledneg$ operator negates every expression in the set.
 The following examples use the extended regular expression syntax as specified
 in definition \ref{defn-syn}.
 
+\needspace{2cm}
 \begin{eg}
    $((a^* \cap aa) + ab)\esetsOfRe \circledcdot c^*$
 
@@ -448,47 +452,36 @@ In definition 2 of \cite{pdere}, the partial derivative of a regular expression
 $\dda(r)$ is specified. We repeat the definition here, with one modification,
 and with the addition of expression repetition.
 
-\begin{defn}
+\begin{defn}[Expression partial derivative]
    \label{defn-pd-eset}
-   Expression partial derivatives as sets of expression sets.
+   The partial derivative defined as sets of expression sets.
 
-   \begin{minipage}[t]{0.4\textwidth}
-      \[\nr{1} \dda(\phi) = \dda(\varepsilon) = \dda(b) = \{\{ \phi \}\}\]
-   \end{minipage}
-   \begin{minipage}[t]{0.4\textwidth}
-      \[\nr{2} \dda(a) = \{\{ \varepsilon \}\}\]
-   \end{minipage}
+   \[\nrdef{1} \dda(\phi) = \dda(\varepsilon) = \dda(b) = \{\{ \phi \}\}\]
 
-   \begin{minipage}[t]{0.4\textwidth}
-      \[\nr{3} \dda(r_1 + r_2) = \dda(r_1) \cup \dda(r_2)\]
-   \end{minipage}
-   \begin{minipage}[t]{0.4\textwidth}
-      \[\nr{4} \dda(r^*) = \dda(r) \circledcdot r^*\]
-   \end{minipage}
+   \[\nrdef{2} \dda(a) = \{\{ \varepsilon \}\}\]
 
-   \begin{minipage}[t]{0.6\textwidth}
-      \[\nr{5} \dda((r_1, r_2)) =
-          \begin{cases}
-             \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\esetsOfRe) \\
-             \dda(r_1) \circledcdot r_2 \cup \dda(r_2) & \text{otherwise}
-          \end{cases}
-      \]
-   \end{minipage}
-   \begin{minipage}[t]{0.3\textwidth}
-      \[\nr{6} \dda(r_1 \cap r_2) = \dda(r_1) \circledcap \dda(r_2)\]
-   \end{minipage}
+   \[\nrdef{3} \dda(r_1 + r_2) = \dda(r_1) \cup \dda(r_2)\]
 
-   \begin{minipage}[t]{0.4\textwidth}
-      \[\nr{7} \dda(r^n) =
-          \begin{cases}
-             \dda(r) & \text{if } n = 1 \\
-             \dda((r, r^{n-1})) & \text{otherwise}
-          \end{cases}
-      \]
-   \end{minipage}
-   \begin{minipage}[t]{0.4\textwidth}
-      \[\nr{8} \dda(\neg r) = \circledneg (\dda(r))\]
-   \end{minipage}
+   \[\nrdef{4} \dda(r^*) = \dda(r) \circledcdot r^*\]
+
+   \[\nrdef{5} \dda((r_1, r_2)) =
+       \begin{cases}
+          \dda(r_1) \circledcdot r_2 & \text{if } \varepsilon \not\in L(r_1\esetsOfRe) \\
+          \dda(r_1) \circledcdot r_2 \cup \dda(r_2) & \text{otherwise}
+       \end{cases}
+   \]
+
+   \[\nrdef{6} \dda(r_1 \cap r_2) = \dda(r_1) \circledcap \dda(r_2)\]
+
+   \[\nrdef{7} \dda(r^n) =
+       \begin{cases}
+          \dda(r) & \text{if } n = 1 \\
+          \dda((r, r^{n-1})) & \text{otherwise}
+       \end{cases}
+   \]
+
+   \[\nrdef{8} \dda(\neg r) = \circledneg (\dda(r))\]
+
 \end{defn}
 
 Caron et al. define \nr{1} as $\dda(b) = \emptyset$, but this yields incorrect

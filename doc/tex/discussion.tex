@@ -1,16 +1,304 @@
 \chapter{Discussion and related work}
 \label{discussion}
 
+Now that we have established an understanding of a partial derivatives based
+approach to pattern submatching of extended regular expressions, we will
+introduce some existing methods of efficient submatch extraction. Subsequently,
+we will elaborate on three existing and widely available tools that support
+submatching. Finally, we will discuss the difference between extended regular
+expressions as presented here and the notion of ERE in many real-world tools.
+
+
+\section{Other efficient submatching algorithms}
+
+The following algorithms extend the idea of Thompson NFA construction and
+powerset construction for DFA computation. They therefore share algorithmic
+complexity characteristics with these methods. Each algorithm is $O(n)$ at
+matching time, but they greatly improve on the constant factor.
+
+\subsection{Tagged NFA/DFA}
+
+In his Master's Thesis \cite{laurikari}, Ville Laurikari describes a method of
+constructing nondeterministic finite automata with tagged transitions (TNFA) and
+their conversion to deterministic finite automata with tagged transitions
+(TDFA). The idea is very similar and in effect equivalent to respectively
+partial derivatives and derivatives based submatching, but uses a modified
+Thompson NFA construction.
+
+Laurikari implemented the algorithm in C and evaluated its performance against
+GNU regex and hackerlab and found that it outperforms both on most tests. More
+importantly, he found that the worst-case matching time scales linearly with the
+input string.
+
+
+\subsection{Bi-directional matching}
+
+Stuart Haber, William Horne, Pratyusa Manadhata, Miranda Mowbray, and Prasad Rao
+at HP Labs developed a vastly more efficient method of submatch extraction in
+\cite{bidi-re}. It works by matching a reversed input with a DFA for the
+inverted language. During this first match, the algorithm keeps track of the
+visited states. This information is then used as input to a second automaton,
+which performs the submatch extraction.
+
+Their results indicate that this method is twenty times faster than the RE2
+matching engine, which is based on lazily constructed DFAs, and twice as fast as
+the Java regular expression engine, which uses a backtracking based approach.
+
+Compile time is exponential in the worst case, but the authors claim that this
+case rarely occurs. String matching and submatch extraction complexity is
+$O(lc)$ for input length $l$ and number of capturing groups $c$. This makes the
+complexity independent of the regular expression size $n$ and improves upon the
+previously fastest algorithm that required $O(nlc)$ time.
+
+Since the algorithm operates on the reversed input, the complete input must be
+available from the start, reducing its usefulness in stream parsing.
+
+
+\subsection{Submatching with OBDDs}
+
+Liu Yang and Vinod Ganapathy from HP Labs, together with Horne, Rao and
+Manadhata from the group that developed \cite{bidi-re} created another algorithm
+for fast submatch extraction using ordered binary decision diagrams in
+\cite{obdd-re}.
+
+Symbolic boolean functions are used to represent the automaton, and OBDDs are
+used to manipulate these functions. Their test results show that this method of
+submatch extraction is one or two orders of magnitude faster than popular
+regular expression engines such as RE2 and PCRE.
+
+
+\section{Regular expression matching engines}
+
+This section is dedicated to describing and comparing various existing
+implementations of regular expression matching and submatching. The criteria
+used for comparison are:
+
+\begin{itemize}
+   \item Time and memory requirements for automaton construction.
+   \item Matching performance, in speed and memory usage.
+   \item Accepted regular expression syntax.
+\end{itemize}
+
+
+\subsection{ml-ulex}
+
+\begin{itemize}
+
+   \item Support extended regular expressions with negation and intersection.
+
+   \item Automata based approach with derivatives.
+
+\end{itemize}
+
+Scott Owens, John Reppy and Aaron Turon developed \mlulex{} for SML/NJ. It is a
+new lexer generator with support for Unicode. With a compatibility mode, it can
+be used as a drop-in replacement for \texttt{ml-lex}, while still providing the
+vastly more efficient code generating backend as well as extended regular
+expressions.
+
+Empirical measurement of its performance can be found in chapter \ref{results}.
+
+
+\subsection{RE2}
+
+The RE2 engine by Russ Cox is a regular expression matcher based on finite
+automata, written in C++.
+
+\begin{itemize}
+
+   \item Does not support extended regular expressions, only basic RE.
+
+   \item Automata based approach.
+
+\end{itemize}
+
+
+In the first step, it constructs an NFA from the expression. When matching an
+input string, it constructs a DFA on the fly and caches the states.  If the DFA
+cache exceeds a certain size, it is cleared and the DFA construction starts
+over.
+
+RE2 implements several low-level optimisations and exhibits high performance. It
+provides specialised functions for specific matching tasks, e.g. a function that
+only solves the word problem, that is, it tests whether the complete input is a
+word in the language described by the regular expression. Another function may
+test whether any substring of the input can be matched by the expression.
+
+In addition, it performs several analyses over the regular expression that allow
+it to choose specialised paths and algorithms for common cases of simple regular
+expressions. For example, if the engine can always know which submatch a
+character is part of, it can avoid copying submatch boundary sets. For example
+in $(x:a^*)(y:b)$, all $a$s are assigned to the match variable $x$, and the
+final $b$ is assigned to $y$, whereas in $(x:a^*)(y:a)$, after reading $aa$, it
+can not yet be decided which variable the letters will be assigned to, resulting
+in a boundary set with two elements: $\{\{(x,aa)\},\{(x,a),(y,a)\}\}$.
+
+The problem solved by our pattern submatching with partial derivatives is the
+most difficult one, and RE2 solves it by first running the DFA on the input to
+find the end of the matched substring. After that, it runs another DFA in which
+all concatenations of regular expressions are reversed, in order to find the
+beginning of the matched substring. Finally, it runs an NFA to locate the
+submatches.
+
+
+\subsubsection{Automata construction}
+
+The time taken by RE2 to compile a regular expression into an automaton is,
+according to \cite{regexp3}, about three to four times more than by PCRE. The
+resulting automaton object can become large, because of the cached DFA, but RE2
+limits the size to a user-defined upper bound. By constructing DFA states on
+demand rather than constructing the complete DFA up front, RE2 avoids the
+exponential complexity of a full NFA state subset construction.
+
+
+\subsubsection{Matching performance}
+
+Using an automata based approach, RE2 avoids exponential time complexity for
+regular expression matching, which a backtracking algorithm exposes for example
+when matching $a^n$ with the expression $(a?)^na^n$. Russ Cox explains this
+runtime behaviour in more detail in \cite{regexp1}. Common case optimisations
+help RE2 outperform PCRE on large inputs, and the engine is not much slower than
+PCRE on small strings.
+
+
+\subsubsection{Accepted syntax}
+
+RE2 accepts most common regular expression operators, but does not in any way
+support negation or intersection of subexpressions. Back-references are not
+supported in any automata based engine, and although RE2 contains a backtracking
+implementation, it does not expose this in its API or syntax.
+
+
+\subsection{PCRE}
+
+The Perl Compatible Regular Expressions library is a C library that attempts to
+bring the power of Perl regular expressions to other languages.
+
+\begin{itemize}
+
+   \item Support extended regular expressions in the form of both positive and
+      negative look-ahead and look-behind assertions.
+
+   \item Backtracking based approach.
+
+\end{itemize}
+
+PCRE and Perl differ in a few instances, but their semantics and syntax are
+mostly equivalent. In particular, Perl allows arbitrary Perl code to be executed
+within a match, whereas PCRE does not include a Perl interpreter and can
+therefore never implement this feature. However, PCRE does provide a way to call
+C code in named ``callout'' points.
+
+\subsubsection{Automata construction}
+
+PCRE is very fast at compiling a regular expression. The expression is compiled
+to a byte-code program, which is optionally compiled to machine code.
+
+
+\subsubsection{Matching performance}
+
+The default matching algorithm used by the library is based on backtracking. The
+regular expression is translated to a program that operates by processing one
+path of an expression at a time, going back to the last matched text and program
+position.
+
+For example, consider the regular expression $(x_1:a^*)(x_2:a)(x_3:b^*)(x_4:b)$,
+which matches any number of $a$ followed by any number of $b$, but at least one
+of each. Matching the string $aabb$ against this pattern with a backtracking
+algorithm will first attempt process the sub-expression $a^*$ by repeatedly
+processing the sub-expression $a$ until it fails, so that $x_1 = aa$. Then, it
+tries to match $(x_2:a)$, which fails, because the input is now at $b$, so the
+algorithm backs up to the position at which the last successful match began, and
+proceeds to process the input $abb$.
+
+This algorithm requires the matcher to process the input up to $2^n$ times, as
+there might be an exponential number of paths to test.
+
+PCRE offers a DFA implementation as alternative matching algorithm, which is not
+Perl compatible, but very efficient. Furthermore, it includes a Just-In-Time
+compiler based on sljit, the stackless Just-In-Time compiler, increasing
+matching performance by several times\footnote{\texttt{pcregrep --no-jit} was
+between two and five times slower than without \texttt{--no-jit} for various
+patterns.}.
+
+A pattern that causes particularly bad performance in PCRE is $(a?)^+a^*b$. For
+this expression, PCRE takes exponential time, and a DFA takes linear time.
+
+
+\subsubsection{Accepted syntax}
+
+PCRE supports the richest syntax of all investigated regular expression
+implementations. It aims to support the full syntax as specified by the Perl
+regular expression man page \texttt{perlre}. For obvious reasons, inline Perl
+code is not supported by PCRE, but the syntax allows for extension points, which
+can call arbitrary C functions after a sub-expression has been matched.
+
+Negation is supported in various ways, through negative zero-width look-ahead
+assertions written \verb'(?!pattern)', where \verb'foo(?!bar)' matches "foo", if
+it is not followed by a "bar". PCRE look-ahead assertions are zero-width, so
+they do not consume any input, unlike the negation in our extended regular
+expressions. However, negative look-ahead can achieve the same effect, so that
+our introductory example pattern matching C comments can be written as
+\verb'/\*((?!\*/).)*\*/' in PCRE.
+
+However, this expression will fail to match long comments, causing a stack
+overflow in the engine. In PCRE version 8.31 on AMD64 Linux with an 8MiB stack,
+the engine fails to match comments longer than 6KiB. Disabling the capture group
+makes it slightly better, so that the expression \verb'/\*(?:(?!\*/).)*\*/'
+fails at 11KiB comments. Since comments are often used to disable large code
+blocks, such behaviour is unacceptable, and one is forced to write the much more
+convoluted term \verb'/\*(([^*]|\*[^/])*)\*/'. The expression with negation does
+require linear time in PCRE, but also uses linear stack space, quickly running
+out. An automata based approach will achieve linear time and constant space for
+this expression.
+
+
+\section{Comparison}
+
+The following table summarises the characteristics of each matching engine.
+Compile time and program size is described in terms of expression length.
+Program size is the number of states for the automata based engines and the
+bytecode size for the backtracking based ones. Runtime and memory refer to the
+input length. Each complexity definition is the worst case for the engine.
+
+\begin{tabular}{lllllll}
+           & Compile  & Program   & Runtime  & Memory & Negation & Intersection \\
+   \dreml  & $O(n)$   & $O(n)$    & $O(n)$   & $O(1)$ & Yes      & Yes          \\
+   \mlulex & $O(2^n)$ & $O(2^n)$  & $O(n)$   & $O(1)$ & Yes      & Yes          \\
+   PCRE    & $O(n)$   & $O(n)$    & $O(2^n)$ & $O(n)$ & Yes*     & No           \\
+   RE2     & $O(n)$   & $O(n)$**  & $O(n)$   & $O(1)$ & No       & No           \\
+\end{tabular}
+
+(*) PCRE supports negative zero-width look-ahead assertions, which can be used
+to emulate negation, but have poor performance characteristics as discussed
+earlier.
+
+(**) RE2 is based on lazy DFA construction, so could potentially have an
+exponential automaton size, it limits the number of cached DFA states.
+
+Although RE2 has an $O(n)$ runtime, it can be very slow in cases where it has to
+clear its cache a lot and recompute the DFA from scratch.
+
+In most cases, PCRE requires $O(1)$ memory, but as we have seen from experiments
+with negation, there are easily constructed cases where it does happen and these
+cases do in fact occur.
+
+
 \section{Real world regular expressions}
+
+In the context of various programming languages such as Perl and C, and
+operating environments such as UNIX, the terminology used is different than the
+one presented in this thesis. This section aims to clarify some of the
+differences to avoid confusion.
 
 
 \subsection{Extra syntax}
 
-In this paper, we have discussed a minimal regular expression syntax, for the
-sake of simplification. However, most applications using regular expressions
-assume a superset of this syntax. In this section, we will discuss how popular
-extensions to the regular expression syntax presented in this paper can be
-transformed to that syntax.
+We have discussed a minimal regular expression syntax, for the sake of
+simplification. However, most applications using regular expressions assume a
+superset of this syntax. In this section, we will discuss how popular extensions
+to the regular expression syntax presented in this thesis can be transformed to
+that syntax.
 
 \begin{itemize}
 
@@ -24,9 +312,9 @@ transformed to that syntax.
       ranges of accepted symbols. For instance, an identifier or type name in
       OCaml might be matched by the regular expression \verb'[a-z_][a-zA-Z_]+'.
       Enumerating all the characters in a choice expression would be cumbersome,
-      producing $(a+b+c+\dots+z+\_)(a+\dots+z+A+\dots+Z+\_)^+$. Therefore, \reml
-      supports character classes as well as ranges and internally converts them
-      to the longer choice expression.
+      producing $(a+b+c+\dots+z+\_)(a+\dots+z+A+\dots+Z+\_)^+$. Therefore,
+      \dreml supports character classes as well as ranges and internally
+      converts them to the longer choice expression.
       
       Inverted character classes such as \verb'[^cde]' match any symbol from
       $\Sigma$, except the ones after the caret. In this case, the language
@@ -104,189 +392,6 @@ meta-characters so that they may be used in a literal match.
 Furthermore, while the grouping operator in POSIX ERE does create an atomic
 expression, which can be used as an argument to other operators, backreferences
 are not supported in ERE.
-
-
-\section{Other efficient sub-matching algorithms}
-
-\subsection{Tagged NFA/DFA}
-
-In his Master's Thesis \cite{laurikari}, Ville Laurikari describes a method of
-constructing tagged nondeterministic finite automata (TNFA) and their conversion
-to tagged deterministic finite automata (TDFA).
-
-
-\subsection{Submatching with OBDDs}
-
-HP.
-
-
-\subsection{Bi-directional matching}
-
-S. Haber et al.
-
-
-\section{Regular expression matching engines}
-
-This section is dedicated to describing and comparing various existing
-implementations of regular expression matching and submatching. The criteria
-used for comparison are:
-
-\begin{itemize}
-   \item Time and memory requirements for automaton construction.
-   \item Matching performance, in speed and memory usage.
-   \item Accepted regular expression syntax.
-\end{itemize}
-
-
-\subsection{RE2}
-
-\begin{itemize}
-
-   \item Does not support extended regular expressions, only basic RE.
-
-   \item Automata based approach.
-
-\end{itemize}
-
-
-The RE2 engine by Russ Cox is a regular expression matcher based on finite
-automata. In the first step, it constructs an NFA from the expression. When
-matching an input string, it constructs a DFA on the fly and caches the states.
-If the DFA cache exceeds a certain size, it is cleared and the DFA construction
-starts over.
-
-RE2 implements several low-level optimisations and exhibits high performance. It
-provides specialised functions for specific matching tasks, e.g. a function that
-only solves the word problem, that is, it tests whether the complete input is a
-word in the language described by the regular expression. Another function may
-test whether any substring of the input can be matched by the expression.
-
-In addition, it performs several analyses over the regular expression that allow
-it to choose specialised paths and algorithms for common cases of simple regular
-expressions. For example, if the engine can always know which sub-match a
-character is part of, it can avoid copying sub-match boundary sets. For example
-in $(x:a^*)(y:b)$, all $a$s are assigned to the match variable $x$, and the
-final $b$ is assigned to $y$, whereas in $(x:a^*)(y:a)$, after reading $aa$, it
-can not yet be decided which variable the letters will be assigned to, resulting
-in a boundary set with two elements: $\{\{(x,aa)\},\{(x,a),(y,a)\}\}$.
-
-The problem solved by our pattern sub-matching with partial derivatives is the
-most difficult one, and RE2 solves it by first running the DFA on the input to
-find the end of the matched substring. After that, it runs another DFA in which
-all concatenations of regular expressions are reversed, in order to find the
-beginning of the matched substring. Finally, it runs an NFA to locate the
-sub-matches.
-
-
-\subsubsection{Automata construction}
-
-The time taken by RE2 to compile a regular expression into an automaton is,
-according to \cite{regexp3}, about three to four times more than by PCRE. The
-resulting automaton object can become large, because of the cached DFA, but RE2
-limits the size to a user-defined limit. By constructing DFA states on demand
-rather than constructing the complete DFA up front, RE2 avoids the exponential
-complexity of a full NFA state subset construction.
-
-
-\subsubsection{Matching performance}
-
-Using an automata based approach, RE2 avoids exponential time complexity for
-regular expression matching, which a backtracking algorithm exposes for example
-when matching $a^n$ with the expression $(a?)^na^n$. Russ Cox explains this
-runtime behaviour in more detail in \cite{regexp1}. Common case optimisations
-help RE2 outperform PCRE on large inputs, and the engine is not much slower than
-PCRE on small strings.
-
-
-\subsubsection{Accepted syntax}
-
-RE2 accepts most common regular expression operators, but does not in any way
-support negation or intersection of subexpressions. Back-references are not
-supported in any automata based engine, and although RE2 contains a backtracking
-implementation, it does not expose this in its API or syntax.
-
-
-\subsection{PCRE}
-
-\begin{itemize}
-
-   \item Support extended regular expressions in the form of both positive and
-      negative look-ahead and look-behind assertions.
-
-   \item Backtracking based approach.
-
-\end{itemize}
-
-
-The Perl Compatible Regular Expressions library is a C library that attempts to
-bring the power of Perl regular expressions to other languages. PCRE and Perl
-differ in a few instances, but their semantics and syntax are mostly equivalent.
-In particular, Perl allows arbitrary Perl code to be executed within a match,
-whereas PCRE does not include a Perl interpreter and can therefore never
-implement this feature. However, PCRE does provide a way to call C code in named
-``callout'' points.
-
-\subsubsection{Automata construction}
-
-PCRE is very fast at compiling a regular expression. The expression is compiled
-to a byte-code program, which is optionally compiled to machine code.
-
-
-\subsubsection{Matching performance}
-
-The default matching algorithm used by the library is based on backtracking. The
-regular expression is translated to a program that operates by processing one
-path of an expression at a time, going back to the last matched text and program
-position.
-
-For example, consider the regular expression $(x_1:a^*)(x_2:a)(x_3:b^*)(x_4:b)$,
-which matches any number of $a$ followed by any number of $b$, but at least one
-of each. Matching the string $aabb$ against this pattern with a backtracking
-algorithm will first attempt process the sub-expression $a^*$ by repeatedly
-processing the sub-expression $a$ until it fails, so that $x_1 = aa$. Then, it
-tries to match $(x_2:a)$, which fails, because the input is now at $b$, so the
-algorithm backs up to the position at which the last successful match began, and
-proceeds to process the input $abb$.
-
-This algorithm requires the matcher to process the input up to $2^n$ times, as
-there might be an exponential number of paths to test.
-
-PCRE offers a DFA implementation as alternative matching algorithm, which is not
-Perl compatible, but very efficient. Furthermore, it includes a Just-In-Time
-compiler based on sljit, the stackless JIT compiler, increasing matching
-performance by several times\footnote{\texttt{pcregrep --no-jit} was between two
-and five times slower than without \texttt{--no-jit} for various patterns.}.
-
-A pattern that causes particularly bad performance in PCRE is $(a?)^na^*b$. For
-this expression, PCRE takes exponential time, and a DFA takes linear time.
-
-
-\subsubsection{Accepted syntax}
-
-PCRE supports the richest syntax of all investigated regular expression
-implementations. It aims to support the full syntax as specified by the Perl
-regular expression man page \texttt{perlre}. For obvious reasons, inline Perl
-code is not supported by PCRE, but the syntax allows for extension points, which
-can call arbitrary C functions after a sub-expression has been matched.
-
-Negation is supported in various ways, through negative zero-width look-ahead
-assertions written \verb'(?!pattern)', where \verb'foo(?!bar)' matches "foo", if
-it is not followed by a "bar". PCRE look-ahead assertions are zero-width, so
-they do not consume any input, unlike the negation in our extended regular
-expressions. However, negative look-ahead can achieve the same effect, so that
-our introductory example pattern matching C comments can be written as
-\verb'/\*((?!\*/).)*\*/' in PCRE.
-
-However, this expression will fail to match long comments, causing a stack
-overflow in the engine. In PCRE version 8.31 on AMD64 Linux with an 8MiB stack,
-the engine fails to match comments longer than 6KiB. Disabling the capture group
-makes it slightly better, so that the expression \verb'/\*(?:(?!\*/).)*\*/'
-fails at 11KiB comments. Since comments are often used to disable large code
-blocks, such behaviour is unacceptable, and one is forced to write the more
-convoluted term \verb'/\*(([^*]|\*[^/])*)\*/'. The expression with negation does
-require linear time in PCRE, but also uses linear stack space, quickly running
-out. An automata based approach will achieve linear time and constant space for
-this expression.
 
 
 % vim:tw=80

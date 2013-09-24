@@ -9,7 +9,7 @@ expressions. The partial derivatives computation used is based on a
 representation of regular expressions as sets of expression sets.
 
 
-\section{Extended regular expression sub-matching}
+\section{Extended regular expression submatching}
 \label{ere-submatch}
 
 The definition of partial derivatives from \cite{pdpat} has been combined with
@@ -17,9 +17,9 @@ the extended regular expression syntax as defined in \cite{pdere}. The regular
 expression pattern syntax from Sulzmann and Lu is amended with additional
 boolean operators for extended regular expressions.
 
-\begin{defn}
+\begin{defn}[Extended regular expression patterns]
    \label{defn-syn}
-   Syntax of extended regular expression patterns.
+   Syntax:
 
    Words:
 
@@ -67,9 +67,9 @@ be applied before beginning the pattern match.
 
 \needspace{6cm}
 
-\begin{defn}
+\begin{defn}[Negation normal form]
    \label{defn-negnorm}
-   Negation normal form.
+   We define the following rewrite rules:
 
    \begin{tabular}{lll}
       $\negnorm(\neg(x : r))$		& $=$	& $(x : \neg r)$					\\
@@ -92,16 +92,16 @@ be applied before beginning the pattern match.
 \end{defn}
 
 We do not define negation of patterns containing concatenation and iteration,
-since there is no sensible way to assign pattern variables to sub-matches.
+since there is no sensible way to assign pattern variables to submatches.
 
 In the remainder of this paper, we will use the term ``regular expression''
 for extended regular expressions, and refer to their instances as $r$ instead
 of $r_e$.  Analogously, the term ``pattern'' is used for ``extended pattern''
 and $p$ is an instance.
 
-\begin{defn}
+\begin{defn}[Matching environments and language of regular expressions]
    \label{defn-lang}
-   Matching environments and language of regular expressions.
+   Syntax and language definitions:
 
    Environments:
 
@@ -110,6 +110,8 @@ and $p$ is an instance.
 		& $|$	& $\Gamma \uplus \Gamma$	& Ordered multi-set of
 							  variable bindings	\\
    \end{tabular}
+
+   \needspace{5cm}
 
    Language:
 
@@ -151,59 +153,64 @@ concatenation. We formalise the pattern matching relation $w \vdash p \leadsto
 intersection. We do not define a relation on pattern negation, since at this
 point, these must have been put in the negation normal form using $\negnorm$.
 
-\begin{minipage}[t]{0.4\textwidth}
-   \[\text{(VarBase)} \frac
-      {w \in L(r)}
-      {w \vdash x : r \leadsto \{x : w\}}
+\begin{defn}[Pattern matching relation]
+   Defined as logical relations.
+
+   \begin{minipage}{0.4\textwidth}
+      \[\text{(VarBase)} \frac
+         {w \in L(r)}
+         {w \vdash x : r \leadsto \{x : w\}}
+      \]
+   \end{minipage}
+   \begin{minipage}{0.5\textwidth}
+      \[\text{(VarGroup)} \frac
+         {w \vdash p \leadsto \Gamma}
+         {w \vdash x : p \leadsto \{x : w\} \uplus \Gamma}
+      \]
+   \end{minipage}
+
+   \begin{minipage}{0.4\textwidth}
+      \[\text{(Concat)} \frac
+         {\begin{array}{c}
+            w = w_1 w_2 \\
+            w_1 \vdash p_1 \leadsto \Gamma_1 \\
+            w_2 \vdash p_2 \leadsto \Gamma_2
+         \end{array}}     
+         {w \vdash (p_1, p_2) \leadsto \Gamma_1 \uplus \Gamma_2}
+      \]
+   \end{minipage}
+   \begin{minipage}{0.5\textwidth}
+      \[\text{(Star)} \frac
+         {\begin{array}{c}
+            w = w_1 \dots w_n \\
+            w_i \vdash p \leadsto \Gamma_i \text{ for } i = 1 \dots n
+         \end{array}}     
+         {w \vdash p^* \leadsto \Gamma_1 \uplus \dots \uplus \Gamma_n}
+      \]
+   \end{minipage}
+
+   \begin{minipage}{0.4\textwidth}
+      \[\text{(ChoiceL)} \frac
+         {w \vdash p_1 \leadsto \Gamma_1}
+         {w \vdash p_1 + p_2 \leadsto \Gamma_1}
+      \]
+   \end{minipage}
+   \begin{minipage}{0.4\textwidth}
+      \[\text{(ChoiceR)} \frac
+         {w \vdash p_2 \leadsto \Gamma_2}
+         {w \vdash p_1 + p_2 \leadsto \Gamma_2}
+      \]
+   \end{minipage}
+
+   \[\text{(Intersect)} \frac
+      {\begin{array}{c}
+         w \vdash p_1 \leadsto \Gamma_1 \\
+         w \vdash p_2 \leadsto \Gamma_2
+      \end{array}}     
+      {w \vdash p_1 \cap p_2 \leadsto \Gamma_1 \uplus \Gamma_2}
    \]
-\end{minipage}
-\begin{minipage}[t]{0.4\textwidth}
-   \[\text{(VarGroup)} \frac
-      {w \vdash p \leadsto \Gamma}
-      {w \vdash x : p \leadsto \{x : w\} \uplus \Gamma}
-   \]
-\end{minipage}
 
-\begin{minipage}[t]{0.4\textwidth}
-\[\text{(Concat)} \frac
-   {\begin{array}{c}
-      w = w_1 w_2 \\
-      w_1 \vdash p_1 \leadsto \Gamma_1 \\
-      w_2 \vdash p_2 \leadsto \Gamma_2
-   \end{array}}     
-   {w \vdash (p_1, p_2) \leadsto \Gamma_1 \uplus \Gamma_2}
-\]
-\end{minipage}
-\begin{minipage}[t]{0.4\textwidth}
-\[\text{(Star)} \frac
-   {\begin{array}{c}
-      w = w_1 \dots w_n \\
-      w_i \vdash p \leadsto \Gamma_i \text{ for } i = 1 \dots n
-   \end{array}}     
-   {w \vdash p^* \leadsto \Gamma_1 \uplus \dots \uplus \Gamma_n}
-\]
-\end{minipage}
-
-\begin{minipage}[t]{0.4\textwidth}
-\[\text{(ChoiceL)} \frac
-   {w \vdash p_1 \leadsto \Gamma_1}
-   {w \vdash p_1 + p_2 \leadsto \Gamma_1}
-\]
-\end{minipage}
-\begin{minipage}[t]{0.4\textwidth}
-\[\text{(ChoiceR)} \frac
-   {w \vdash p_2 \leadsto \Gamma_2}
-   {w \vdash p_1 + p_2 \leadsto \Gamma_2}
-\]
-\end{minipage}
-
-\[\text{(Intersect)} \frac
-   {\begin{array}{c}
-      w \vdash p_1 \leadsto \Gamma_1 \\
-      w \vdash p_2 \leadsto \Gamma_2
-   \end{array}}     
-   {w \vdash p_1 \cap p_2 \leadsto \Gamma_1 \uplus \Gamma_2}
-\]
+\end{defn}
 
 As described in section \ref{ere-submatch}, the matching function yielded by the
 pattern partial derivative can be customised with an $\iterate$. If this
@@ -219,7 +226,7 @@ A^1, \dots, A^n \}$ that yield the original input $A^n$.
 
 If the Kleene star is applied again, the number of matches does not change, but
 the number of states the automaton ends with will be $m^{n-1}$ where $m$ is the
-number of kleene stars in tetration: $S((x:A^*)^{^m*}, A^n) = m^{n-1}$.
+number of Kleene stars in tetration: $S((x:A^*)^{^m*}, A^n) = m^{n-1}$.
 
 This exponential number of matches can be reduced if instead of an ordered
 multi-set of matches, we use an unordered multi-set for the matching
@@ -258,9 +265,10 @@ x \to l) \}$, the set of pairs containing an expression set and the associated
 transition function. Sets of pattern sets are defined similarly to sets of
 expression sets in definition \ref{defn-esets}.
 
-\begin{defn}
+\needspace{3cm}
+\begin{defn}[Sets of pattern sets]
    \label{defn-psets}
-   Syntax for sets of pattern sets.
+   Syntax:
 
    \begin{tabular}{lll}
       $\pset$	& $::=$ & $(\{r_1, r_2, \dots, r_n\}, x \to l)$ \\
@@ -281,9 +289,9 @@ POSIX match operate correctly.
 The operators $\esetOfRe$ and $\reOfEset$ can be defined analogously for
 patterns to construct pattern sets and reconstruct the pattern from them.
 
-\begin{defn}
+\begin{defn}[Patterns to pattern sets]
    \label{defn-re2pset}
-   Conversions from patterns to pattern sets.
+   Conversions from patterns.
 
    Pattern set from expression pattern:
    $\cdot\esetOfRe :: p \to \pset$
@@ -307,7 +315,7 @@ tracking.
 
 The inverse operator is defined analogously to definition \ref{defn-re2esets}.
 
-\begin{defn}
+\begin{defn}[Pattern sets to patterns]
    \label{defn-re2psets}
    Conversions from pattern sets back to patterns.
 
@@ -332,9 +340,10 @@ The expression set operators from definition \ref{defn-eset-ops} must be defined
 for pattern derivatives, but since pattern derivatives carry a transition
 function $f$, these must be sensibly combined in the set operators.
 
-\begin{defn}
+\begin{defn}[Distributive laws on sets of pattern sets]
    \label{defn-pset-ops}
-   Distributive laws on sets of pattern sets.
+   The normal distributive laws can similarly to \ref{defn-eset-ops} be extended
+   to sets of pattern sets.
 
    \begin{tabular}{lll}
       $\psets \circledcdot_{mod} p_2$
@@ -364,24 +373,24 @@ operators $\circledcdot$ and $\circledcap$, omitting negation. This definition
 is an extension of definition \ref{defn-pd-eset} with the semantics from the
 pattern matching relation in definition \ref{patmatchrel}.
 
-\begin{defn}
+\begin{defn}[Pattern partial derivative]
    \label{defn-pd-pset}
    Pattern partial derivatives as sets of pattern sets.
 
-   \[\nr{1p}\quad \dda(x:r)
+   \[\nrdef{1p} \dda(x:r)
       = \{ (\{ \eset\reOfEset \}, \updatexa) | \eset \in \dda(r) \}\]
-   \[\nr{2p}\quad \dda(x:p)
+   \[\nrdef{2p} \dda(x:p)
       = \{ (\{ (x:\pset\reOfEset) \}, \updatexa \circ f) | (\pset, f) \in \dda(p) \}\]
-   \[\nr{3p}\quad \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
-   \[\nr{4p}\quad \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
-   \[\nr{5p}\quad \dda((p_1, p_2)) =
+   \[\nrdef{3p} \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
+   \[\nrdef{4p} \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
+   \[\nrdef{5p} \dda((p_1, p_2)) =
        \begin{cases}
           \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\reOfEsets) \\
           \dda(r_1) \circledcdot_{id} p_2 \cup \dda(p_2) & \text{otherwise}
        \end{cases}
    \]
-   \[\nr{6p}\quad \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
-   \[\nr{7p}\quad \dda(p^n) =
+   \[\nrdef{6p} \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
+   \[\nrdef{7p} \dda(p^n) =
        \begin{cases}
           \{ (\pset, f \circ \iterate) | (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
           \dda(p) \circledcdot_{\iterate} p^{n-1} & \text{otherwise}
@@ -399,21 +408,19 @@ finds all free variables used in the pattern, and is defined in section 3.1 of
 the same paper.
 
 
-\section{The sub-match automaton}
+\section{The submatch automaton}
 \label{nfa}
 
-Given the definition of the partial derivative of a sub-matching pattern $\dda$,
+Given the definition of the partial derivative of a submatching pattern $\dda$,
 which yields a set of expression sets, we can define a function yielding the
 partial derivative for a pattern $p$: $\cdot \setminus_p \cdot :: p \to l \to
 \{(p, x \to l)\}$
 
-\begin{defn}
-   Pattern partial derivative as set of tagged transitions.
-
+\begin{defn}[Pattern partial derivative as set of tagged transitions]
    \[p \setminus_p l = \{ (\mathcal{P}\downarrow, f) | (\mathcal{P}, f) \in \dd{l}(p) \}\]
 \end{defn}
 
-Using this function, the sub-matching automaton can be constructed by
+Using this function, the submatching automaton can be constructed by
 iteratively constructing the partial derivative of the input pattern over each
 letter in the alphabet. The resulting set of derivated terms is then filtered to
 remove all those that describe the empty language. This filtered set is then
@@ -455,12 +462,12 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
 
    The resulting set of pattern sets contains the partial derivative over the
    letter $a$. The partial derivative over $b$ and $c$ will yield the empty
-   language $\{ (\{ (\phi, p_2) \}, \updatexa) \}$. These are filtered out at
-   the end of the iteration. The remaining sets are converted to partial
-   derivatives according to the $\cdot \setminus_p \cdot$ operator, resulting in
-   $p \setminus_p a = \{ (p_2, \updatexa) \}$. In the next iteration, we
-   continue with the set of derivated terms from the previous iteration, in this
-   case just $p_2$.
+   language, resulting in the set $\big\{ (\{ (\phi, p_2) \}, \updatexa)
+   \big\}$. These are filtered out at the end of the iteration. The remaining
+   sets are converted to partial derivatives according to the $\cdot \setminus_p
+   \cdot$ operator, resulting in $p \setminus_p a = \{ (p_2, \updatexa) \}$. In
+   the next iteration, we continue with the set of derivated terms from the
+   previous iteration, in this case just $p_2$.
 
    \begin{tabular}{lll}
       $\dda(\neg c)$
@@ -473,6 +480,8 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
       \\ & $=$ &
          $\{\{\neg\phi\}\}$
    \end{tabular}
+
+   \needspace{5cm}
 
    \begin{tabular}{lll}
       $\dda(((y:\neg c), p_3))$
@@ -520,13 +529,19 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
    \end{tabular}
 
    The resulting set of pattern sets is
-   \[\dda(\neg c) \cup \dda(z:ab + ac) = \{ (\{ (\neg\phi, p_3) \},
-   \update{y}{a}), (\{ b \}, \update{z}{a}), (\{ c \}, \update{z}{a}) \}\].
+   \begin{align*}
+     \dda(\neg c) \cup \dda(z:ab + ac) =
+     \big\{
+     & (\{ (\neg\phi, p_3) \}, \update{y}{a}), \\
+     & (\{ b \}, \update{z}{a}), \\
+     & (\{ c \}, \update{z}{a})
+     \big\}
+   \end{align*}
 
    After using the same method to iteratively construct the entire automaton,
-   the states and transitions will be as in the following graph:
+   the states and transitions will be as in the graph in figure \ref{img-nfa}.
 
-   \img{img/nfa}{16cm}
+   \img{nfa}{15cm}{Tagged transitions in NFA}
 
 \end{eg}
 
@@ -564,10 +579,9 @@ This function is an approximation in that if it yields \true, then $L(r) =
 \emptyset$, but if it yields \false, $L(r) \neq \emptyset$ may not follow. For
 instance, $\isempty(a \cap b) = 0$, but $L(a \cap b) = \emptyset$.
 
-\needspace{5cm}
-\begin{defn}
+\begin{defn}[Approximation for $L(r) = \emptyset$]
    \label{defn-isempty}
-   Approximation for $L(r) = \emptyset$.
+   $\isempty(\phi)$ is true if and only if $L(r) = \emptyset$.
 
    \begin{tabular}{lll}
       $\isempty(\phi)$	& 	$=$ & $1$ \\
@@ -580,16 +594,17 @@ instance, $\isempty(a \cap b) = 0$, but $L(a \cap b) = \emptyset$.
       $\isempty(\neg r)$	& $=$ & $\isemptyneg(r)$ \\
    \end{tabular}
 
-   $\isemptyneg(r)$ is the specialisation for negation, which has the meaning of
-   $\isempty(\neg r)$. Although $\neg(\Sigma^*)$ describes the empty language, we
-   do not filter it here, since this is an approximation.
+   A specialisation of $\isempty$ for negation is $\isemptyneg(r)$, which has
+   the meaning of $\isempty(\neg r)$. Note that although $\neg(\Sigma^*)$
+   describes the empty language, we do not filter it here, since this is an
+   approximation.
 
    \begin{tabular}{lll}
-      $\isemptyneg(\varepsilon)$	& $=$ & $0$ \\
-      $\isemptyneg(r^*)$		& $=$ & $0$ \\
-      $\isemptyneg(l)$			& $=$ & $0$ \\
-      $\isemptyneg(\phi)$		& $=$ & $0$ \\
-      $\isemptyneg((r_1, r_2))$		& $=$ & $0$ \\
+      $\isemptyneg(\varepsilon) = \isemptyneg(r^*) = \isemptyneg(l) = \isemptyneg(\phi)$ & $=$ & $0$ \\
+   \end{tabular}
+
+   \begin{tabular}{lll}
+      $\isemptyneg((r_1, r_2))$		& $=$ & $\isemptyneg(r_1)$ \\
    \end{tabular}
 
    De Morgan's laws:
@@ -613,9 +628,10 @@ $\isempty(r)$ iff $L(r) = \emptyset$. The assertion that conversely, $L(r) =
 only necessary to rule out false positives and therefore the possibility of
 removing valid transitions from the resulting automaton.
 
-\begin{lem}
+\begin{lem}[Correctness of $\isempty$ as an approximation]
    $\isempty(r) \Rightarrow L(r) = \emptyset$
 
+   \proof
    It must be shown that for every instance of $r$ in which $\isempty(r)$ is
    \true, it holds that $L(r) = \emptyset$. We assume that $\Sigma$ is not empty,
    so that $\Sigma^* \setminus \{\varepsilon\} \neq \emptyset$. The premise for
@@ -692,13 +708,23 @@ removing valid transitions from the resulting automaton.
          $\Leftrightarrow \isemptyneg(r_1) \vee \isemptyneg(r_2)$ \\
          $\Leftrightarrow \isemptyneg(r_1 + r_2)$
 
-      %\item TODO
-         %$L(\neg(r_1, r_2)) = \emptyset$
+      \item
+         $L(\neg(r_1, r_2)) = \emptyset$ is true if $L((r_1, r_2)) =
+         L(\Sigma^*)$, which is achieved if $L(r_1) = L(\Sigma^*)$ or $L(r_1) =
+         L(\Sigma^n)$ and $L(r_2)= L(\Sigma^*)$. Following from the definition
+         of negation, these are equivalent to saying $L(\neg r_1) = \emptyset$
+         or $L(\neg r_1) = L(\Sigma^*) \setminus L(\Sigma^n)$ and $L(\neg r_2) =
+         \emptyset$. The latter cannot be used to decide the empty language
+         problem in linear time, so we can rewrite the problem as $L(\neg(r_1,
+         r_2)) = \emptyset \Leftarrow L(\neg r_1) = \emptyset \Leftarrow
+         \isemptyneg(r_1)$.
 
       \item
          $L(\neg\neg r) = L(r)$, thus $\isempty(\neg\neg r) = \isempty(r)$.
 
    \end{enumerate}
+
+   \qed
 \end{lem}
 
 
@@ -711,7 +737,7 @@ complexity. Unlike the above predicate, however, the $\nullable$ function is
 exact. Its termination can be proved in the same way as above. Note that the
 $\nullable$ predicate is merely a special case of the word problem.
 
-\begin{defn}
+\begin{defn}[Nullability]
    \label{defn-nullable}
    Exact function for $\varepsilon \in L(r)$.
 
@@ -739,7 +765,7 @@ whether it is not in the negated language.
 \section{Declarative asynchronous lexers}
 \label{lexer}
 
-As mentioned in the introduction, sub-matching can be used to declaratively
+As mentioned in the introduction, submatching can be used to declaratively
 specify a lexer for a programming language. We can extract the greedy left-most
 match from the matching environment $\Gamma$ and pass the lexeme information to
 the semantic action code.
@@ -762,8 +788,8 @@ grammar, can wait, enabling concurrent lexing and parsing.
 
 \subsection{Matching functions}
 
-We extend on the idea of named sub-matches and instead of associating a name in
-the matching environment with a sub-match, we associate a function with each
+We extend on the idea of named submatches and instead of associating a name in
+the matching environment with a submatch, we associate a function with each
 pattern. Thus, instead of a pattern $(x:r)$ where variable $x$ is associated
 with regular expression $r$, we write the pattern $(f:r)$ in which a function is
 called when the sub-expression is successful.
@@ -783,10 +809,11 @@ and the storage requirements for delayed actions would be linear in the input
 length. Therefore, the actions should only be delayed for as little time as
 possible.
 
-\begin{defn}
-   Match completeness.
+\needspace{5cm}
+\begin{defn}[Match completeness]
+   This defines when a match is considered complete.
 
-   Supporting definitions.
+   Supporting definitions:
    \begin{enumerate}
 
       \item A toplevel pattern as one that is not enclosed in any other patterns.

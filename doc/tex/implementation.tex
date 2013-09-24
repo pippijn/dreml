@@ -8,8 +8,8 @@ derivatives, how support for extended regular expressions was implemented, and
 finally how the prototype was optimised.
 
 In addition to the prototype, the algorithms implemented were integrated into a
-tool called \texttt{re2ml}, which accepts the full syntax, including
-sub-matching, supported by \texttt{ocamllex}.
+tool called \dreml, which accepts the full syntax, including
+submatching, supported by \ocamllex.
 
 
 \section{Grammar}
@@ -17,13 +17,13 @@ sub-matching, supported by \texttt{ocamllex}.
 
 The lexical grammar in the prototype supports only Latin letters, $a$ through
 $z$ in upper and lower case, for matches. This limitation is rather arbitrary
-but removes the need for escape sequences. The \texttt{re2ml} tool supports any
-character, as well as unicode escape sequences, which are translated to a UTF-8
+but removes the need for escape sequences. The \dreml{} tool supports any
+character, as well as Unicode escape sequences, which are translated to a UTF-8
 encoded sequence.
 
-\begin{defn}
+\begin{defn}[Grammar of regular expression syntax]
    \label{defn-gram-reg}
-   Regular grammar of regular expression syntax.
+   Regular grammar for tokens used in the context-free grammar below.
 
    \begin{tabular}{lrl}
       Digit	& $::=$	& '0' \dots '9'				\\
@@ -40,13 +40,15 @@ distinguished from a single character. Another way would be to allow
 \textit{namestr} both as name and as expression, and transforming the string
 into a character sequence at a later point.
 
-\begin{defn}
+\begin{defn}[Context-free grammar of regular expression syntax]
    \label{defn-gram-cfg}
-   Context-free grammar of regular expression syntax.
 
-   In this concrete syntax definition, identifiers starting with a majuscule
-   name tokens defined in the lexical grammar, and identifiers starting with a
-   miniscule name other context-free grammar rules defined here.
+   In this concrete syntax definition, identifiers starting with a
+   majuscule\footnote{Uppercase letter} name tokens defined in the lexical
+   grammar, and identifiers starting with a minuscule\footnote{Lowercase letter}
+   name other context-free grammar rules defined here.
+
+   \needspace{5cm}
 
    Patterns:
 
@@ -91,12 +93,12 @@ into a character sequence at a later point.
 The parser also allows for '$\cap$' (U+2229) to be used as intersection operator
 '\&', as well as '+' for the choice operator '$|$' and '$\neg$' (U+00AC) for
 negation '$\sim$'. The two syntaxes for counted repetition are equivalent.  The
-repetition operator is not supported in \texttt{ocamllex}, but \texttt{re2ml}
-allows it. It should be noted that since a finite state machine does not have
-any storage besides the states it consists of, the repetition operator yields
-the same automaton as an expanded expression with the expression under
-repetition actually repeated $n$ times.  Thus, the number of states required by
-the automaton grows linearly with $n$.
+repetition operator is not supported in \ocamllex, but \dreml{} allows
+it. It should be noted that since a finite state machine does not have any
+storage besides the states it consists of, the repetition operator yields the
+same automaton as an expanded expression with the expression under repetition
+actually repeated $n$ times.  Thus, the number of states required by the
+automaton grows linearly with $n$.
 
 
 \section{Derivatives}
@@ -113,7 +115,7 @@ concatenation.
 
 In the initial implementation, the syntax tree contained not only the pattern
 variable name, but also its value. Thus, the derivative operation directly
-records the sub-match in the resulting pattern derivative instead of yielding a
+records the submatch in the resulting pattern derivative instead of yielding a
 pattern derivative along with a transition function as discussed in section
 \ref{exprsets}.
 
@@ -137,12 +139,11 @@ This definition is from \cite{pdpat}, figure 7.
 
    Given the pattern $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC)$ and the input string $AB$,
    the derivative of the pattern over the word is recursively constructed.
-   
-   \begin{tabular}{lrl}
-      $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus A \setminus B$
-         & $=$ & $(x|[A]:B)+(y|[A]:C)+(z|[A]:BC) \setminus B$ \\
-         & $=$ & $(x|[AB]:\varepsilon)+(y|[AB]:\phi)+(y|[AB]:C)$
-   \end{tabular}
+   \begin{align*}
+        &\quad (x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus A \setminus B \\
+      = &\quad (x|[A]:B)+(y|[A]:C)+(z|[A]:BC) \setminus B \\
+      = &\quad (x|[AB]:\varepsilon)+(y|[AB]:\phi)+(y|[AB]:C)
+   \end{align*}
 \end{eg}
 
 In order to obtain the greedy left-most match, we need to do a depth-first
@@ -157,8 +158,8 @@ tree must succeed for all others to yield a value.
 \section{Partial derivatives}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The partial derivative operation producing the a list of derivated terms instead
-of the complete derivative. This is done by returning a list of terms where the
+The partial derivative operation producing a list of derivated terms instead of
+the complete derivative. This is done by returning a list of terms where the
 derivative operation returns a choice. The derivative operation for choice is
 defined as $(p_1 + p_2) \setminus l = p_1 \setminus l + p_2 \setminus l$. For
 the partial derivative, we return the choices separately as a list, and since
@@ -171,12 +172,11 @@ partial derivative of the above example would yield:
 
 \begin{eg}
    Computation of pattern partial derivative of a word.
-
-   \begin{tabular}{lrl}
-      $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus_p A \setminus_p B$
-         & $=$ & $\{ p' \setminus_p B | p' \in \{(x|[A]:B), (y|[A]:C), (z|[A]:BC)\} \}$ \\
-         & $=$ & $\{ (x|[AB]:\varepsilon), (y|[AB]:\phi), (z|[AB]:C) \}$
-   \end{tabular}
+   \begin{align*}
+        &\quad (x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus_p A \setminus_p B \\
+      = &\quad \{ p' \setminus_p B | p' \in \{(x|[A]:B), (y|[A]:C), (z|[A]:BC)\} \} \\
+      = &\quad \{ (x|[AB]:\varepsilon), (y|[AB]:\phi), (z|[AB]:C) \}
+   \end{align*}
 \end{eg}
 
 Here, we can obtain the greedy left-most match by taking the first succeeding
@@ -220,8 +220,8 @@ abstract type \texttt{TransitionType.t} in module \texttt{Types}.
 Abstract type \texttt{t} represents the transition function. Semantically, it
 represents a function of type $\mathit{env} \to \mathit{env}$. In the concrete
 implementation \texttt{Transition}, that is exactly its type, and function
-composition is done with function closures. \texttt{Transition.execute} is then
-simply a function application operator. The implementation in module
+composition is done with function closures. Function \texttt{Transition.execute}
+is then simply a function application operator. The implementation in module
 \texttt{Instruction} defines it as a data structure that is interpreted by
 \texttt{execute}.
 
@@ -312,8 +312,13 @@ expression partial derivative is outside the functor definition.
 
 \begin{lstlisting}
    (* Partial derivative interface. *)
-   module type PartialDerivative : functor(Tag : TransitionType) -> sig
-     val derive_pat : letter -> pattern -> (pattern * Tag.t) list
+   module type PartialDerivative
+     : functor(Tag : TransitionType) ->
+   sig
+     val derive_pat
+       : letter
+       -> pattern
+       -> (pattern * Tag.t) list
    end
 \end{lstlisting}
 
@@ -362,7 +367,7 @@ along the path the thread takes. When multiple paths come together, it is the
 matching strategy that decides which of the environments is retained. For
 example, considering the pattern $p = (x:a^*) + (y:aa)$ and input string $aa$,
 we would first transition over $a$, which yields the partial derivative $p
-\setminus a = \{ ((x:\varepsilon), (x \mapsto a)), ((x:a^*), (x \mapsto a)),
+\setminus_p a = \{ ((x:\varepsilon), (x \mapsto a)), ((x:a^*), (x \mapsto a)),
 ((y:\varepsilon a), (y \mapsto a)) \}$. Here, the first component of each pair
 is the expression matching at the next state, and the second component is the
 associated matching environment $\Gamma$. In the next step, we derive each of
@@ -371,14 +376,14 @@ a set of new states for each of the three states in $p'$.
 
 \begin{enumerate}
    \item
-      $(x:\varepsilon) \setminus a = \{ ((x:\phi), (x \mapsto a)) \}$
+      $(x:\varepsilon) \setminus_p a = \{ ((x:\phi), (x \mapsto a)) \}$
    \item
-      $(x:a^*) \setminus a = \{
+      $(x:a^*) \setminus_p a = \{
          ((x:\varepsilon), (x \mapsto a)),
          ((x:a^*), (x \mapsto a))
       \}$
    \item
-      $(y:\varepsilon a) \setminus a = \{ ((y:\varepsilon), (y \mapsto a)) \}$
+      $(y:\varepsilon a) \setminus_p a = \{ ((y:\varepsilon), (y \mapsto a)) \}$
 \end{enumerate}
 
 These sets are now merged into a single ordered set, while updating the input
@@ -401,7 +406,7 @@ accepts the empty word.
 
 Support for additional boolean operators was implemented using the DNF extension
 described in section \ref{exprsets}.  The \texttt{ExprSet} module provides the
-improved sub-matching algorithm based on expression sets.  The relevant types
+improved submatching algorithm based on expression sets.  The relevant types
 for the sets of expression sets and pattern sets are defined in the
 \texttt{Types} module:
 
@@ -417,8 +422,8 @@ Sets of pattern sets are parametrised by their transition function type, and
 must therefore be defined in the functor that defines the derivative operation.
 Types \texttt{regex} and \texttt{pattern} are the abstract syntax tree types for
 regular expressions and patterns. The internal \texttt{derive\_pat} function
-returns a \verb!(exprset_pat * Tag.t) list!, which is converted by operator
-$\reOfEset$ to match the interface type \verb!(pattern * Tag.t) list!.
+returns a \texttt{(exprset\_pat * Tag.t) list}, which is converted by operator
+$\reOfEset$ to match the interface type \texttt{(pattern * Tag.t) list}.
 
 
 
@@ -435,7 +440,7 @@ Before starting the partial derivative automata construction and after each step
 in the construction, the input terms are recursively simplified by the following
 rules:
 
-\begin{defn}
+\begin{defn}[Simplification]
    \label{defn-simplify}
    Simplification rules for expressions and patterns.
 
@@ -543,7 +548,7 @@ the following type of the NFA data structure:
 
 Every state lookup is now done through direct indexing into a single array,
 making it $O(1)$ in both the number of states and the derived expression length.
-A single\footnote{However, this method did not noticably improve performance
+A single\footnote{However, this method did not noticeably improve performance
 against indexing into an array of arrays.} dense array is used for all states
 for all possible input symbols. This means that indexing is done by $i = q \cdot
 |\Sigma| + c$, where $q$ is the state number and $c$ is the input symbol number
@@ -568,9 +573,9 @@ For the bit-map, we use a byte array in the form of an OCaml \texttt{string}.
 The first attempt was using a \texttt{bool array}, which is about twice as fast
 for small automata, but suffers from cache misses when the automaton is larger,
 at which point the byte string, despite slightly more complex access operations,
-is more efficient. A second, non-neglegible effect of using a string rather than
+is more efficient. A second, non-negligible effect of using a string rather than
 a boolean array is that the OCaml garbage collector knows not to scan it. This
-effect is particularly noticable for very large automata.
+effect is particularly noticeable for very large automata.
 
 
 % vim:tw=80

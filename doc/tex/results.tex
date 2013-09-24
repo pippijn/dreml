@@ -1,44 +1,68 @@
 \chapter{Empirical results}
 \label{results}
 
-
 Performance of the tool was one of the main goals for this thesis, so an
-evaluation is required. Not many regular expression matchers support the kind of
-extended regular expressions we support, making a comparison with them
-difficult. The only other tool that does is \mlulex{}, however doing so with
-derivatives and not supporting submatching. All comparisons in the following
-were done with \reml{} and \mlulex{}. Automata construction in Perl and PCRE are
-several orders of magnitude faster than in both \reml{} and \mlulex{}, making a
-comparison on this level inexpressive.
+evaluation is required. Regular expression matcher performance can be compared
+by two important indicators:
+
+\begin{itemize}
+   \item Automata construction time and resulting automaton size.
+   \item Runtime performance during a match.
+\end{itemize}
+
+Not many regular expression matchers support the kind of extended regular
+expressions we support, making a comparison with them difficult. The only other
+tool that does is \mlulex{}, however doing so with derivatives and not
+supporting submatching. All comparisons in the following were done with \dreml{}
+and \mlulex{}. Automata construction in Perl and PCRE are several orders of
+magnitude faster than in both \dreml{} and \mlulex{}, making a comparison on this
+level inexpressive.
+
 
 \section{Automata construction}
+
+We measure the time needed by each program to produce the matching automaton.
+For \mlulex{}, the program startup time was subtracted, and the minimum time
+over several hundreds to thousands of runs was taken. The average time is not a
+good measure, as CPU scheduling and other running tasks may greatly influence
+it. On the contrary, the minimum time has proven to be a very stable measure.
+
 
 \subsection{Simple expression}
 
 Here, the time taken to construct an automaton for $a^n$ is measured. The number
 of states is $n + 1$ in both NFA (partial derivative) and DFA (derivative)
-construction. \mlulex{} performs slighty better.
+construction. \mlulex{} performs slighty better. The graph in figure
+\ref{img-con-an} shows the timing results for this expression.
 
-\img{img/con-an}{12cm}
+\img{con-an}{14cm}{Compile time for $a^n$}
+
 
 \subsection{Worst-case regular expression}
 
 DFA powerset construction takes exponential time and space when compiling the
 expression $(a+b)^*b(a+b)^n$. Since \mlulex{} constructs a DFA, the time taken
-during compilation is exponential in $n$. \reml{} uses partial derivatives to
+during compilation is exponential in $n$. \dreml{} uses partial derivatives to
 construct an NFA and takes linear time.
 
-\img{img/dfa-exp}{12cm}
+\img{dfa-exp}{14cm}{Compile time for $(a+b)^*b(a+b)^n$}
+
+Interestingly and as can be seen from figure \ref{img-dfa-exp}, \mlulex{} is
+noticeably faster at $n = 7$ than at $n = 6$. This effect has been observed in
+all test runs on various platforms. No reason for this behaviour could be
+determined.
+
 
 \subsection{Worst-case extended regular expression}
 
 Given the expressions $r_1 = (a+b)^*b(a+b)^n$, $r_2 = (\neg(\neg a + \neg
 b))^*b(a+b)^n$ and $r = r_1 \cap r_2$, a natural partial derivative construction
-would reduce to a full derivative computation. Here we can see that \reml{}, by
+would reduce to a full derivative computation. Here we can see that \dreml{}, by
 adopting the sets of sets extension, produces only a polynomial number of
-states.
+states. Figure \ref{img-dfa-states} shows the exponential growth in the DFA case
+contrasted with the polynomial growth in the NFA construction.
 
-\img{img/dfa-states}{12cm}
+\img{dfa-states}{14cm}{Exponential DFA growth vs. polynomial NFA growth}
 
 
 \section{Automata simulation}
@@ -47,21 +71,28 @@ In order to measure the performance of each matching engine, this test creates a
 string of length $n \cdot 1024$ with only the letter $a$ repeated, and matches
 it with the regular expression $a^*$.
 
-\img{img/astar}{12cm}
+\img{astar}{14cm}{Performance of matching $a^*$}
 
 This test also considers Perl and PRCE, both of which are much faster on this
 straightforward expression, but display exponential runtime behaviour for
-expressions such as $(a?)^na^n$. The graph shows that \reml{} has competetive
+expressions such as $(a?)^na^n$. The graph shows that \dreml{} has competitive
 matching performance with \mlulex{}, despite the overhead of keeping track of
-multiple states. \reml{} uses tables and a simulation loop while \mlulex{}
+multiple states. \dreml{} uses tables and a simulation loop while \mlulex{}
 generates efficient SML code with mutually recursive functions. \mlulex{} also
 implements a table based lexer engine, which is about three to four times slower
 than its code based engine.
 
-Our results show that a solution based on partial derivatives can have
-competetive performance with one based on derivatives and can vastly outperform
-a derivative based automata construction in cases where the number of states
-between NFA and DFA differ substantially.
+As figure \ref{img-astar} shows, results indicate that a solution based on
+partial derivatives can have competitive performance with one based on
+derivatives and can vastly outperform a derivative based automata construction
+in cases where the number of states between NFA and DFA differ substantially.
+
+All timing was done with Standard ML of New Jersey v110.75 and OCaml version
+4.00.1. Using MLton instead of SML/NJ for the SML implementation would likely
+show greatly improved performance for \mlulex, but this comparison would no
+longer evaluate the algorithms, but rather the MLton compiler. Both OCaml and
+SML/NJ generate fairly straightforward native code, which can more easily be
+compared.
 
 
 % vim:tw=80

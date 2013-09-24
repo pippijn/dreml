@@ -1,10 +1,48 @@
 \chapter{Conclusion}
 \label{conclusion}
 
+In this master's thesis, we combined the theory of pattern partial derivatives
+from \cite{pdpat} with the sets of expression sets extension of partial
+derivatives from \cite{pdere} to support extended regular expression
+submatching. We have implemented a prototype named \dreml{} in OCaml so that its
+performance could be compared to \mlulex, another existing program written in
+SML.
+
+Our timing results indicate that despite the increased complexity of computing
+and operating on expression sets rather than computing a single derivative for
+each expression, we can achieve competitive performance for automata
+construction as well as at matching time.
+
+Similarities and differences between our method and existing regular expression
+engines supporting submatching have been shown. We have evaluated several
+algorithms and shown how our algorithm improves upon them.
+
+Future efforts will be directed at improving usability and performance of the
+tool, so that it can be used as a drop-in replacement for \ocamllex{} with
+additional functionality, while retaining or improving upon its performance.
+
+Some ideas for future development:
+
 \begin{itemize}
-   \item What have we achieved?
-   \item Future plans.
+
+   \item Add Unicode support, building on the ideas implemented in \mlulex{} and
+      presented in \cite{re-deriv}. This would improve compile time performance
+      even for non-Unicode patterns.
+
+   \item Perform static analysis on regular expressions and the resulting
+      automaton to provide better error messages, both at compile time and at
+      matching time.
+
+   \item Provide an option to determinise the NFA and minimise the resulting
+      DFA, at the expense of increased compile time.
+
+   \item Implement an ML code generator producing mutually recursive functions
+      in addition to the current table-based backend.
+
 \end{itemize}
+
+An OCaml implementation of the algorithms presented in this thesis can be
+downloaded as source code from \url{https://github.com/pippijn/dreml}.
 
 
 % vim:tw=80

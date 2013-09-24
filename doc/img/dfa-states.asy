@@ -2,9 +2,8 @@ import graph;
 
 size (16cm, 5cm, IgnoreAspect);
 
-marker mark = marker (unitcircle);
-
-void draw_graph (string data, pen pen, string name = "") {
+void draw_graph (string data, pen pen, string name, path shape) {
+  marker mark = marker (scale (1.5) * shape);
   file in = input (data).line ().csv ();
 
   string[] columnlabel = in;
@@ -21,8 +20,8 @@ void draw_graph (string data, pen pen, string name = "") {
   }
 }
 
-draw_graph ("dfa-states-dreml.log", black, "re2ml");
-draw_graph ("dfa-states-ulex.log", brown, "ml-ulex");
+draw_graph ("dfa-states-dreml.log", black, "dreml", scale (1 / 1.5) * unitcircle);
+draw_graph ("dfa-states-ulex.log", brown, "ml-ulex", polygon (3));
 
 xaxis ("$n$", Bottom, LeftTicks);
 xaxis (Top);
