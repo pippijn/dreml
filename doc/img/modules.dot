@@ -1,0 +1,33 @@
+digraph G {
+        size="10,7.5";
+        ratio="fill";
+        fontsize="12pt";
+        rankdir = TB ;
+        "ExprSets" [style=filled, color=darkturquoise];
+        "ExprSets" -> "Tag";
+        "ExprSets" -> "Simplify";
+        "ExprSets" -> "Language";
+        "Instruction" [style=filled, color=darkturquoise];
+        "Instruction" -> "Transition";
+        "Instruction" -> "Pattern";
+        "Language" [style=filled, color=darkturquoise];
+        "Lexer" [style=filled, color=darkturquoise];
+        "Lexer" -> "Parser";
+        "Main" [style=filled, color=darkturquoise];
+        "Main" -> "Pattern";
+        "Main" -> "Parser";
+        "Main" -> "Nfa";
+        "Main" -> "Lexer";
+        "Main" -> "Language";
+        "Nfa" [style=filled, color=darkturquoise];
+        "Nfa" -> "Tag";
+        "Nfa" -> "Language";
+        "Nfa" -> "ExprSets";
+        "Parser" [style=filled, color=darkturquoise];
+        "Pattern" [style=filled, color=darkturquoise];
+        "Simplify" [style=filled, color=darkturquoise];
+        "Tag" [style=filled, color=darkturquoise];
+        "Tag" -> "Instruction";
+        "Transition" [style=filled, color=darkturquoise];
+        "Transition" -> "Pattern";
+}
