@@ -11,6 +11,8 @@ In addition to the prototype, the algorithms implemented were integrated into a
 tool called \dreml, which accepts the full syntax, including
 submatching, supported by \ocamllex.
 
+\img{modules}{10cm}{Module dependency graph}
+
 
 \section{Grammar}
 %%%%%%%%%%%%%%%%%
@@ -137,10 +139,10 @@ This definition is from \cite{pdpat}, figure 7.
 \begin{eg}
    Computation of pattern derivative of a word.
 
-   Given the pattern $(x|[]:AB)+(y|[]:AC)+(z|[]:ABC)$ and the input string $AB$,
+   Given the pattern $(x|[\:]:AB)+(y|[\:]:AC)+(z|[\:]:ABC)$ and the input string $AB$,
    the derivative of the pattern over the word is recursively constructed.
    \begin{align*}
-        &\quad (x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus A \setminus B \\
+        &\quad (x|[\:]:AB)+(y|[\:]:AC)+(z|[\:]:ABC) \setminus A \setminus B \\
       = &\quad (x|[A]:B)+(y|[A]:C)+(z|[A]:BC) \setminus B \\
       = &\quad (x|[AB]:\varepsilon)+(y|[AB]:\phi)+(y|[AB]:C)
    \end{align*}
@@ -173,7 +175,7 @@ partial derivative of the above example would yield:
 \begin{eg}
    Computation of pattern partial derivative of a word.
    \begin{align*}
-        &\quad (x|[]:AB)+(y|[]:AC)+(z|[]:ABC) \setminus_p A \setminus_p B \\
+        &\quad (x|[\:]:AB)+(y|[\:]:AC)+(z|[\:]:ABC) \setminus_p A \setminus_p B \\
       = &\quad \{ p' \setminus_p B | p' \in \{(x|[A]:B), (y|[A]:C), (z|[A]:BC)\} \} \\
       = &\quad \{ (x|[AB]:\varepsilon), (y|[AB]:\phi), (z|[AB]:C) \}
    \end{align*}
@@ -187,7 +189,7 @@ variable names due to several paths being taken.
 A Brzozowski derivative from the Antimirov partial derivative constructed here
 can easily be obtained by folding the set of derivated terms into choices:
 
-\[p \setminus l = (p_1 + \dots + p_n) | p_i \in p \setminus_p l \]
+\[p \setminus l = (p_1 + \dots + p_n) \where p_i \in p \setminus_p l \]
 
 This function is used to implement negation and intersection as a natural
 extension to partial derivatives. It is not used in the sets of sets extension.
@@ -347,7 +349,7 @@ In this definition,
       \texttt{transition}, which also contains a matching function for updating
       the matching environments.
    \item $q_0$ is the second component of the \texttt{nfa} pair.
-   \item $F$ is implicitly given by $F = \{ q \in Q | \varepsilon \in L(q) \}$.
+   \item $F$ is implicitly given by $F = \{ q \in Q \where \varepsilon \in L(q) \}$.
 \end{itemize}
 
 A state lookup takes $O(n)$ time over the term length and amortised $O(1)$ over

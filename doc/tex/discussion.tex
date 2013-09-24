@@ -234,9 +234,9 @@ code is not supported by PCRE, but the syntax allows for extension points, which
 can call arbitrary C functions after a sub-expression has been matched.
 
 Negation is supported in various ways, through negative zero-width look-ahead
-assertions written \verb'(?!pattern)', where \verb'foo(?!bar)' matches "foo", if
-it is not followed by a "bar". PCRE look-ahead assertions are zero-width, so
-they do not consume any input, unlike the negation in our extended regular
+assertions written \verb'(?!pattern)', where \verb'foo(?!bar)' matches ``foo'',
+if it is not followed by a ``bar''. PCRE look-ahead assertions are zero-width,
+so they do not consume any input, unlike the negation in our extended regular
 expressions. However, negative look-ahead can achieve the same effect, so that
 our introductory example pattern matching C comments can be written as
 \verb'/\*((?!\*/).)*\*/' in PCRE.

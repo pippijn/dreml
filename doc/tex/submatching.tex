@@ -69,7 +69,7 @@ be applied before beginning the pattern match.
 
 \begin{defn}[Negation normal form]
    \label{defn-negnorm}
-   We define the following rewrite rules:
+   We define the following transformation:
 
    \begin{tabular}{lll}
       $\negnorm(\neg(x : r))$		& $=$	& $(x : \neg r)$					\\
@@ -117,14 +117,14 @@ and $p$ is an instance.
 
    \begin{tabular}{lll}
       $L(r_1 + r_2)$	& $=$	& $L(r_1) \cup L(r_2)$					\\
-      $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
+      $L((r_1, r_2))$	& $=$	& $\{ w_1w_2 \where w_1 \in L(r_1), w_2 \in L(r_2) \}$	\\
       $L(r_1 \cap r_2)$	& $=$	& $L(r_1) \cap L(r_2)$					\\
       $L(\neg r)$	& $=$	& $\Sigma^* \setminus L(r)$				\\
       $L(r^*)$		& $=$	&
-         $\{\varepsilon\} \cup \{ w_1 \dots w_n | i
+         $\{\varepsilon\} \cup \{ w_1 \dots w_n \where i
          \in \{ 1, \dots, n \}, w_i \in L(r) \}$	\\
       $L(r^n)$		& $=$	&
-         $\{ w_1 \dots w_n | w_n \in L(r) \}$	\\
+         $\{ w_1 \dots w_n \where w_n \in L(r) \}$	\\
       $L(l)$		& $=$	& $\{l\}$						\\
       $L(\varepsilon)$	& $=$	& $\{\varepsilon\}$					\\
       $L(\phi)$		& $=$	& $\emptyset$						\\
@@ -133,7 +133,7 @@ and $p$ is an instance.
 
 % TODO: prove L(r^n)
 
-The term $\Sigma^*$ is used as abbreviation for $\{ w | w \in \Sigma^* \}$.
+The term $\Sigma^*$ is used as abbreviation for $\{ w \where w \in \Sigma^* \}$.
 
 The variable environments are the same as in \cite{pdpat}, the language
 definition has been extended with the definitions from \cite{pdere}.
@@ -157,20 +157,20 @@ point, these must have been put in the negation normal form using $\negnorm$.
    Defined as logical relations.
 
    \begin{minipage}{0.4\textwidth}
-      \[\text{(VarBase)} \frac
+      \[\text{(VarBase)}\, \frac
          {w \in L(r)}
          {w \vdash x : r \leadsto \{x : w\}}
       \]
    \end{minipage}
    \begin{minipage}{0.5\textwidth}
-      \[\text{(VarGroup)} \frac
+      \[\text{(VarGroup)}\, \frac
          {w \vdash p \leadsto \Gamma}
          {w \vdash x : p \leadsto \{x : w\} \uplus \Gamma}
       \]
    \end{minipage}
 
    \begin{minipage}{0.4\textwidth}
-      \[\text{(Concat)} \frac
+      \[\text{(Concat)}\, \frac
          {\begin{array}{c}
             w = w_1 w_2 \\
             w_1 \vdash p_1 \leadsto \Gamma_1 \\
@@ -180,7 +180,7 @@ point, these must have been put in the negation normal form using $\negnorm$.
       \]
    \end{minipage}
    \begin{minipage}{0.5\textwidth}
-      \[\text{(Star)} \frac
+      \[\text{(Star)}\, \frac
          {\begin{array}{c}
             w = w_1 \dots w_n \\
             w_i \vdash p \leadsto \Gamma_i \text{ for } i = 1 \dots n
@@ -190,19 +190,19 @@ point, these must have been put in the negation normal form using $\negnorm$.
    \end{minipage}
 
    \begin{minipage}{0.4\textwidth}
-      \[\text{(ChoiceL)} \frac
+      \[\text{(ChoiceL)}\, \frac
          {w \vdash p_1 \leadsto \Gamma_1}
          {w \vdash p_1 + p_2 \leadsto \Gamma_1}
       \]
    \end{minipage}
    \begin{minipage}{0.4\textwidth}
-      \[\text{(ChoiceR)} \frac
+      \[\text{(ChoiceR)}\, \frac
          {w \vdash p_2 \leadsto \Gamma_2}
          {w \vdash p_1 + p_2 \leadsto \Gamma_2}
       \]
    \end{minipage}
 
-   \[\text{(Intersect)} \frac
+   \[\text{(Intersect)}\, \frac
       {\begin{array}{c}
          w \vdash p_1 \leadsto \Gamma_1 \\
          w \vdash p_2 \leadsto \Gamma_2
@@ -348,14 +348,14 @@ function $f$, these must be sensibly combined in the set operators.
    \begin{tabular}{lll}
       $\psets \circledcdot_{mod} p_2$
          & $=$
-         & $\{ (\{ (p_1, p_2) | p_1 \in \eset \}, f \circ mod) | (\eset, f) \in \psets \}$
+         & $\{ (\{ (p_1, p_2) \where p_1 \in \eset \}, f \circ mod) \where (\eset, f) \in \psets \}$
          \\
 
       $\psets_1 \circledcap \psets_2$
          & $=$
          & $\{
               (\eset_1 \cup \eset_2, f_1 \circ f_2)
-              | (\eset_1, f_1) \in \psets_1, (\eset_2, f_2) \in \psets_2
+              \where (\eset_1, f_1) \in \psets_1, (\eset_2, f_2) \in \psets_2
            \}$
          \\
    \end{tabular}
@@ -378,9 +378,9 @@ pattern matching relation in definition \ref{patmatchrel}.
    Pattern partial derivatives as sets of pattern sets.
 
    \[\nrdef{1p} \dda(x:r)
-      = \{ (\{ \eset\reOfEset \}, \updatexa) | \eset \in \dda(r) \}\]
+      = \{ (\{ \eset\reOfEset \}, \updatexa) \where \eset \in \dda(r) \}\]
    \[\nrdef{2p} \dda(x:p)
-      = \{ (\{ (x:\pset\reOfEset) \}, \updatexa \circ f) | (\pset, f) \in \dda(p) \}\]
+      = \{ (\{ (x:\pset\reOfEset) \}, \updatexa \circ f) \where (\pset, f) \in \dda(p) \}\]
    \[\nrdef{3p} \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
    \[\nrdef{4p} \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
    \[\nrdef{5p} \dda((p_1, p_2)) =
@@ -392,7 +392,7 @@ pattern matching relation in definition \ref{patmatchrel}.
    \[\nrdef{6p} \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
    \[\nrdef{7p} \dda(p^n) =
        \begin{cases}
-          \{ (\pset, f \circ \iterate) | (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
+          \{ (\pset, f \circ \iterate) \where (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
           \dda(p) \circledcdot_{\iterate} p^{n-1} & \text{otherwise}
        \end{cases}
    \]
@@ -417,7 +417,7 @@ partial derivative for a pattern $p$: $\cdot \setminus_p \cdot :: p \to l \to
 \{(p, x \to l)\}$
 
 \begin{defn}[Pattern partial derivative as set of tagged transitions]
-   \[p \setminus_p l = \{ (\mathcal{P}\downarrow, f) | (\mathcal{P}, f) \in \dd{l}(p) \}\]
+   \[p \setminus_p l = \{ (\mathcal{P}\downarrow, f) \where (\mathcal{P}, f) \in \dd{l}(p) \}\]
 \end{defn}
 
 Using this function, the submatching automaton can be constructed by
@@ -444,7 +444,7 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
       & $=_{\nr{5p}}$ &
          $\dda(x:a) \circledcdot_{\id} p_2$
       \\ & $=_{\nr{1p}}$ &
-         $\{ (\{ \eset\reOfEset \}, \updatexa) | \eset \in \dda(a) \}
+         $\{ (\{ \eset\reOfEset \}, \updatexa) \where \eset \in \dda(a) \}
             \circledcdot_{\id} p_2$
       \\ & $=$ &
          $\{ (\{ \varepsilon \}, \updatexa) \}
@@ -488,7 +488,7 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
       & $=_{\nr{5p}}$ &
          $\dda(y:\neg c) \circledcdot_{\id} p_3 \cup \dda(p_3)$
       \\ & $=_{\nr{1p}}$ &
-         $\{ (\{ \eset\reOfEset \}, \update{y}{a}) | \eset \in \dda(\neg c) \}
+         $\{ (\{ \eset\reOfEset \}, \update{y}{a}) \where \eset \in \dda(\neg c) \}
             \circledcdot_{\id} p_3 \cup \dda(p_3)$
       \\ & $=$ &
          $\{ (\{ \neg\phi \}, \update{y}{a}) \}
@@ -517,9 +517,9 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
    \begin{tabular}{lll}
       $\dda(z:ab + ac)$
       & $=_{\nr{1p}}$ &
-         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) | \eset \in \dda(ab + ac) \}$
+         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) \where \eset \in \dda(ab + ac) \}$
       \\ & $=$ &
-         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) | \eset \in \{\{\varepsilon b\}, \{\varepsilon c\}\} \}$
+         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) \where \eset \in \{\{\varepsilon b\}, \{\varepsilon c\}\} \}$
       \\ & $=$ &
          $\{ (\{ \varepsilon b \}, \update{z}{a}), (\{ \varepsilon c \}, \update{z}{a}) \}$
       \\ \multicolumn{3}{l}
@@ -673,7 +673,7 @@ removing valid transitions from the resulting automaton.
          not, then after matching the left expression, the complete expression
          runs into an error state, therefore not recognising any language. \\
          $L((r_1, r_2)) = \emptyset$ \\
-         $\Leftrightarrow \{ w_1w_2 | w_1 \in L(r_1), w_2 \in L(r_2) \} = \emptyset$ \\
+         $\Leftrightarrow \{ w_1w_2 \where w_1 \in L(r_1), w_2 \in L(r_2) \} = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
          $\Leftarrow \isempty(r_1) \vee \isempty(r_2)$ \\
          $\Leftrightarrow \isempty(r_1 \cap r_2)$
@@ -683,7 +683,7 @@ removing valid transitions from the resulting automaton.
          does so. Conversely, if $L(r)$ is the empty language, then no number of
          consecutive $r$ will fix that. \\
          $L(r^n) = \emptyset$ \\
-         $\Leftrightarrow \{ w_1 \dots w_n | w_i \in L(r) \} = \emptyset$ \\
+         $\Leftrightarrow \{ w_1 \dots w_n \where w_i \in L(r) \} = \emptyset$ \\
          $\Leftrightarrow L(r) = \emptyset$ \\
          $\Leftarrow \isempty(r)$ \\
          $\Leftrightarrow \isempty(r^n)$

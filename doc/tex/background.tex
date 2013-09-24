@@ -364,20 +364,20 @@ define these operators in the syntax used in \cite{pdpat}.
    \begin{tabular}{lll}
       $\esets \circledcdot r_2$
          & $=$
-         & $\{ \{ (r_1, r_2) | r_1 \in \eset \} | \eset \in \esets \}$
+         & $\{ \{ (r_1, r_2) \where r_1 \in \eset \} \where \eset \in \esets \}$
          \\
 
       $\esets_1 \circledcap \esets_2$
          & $=$
          & $\{
               \eset_1 \cup \eset_2
-              | \eset_1 \in \esets_1, \eset_2 \in \esets_2
+              \where \eset_1 \in \esets_1, \eset_2 \in \esets_2
            \}$
          \\
 
       $\circledneg\esets$
          & $=$
-         & $\{ \{ \neg r | r \in \eset \} | \eset \in \esets \}$
+         & $\{ \{ \neg r \where r \in \eset \} \where \eset \in \esets \}$
          \\
    \end{tabular}
 \end{defn}
@@ -398,9 +398,9 @@ in definition \ref{defn-syn}.
       $=$ &
          $\{\{a^*, aa\}, \{ab\}\} \circledcdot c^*$
       \\ $=$ &
-         $\{ \{ (r_1, c^*) | r_1 \in \eset \} | \eset \in \{\{a^*, aa\}, \{ab\}\} \}$
+         $\{ \{ (r_1, c^*) \where r_1 \in \eset \} \where \eset \in \{\{a^*, aa\}, \{ab\}\} \}$
       \\ $=$ &
-         $\{ \{ (r_1, c^*) | r_1 \in \{a^*, aa\} \}, \{ (r_1, c^*) | r_1 \in \{ab\} \} \}$
+         $\{ \{ (r_1, c^*) \where r_1 \in \{a^*, aa\} \}, \{ (r_1, c^*) \where r_1 \in \{ab\} \} \}$
       \\ $=$ &
          $\{ \{ (a^*, c^*), (aa, c^*) \}, \{ (ab, c^*) \} \}$
    \end{tabular}
@@ -419,7 +419,7 @@ in definition \ref{defn-syn}.
       \\ $=$ &
          $\{
             \eset_1 \cup \eset_2
-            | \eset_1 \in \{\{a^*, aa\}, \{b^*\}\}
+            \where \eset_1 \in \{\{a^*, aa\}, \{b^*\}\}
             , \eset_2 \in \{\{a^*\}, \{b^*, bb\}\}
          \}$
       \\ $=$ &

@@ -1,8 +1,8 @@
 \chapter{Introduction}
 
-Regular expressions, often abbreviated as "regex", are a key component of modern
-software development. Many applications nowadays are inconceivable without the
-efficient pattern matching provided by regular expression engines.
+Regular expressions, often abbreviated as ``regex'', are a key component of
+modern software development. Many applications nowadays are inconceivable
+without the efficient pattern matching provided by regular expression engines.
 
 Regexes are used in NIDS\footnote{Network Intrusion Detection System} to match
 network packets in real time, in compilers to tokenise source code, in online
@@ -26,8 +26,8 @@ Regular Expressions}.
 
 However, most of these engines share a common deficiency: they are slow.
 Naturally, they are fast for most common expressions because that is what they
-were optimised for. However, for almost every regular expression engine, a class
-of expressions exists for which the engine is slow. Slow, in this context, means
+were optimised for, but for almost every regular expression engine, a class of
+expressions exists for which the engine is slow. Slow, in this context, means
 that it takes exponential execution time, and that means that even for
 relatively small inputs, the time taken for a match can exceed a human lifetime.
 
@@ -47,7 +47,7 @@ many applications, in particular those that allow untrusted users to enter
 arbitrary expressions. Russ Cox developed RE2, an automata based regular
 expression engine, for exactly this reason: Google code search allows web users
 to enter regular expressions that run against a large amount of source code. An
-engine with potentially exponential runtime would create a security risk.
+engine with potentially exponential runtime would impose a security risk.
 
 Applications requiring linear execution time for pattern matching generally use
 actual regular expressions, i.e. descriptions of regular languages, that can be

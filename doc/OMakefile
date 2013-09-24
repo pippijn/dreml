@@ -21,6 +21,7 @@ Images[] =
   img/con-an
   img/dfa-exp
   img/dfa-states
+  img/modules
   img/nfa
 
 TARGET = $(latex-document)
