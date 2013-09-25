@@ -333,9 +333,10 @@ that syntax.
       grammars.
 
       A more complex example that does not even fall into the class of CFGs is
-      \verb'([abc]*)b\1', which matches any sequence of $a \dots c$, followed by
-      $b$, followed by the same sequence matched before the $b$. E.g. $abcbabc$
-      could be matched by this expression.
+      the backreference expression \verb'([abc]*)b\1', which matches any
+      sequence of $a \dots c$, followed by $b$, followed by the same sequence
+      matched before the $b$. E.g. $abcbabc$ could be matched by this
+      expression.
 
       Since nondeterministic finite automata cannot recognise context-free
       grammars, let alone context-sensitive grammars, backreferences are not

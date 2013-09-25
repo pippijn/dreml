@@ -8,8 +8,8 @@ derivatives, how support for extended regular expressions was implemented, and
 finally how the prototype was optimised.
 
 In addition to the prototype, the algorithms implemented were integrated into a
-tool called \dreml, which accepts the full syntax, including
-submatching, supported by \ocamllex.
+tool called \dreml, which accepts the full syntax supported by \ocamllex,
+including submatching.
 
 \img{modules}{10cm}{Module dependency graph}
 
@@ -227,9 +227,9 @@ is then simply a function application operator. The implementation in module
 \texttt{Instruction} defines it as a data structure that is interpreted by
 \texttt{execute}.
 
-Ultimately, the data structure based execution calls the functions from module
-\texttt{Transition}, and is therefore slightly less efficient than a direct
-closure, but has the advantage that it can be inspected, whereas function
+Ultimately, the data structure based execution calls the functions from the
+\texttt{Transition} module, and is therefore slightly less efficient than a
+direct closure, but has the advantage that it can be inspected, whereas function
 closures are effectively opaque. Furthermore, a data structure representing the
 transition function can be used for code generation, so that our tagged
 automaton can be translated to OCaml functions.
@@ -272,7 +272,7 @@ the transition function as data structure.
 \subsubsection{iterate}
 
 \texttt{iterate} is a two-step function. In the definition of pattern partial
-derivatives, $\iterate$ is indexed by $\fv(p)$, which is the set of pattern
+derivatives, $\iteratefvp$ is indexed by $\fv(p)$, which is the set of pattern
 variables in $p$. When calling \texttt{iterate}, these variables are renamed, so
 that the next iteration of $p^*$ or $p^n$ receives a pristine matching
 environment.
@@ -312,6 +312,7 @@ derivative operation, is parametrised by \texttt{TransitionType}. Only the
 pattern partial derivative function requires this parametrisation; the
 expression partial derivative is outside the functor definition.
 
+\needspace{3cm}
 \begin{lstlisting}
    (* Partial derivative interface. *)
    module type PartialDerivative
@@ -425,7 +426,7 @@ must therefore be defined in the functor that defines the derivative operation.
 Types \texttt{regex} and \texttt{pattern} are the abstract syntax tree types for
 regular expressions and patterns. The internal \texttt{derive\_pat} function
 returns a \texttt{(exprset\_pat * Tag.t) list}, which is converted by operator
-$\reOfEset$ to match the interface type \texttt{(pattern * Tag.t) list}.
+$\reOfPset$ to match the interface type \texttt{(pattern * Tag.t) list}.
 
 
 
@@ -453,24 +454,38 @@ rules:
       $p^{*^*}$				& $=$	& $p^*$				\\
    \end{tabular}
 
+   \needspace{3cm}
    Expressions:
 
    \begin{tabular}{lrl}
       Intersection:								\\
       $r \cap r$			& $=$	& $r$				\\
       $\phi \cap r = r \cap \phi$	& $=$	& $\phi$			\\
+   \end{tabular}
+
+   \begin{tabular}{lrl}
       Concatenation:								\\
       $\phi r = r \phi$			& $=$	& $\phi$			\\
       $\varepsilon r = r \varepsilon$	& $=$	& $r$				\\
+   \end{tabular}
+
+   \begin{tabular}{lrl}
       Choice:									\\
       $r + r$				& $=$	& $r$				\\
       $\neg\phi + r = r + \neg\phi$	& $=$	& $\neg\phi$			\\
+   \end{tabular}
+
+   \begin{tabular}{lrl}
       Repetition:								\\
       $r^{*^*}$				& $=$	& $r^*$				\\
       $\varepsilon^*$			& $=$	& $\varepsilon$			\\
       $\phi^*$				& $=$	& $\varepsilon$			\\
       $r^0$				& $=$	& $\varepsilon$			\\
       $r^1$				& $=$	& $r$				\\
+   \end{tabular}
+
+   \needspace{2cm}
+   \begin{tabular}{lrl}
       Negation:									\\
       $\neg(\neg r)$			& $=$	& $r$				\\
       $\neg(\neg r_1 \cap \neg r_2)$	& $=$	& $r_1 + r_2$			\\

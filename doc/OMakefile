@@ -8,10 +8,12 @@ Parts[] =
   tex/discussion
   tex/implementation
   tex/intro
+  tex/macros
+  tex/operators
   tex/results
+  tex/signature
   tex/submatching
   tex/syntax
-  tex/macros
 
 Bibliography[] =
   dreml
@@ -23,6 +25,7 @@ Images[] =
   img/dfa-states
   img/modules
   img/nfa
+  img/nfa-iterate
 
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)

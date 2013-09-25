@@ -22,6 +22,7 @@ void draw_graph (string data, pen pen, string name, path shape) {
 
 draw_graph ("dfa-exp-dreml.log", black, "dreml", scale (1 / 1.5) * unitcircle);
 draw_graph ("dfa-exp-ulex.log", brown, "ml-ulex", polygon (3));
+draw_graph ("dfa-exp-ocamllex.log", blue, "ocamllex", polygon (4));
 
 xaxis ("$n$", Bottom, LeftTicks);
 xaxis (Top);

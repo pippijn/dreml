@@ -1,0 +1,8 @@
+digraph nfa {
+        rankdir = LR;
+        bgcolor = "transparent";
+        "(x:a+b)*" -> "(x:ε)(x:a+b)*" [ label = "a | iterateₓ(x)⊕[a]" ];
+        "(x:a+b)*" -> "(x:ε)(x:a+b)*" [ label = "b | iterateₓ(x)⊕[b]" ];
+        "(x:ε)(x:a+b)*" -> "(x:ε)(x:a+b)*" [ label = "a | iterateₓ(x)⊕[a]" ];
+        "(x:ε)(x:a+b)*" -> "(x:ε)(x:a+b)*" [ label = "b | iterateₓ(x)⊕[b]" ];
+}

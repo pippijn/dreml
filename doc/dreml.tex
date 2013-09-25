@@ -14,7 +14,7 @@
 \usepackage{textcomp}
 \usepackage[a4paper,left=3cm,right=3cm,top=3.5cm,bottom=2cm]{geometry}
 \usepackage{tikz}
-%\usepackage{setspace}
+\usepackage[onehalfspacing]{setspace}
 %\usepackage[scaled=.8]{DejaVuSansMono}
 
 % Listings settings
@@ -36,6 +36,7 @@
 % Line distance
 %\renewcommand{\baselinestretch}{1.25}\normalsize
 %\onehalfspacing
+\recalctypearea
 
 % Colours
 \newcommand{\optcolor}[2]{\textcolor[rgb]{#1}{#2}}
@@ -90,13 +91,18 @@
 \parskip=4pt
 \parindent=0pt
 
-\input{tex/macros}
+\input{tex/operators}
 
 \begin{document}
 
+%\pagenumbering{roman}
 \tableofcontents
 
+\input{tex/macros}
+
+\input{tex/signature}
 \input{tex/syntax}
+
 \input{tex/intro}
 \input{tex/background}
 \input{tex/submatching}

@@ -29,12 +29,13 @@ input alphabet $\Sigma$.
 		& $|$	& $r^*$				& Kleene star		\\
 		& $|$	& $\varepsilon$			& Empty word		\\
 		& $|$	& $\phi$			& Empty language	\\
-		& $|$	& $l \in Sigma$			& Letters		\\
+		& $|$	& $l \in \Sigma$		& Letters		\\
    \end{tabular}
 \end{defn}
 
 On this syntax, Brzozowski defines the left derivative.
 
+\needspace{4cm}
 \begin{defn}[Brzozowski's regular expression derivative]
    \label{defn-deriv}
    Abstract syntax:
@@ -450,15 +451,15 @@ in definition \ref{defn-syn}.
 
 In definition 2 of \cite{pdere}, the partial derivative of a regular expression
 $\dda(r)$ is specified. We repeat the definition here, with one modification,
-and with the addition of expression repetition.
+which we will explain later, and with the addition of expression repetition.
 
 \begin{defn}[Expression partial derivative]
    \label{defn-pd-eset}
    The partial derivative defined as sets of expression sets.
 
-   \[\nrdef{1} \dda(\phi) = \dda(\varepsilon) = \dda(b) = \{\{ \phi \}\}\]
+   \[\nrdef{1} \dda(\phi) = \dda(\varepsilon) = \dda(b) = \big\{\{ \phi \}\big\}\]
 
-   \[\nrdef{2} \dda(a) = \{\{ \varepsilon \}\}\]
+   \[\nrdef{2} \dda(a) = \big\{\{ \varepsilon \}\big\}\]
 
    \[\nrdef{3} \dda(r_1 + r_2) = \dda(r_1) \cup \dda(r_2)\]
 

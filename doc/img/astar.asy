@@ -22,6 +22,7 @@ void draw_graph (string data, pen pen, string name, path shape) {
 
 draw_graph ("astar-dreml.log", black, "dreml", scale (1 / 1.5) * unitcircle);
 draw_graph ("astar-ulex.log", brown, "ml-ulex", polygon (3));
+draw_graph ("astar-ocamllex.log", blue, "ocamllex", cross (3));
 draw_graph ("astar-perl.log", darkgreen, "perl", polygon (4));
 draw_graph ("astar-pcre.log", darkblue, "pcre", cross (4));
 

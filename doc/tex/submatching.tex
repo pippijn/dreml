@@ -29,6 +29,7 @@ boolean operators for extended regular expressions.
 		& $|$	& $lw$			& Concatenation	\\
    \end{tabular}
 
+   \needspace{3cm}
    Extended patterns:
 
    \begin{tabular}{lrll}
@@ -66,7 +67,6 @@ pattern negations in terms of a negation normal form transformation that must
 be applied before beginning the pattern match.
 
 \needspace{6cm}
-
 \begin{defn}[Negation normal form]
    \label{defn-negnorm}
    We define the following transformation:
@@ -112,7 +112,6 @@ and $p$ is an instance.
    \end{tabular}
 
    \needspace{5cm}
-
    Language:
 
    \begin{tabular}{lll}
@@ -169,6 +168,7 @@ point, these must have been put in the negation normal form using $\negnorm$.
       \]
    \end{minipage}
 
+   \needspace{3cm}
    \begin{minipage}{0.4\textwidth}
       \[\text{(Concat)}\, \frac
          {\begin{array}{c}
@@ -213,7 +213,7 @@ point, these must have been put in the negation normal form using $\negnorm$.
 \end{defn}
 
 As described in section \ref{ere-submatch}, the matching function yielded by the
-pattern partial derivative can be customised with an $\iterate$. If this
+pattern partial derivative can be customised with an $\iteratefvp$. If this
 function is defined as one that keeps all matches, the number of possible
 matches can become exponential, if the pattern matching relation is defined as
 above.
@@ -265,7 +265,6 @@ x \to l) \}$, the set of pairs containing an expression set and the associated
 transition function. Sets of pattern sets are defined similarly to sets of
 expression sets in definition \ref{defn-esets}.
 
-\needspace{3cm}
 \begin{defn}[Sets of pattern sets]
    \label{defn-psets}
    Syntax:
@@ -278,15 +277,15 @@ expression sets in definition \ref{defn-esets}.
 
 Similarly to the additional requirement for Sulzmann and Lu's pattern partial
 derivatives, our sets of pattern sets are in fact ordered sets, ordered by their
-origin. That means the pattern $(x:ac)(y:ab)$ represented as set of pattern sets
-is $\{\{x:ac\}, \{y:ab\}\}$, exactly in that order. This post-condition is
+origin. That means the pattern $(x:ac)+(y:ab)$ represented as set of pattern
+sets is $\{\{x:ac\}, \{y:ab\}\}$, exactly in that order. This post-condition is
 required to ensure that matching strategies such as the greedy left-most and
 POSIX match operate correctly.
 
 
 \subsubsection{Conversions}
 
-The operators $\esetOfRe$ and $\reOfEset$ can be defined analogously for
+The operators $\psetOfRe$ and $\reOfPset$ can be defined analogously for
 patterns to construct pattern sets and reconstruct the pattern from them.
 
 \begin{defn}[Patterns to pattern sets]
@@ -294,11 +293,11 @@ patterns to construct pattern sets and reconstruct the pattern from them.
    Conversions from patterns.
 
    Pattern set from expression pattern:
-   $\cdot\esetOfRe :: p \to \pset$
+   $\cdot\psetOfRe :: p \to \pset$
 
    \begin{tabular}{lll}
-      $(p_1 \cap p_2)\esetOfRe$	& $=$	& $p_1\esetOfRe \cup p_2\esetOfRe$	\\
-      $p\esetOfRe$			& $=$	& $\{p\}$			\\
+      $(p_1 \cap p_2)\psetOfRe$	& $=$	& $p_1\psetOfRe \cup p_2\psetOfRe$	\\
+      $p\psetOfRe$			& $=$	& $\{p\}$			\\
    \end{tabular}
 \end{defn}
 
@@ -320,15 +319,15 @@ The inverse operator is defined analogously to definition \ref{defn-re2esets}.
    Conversions from pattern sets back to patterns.
 
    Pattern from pattern set:
-   $\cdot\reOfEset :: \pset \to r$
+   $\cdot\reOfPset :: \pset \to r$
 
    \begin{tabular}{lll}
-      $\{p\}\reOfEset$			& $=$	& $p$				\\
-      $(\{p\} \cup \pset)\reOfEset$	& $=$	& $p \cap \pset\reOfEset$	\\
+      $\{p\}\reOfPset$			& $=$	& $p$				\\
+      $(\{p\} \cup \pset)\reOfPset$	& $=$	& $p \cap \pset\reOfPset$	\\
    \end{tabular}
 \end{defn}
 
-We do not define $\esetsOfRe$ and $\reOfEsets$ for sets of pattern sets, and
+We do not define $\psetsOfRe$ and $\reOfPsets$ for sets of pattern sets, and
 there is no need for them, but the final pattern derivative as set of patterns
 with transition functions can be obtained from a pattern using the function
 $\cdot \setminus_p \cdot$ detailed and illustrated in section \ref{nfa}.
@@ -348,14 +347,14 @@ function $f$, these must be sensibly combined in the set operators.
    \begin{tabular}{lll}
       $\psets \circledcdot_{mod} p_2$
          & $=$
-         & $\{ (\{ (p_1, p_2) \where p_1 \in \eset \}, f \circ mod) \where (\eset, f) \in \psets \}$
+         & $\{ (\{ (p_1, p_2) \where p_1 \in \pset \}, f \circ mod) \where (\pset, f) \in \psets \}$
          \\
 
       $\psets_1 \circledcap \psets_2$
          & $=$
          & $\{
-              (\eset_1 \cup \eset_2, f_1 \circ f_2)
-              \where (\eset_1, f_1) \in \psets_1, (\eset_2, f_2) \in \psets_2
+              (\pset_1 \cup \pset_2, f_1 \circ f_2)
+              \where (\pset_1, f_1) \in \psets_1, (\pset_2, f_2) \in \psets_2
            \}$
          \\
    \end{tabular}
@@ -378,29 +377,30 @@ pattern matching relation in definition \ref{patmatchrel}.
    Pattern partial derivatives as sets of pattern sets.
 
    \[\nrdef{1p} \dda(x:r)
-      = \{ (\{ \eset\reOfEset \}, \updatexa) \where \eset \in \dda(r) \}\]
+      = \big\{ (\{ (x:\eset\reOfEset) \}, \updatexa) \where \eset \in \dda(r) \big\}\]
    \[\nrdef{2p} \dda(x:p)
-      = \{ (\{ (x:\pset\reOfEset) \}, \updatexa \circ f) \where (\pset, f) \in \dda(p) \}\]
+      = \big\{ (\{ (x:\pset\reOfPset) \}, \updatexa \circ f) \where (\pset, f) \in \dda(p) \big\}\]
    \[\nrdef{3p} \dda(p_1 + p_2) = \dda(p_1) \cup \dda(p_2)\]
-   \[\nrdef{4p} \dda(p^*) = \dda(p) \circledcdot_{\iterate} p^*\]
+   \[\nrdef{4p} \dda(p^*) = \dda(p) \circledcdot_{\iteratefvp} p^*\]
+   \needspace{3cm}
    \[\nrdef{5p} \dda((p_1, p_2)) =
        \begin{cases}
-          \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\reOfEsets) \\
+          \dda(r_1) \circledcdot_{id} p_2 & \text{if } \varepsilon \not\in L(p_1\reOfPsets) \\
           \dda(r_1) \circledcdot_{id} p_2 \cup \dda(p_2) & \text{otherwise}
        \end{cases}
    \]
    \[\nrdef{6p} \dda(p_1 \cap p_2) = \dda(p_1) \circledcap \dda(p_2)\]
    \[\nrdef{7p} \dda(p^n) =
        \begin{cases}
-          \{ (\pset, f \circ \iterate) \where (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
-          \dda(p) \circledcdot_{\iterate} p^{n-1} & \text{otherwise}
+          \{ (\pset, f \circ \iteratefvp) \where (\pset, f) \in \dda(p) \} & \text{if } n = 1 \\
+          \dda(p) \circledcdot_{\iteratefvp} p^{n-1} & \text{otherwise}
        \end{cases}
    \]
 \end{defn}
 
 In \nr{5p}, the identity function is given as modifier to the $\circledcdot$
 operator, keeping the environment as is before passing it to the transition
-function. The $\iterate$ function can modify the environment for the two
+function. The $\iteratefvp$ function can modify the environment for the two
 iterating patterns $p^*$ and $p^n$. It can choose to keep only the last match or
 all matches, by renaming past recorded match variables. This function is
 described in more detail in section 5.1 of \cite{pdpat}. The $\fv(p)$ function
@@ -430,34 +430,34 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
 
 \begin{eg}
    Given the alphabet $\Sigma = \{a, b, c\}$ and the pattern expression $p =
-   (x:a, p_2)$ where $p_2 = (y:\neg c, p_3)$ and $p_3 = (z:ab + ac)$, we can
-   construct the automaton as follows:
+   (x:a, p_2)$ where $p_2 = (y:\neg c, p_3)$ and $p_3 = (z:ab + ac)$, thus $p =
+   (x:a)(y:\neg c)(z:ab + ac)$, we can construct the automaton as follows:
 
    \begin{tabular}{lll}
       $\dda(a)$
       & $=_{\nr{2}}$ &
-         $\{\{ \varepsilon \}\}$
+      $\{\{ \varepsilon \}\}$
    \end{tabular}
 
    \begin{tabular}{lll}
       $\dda(((x:a), p_2))$
       & $=_{\nr{5p}}$ &
-         $\dda(x:a) \circledcdot_{\id} p_2$
+      $\dda(x:a) \circledcdot_{\id} p_2$
       \\ & $=_{\nr{1p}}$ &
-         $\{ (\{ \eset\reOfEset \}, \updatexa) \where \eset \in \dda(a) \}
-            \circledcdot_{\id} p_2$
+      $\{ (\{ x:\eset\reOfEset \}, \updatexa) \where \eset \in \dda(a) \}
+      \circledcdot_{\id} p_2$
       \\ & $=$ &
-         $\{ (\{ \varepsilon \}, \updatexa) \}
-            \circledcdot_{\id} p_2$
+      $\{ (\{ x:\varepsilon \}, \updatexa) \}
+      \circledcdot_{\id} p_2$
       \\ \multicolumn{3}{l}
-         {By definition \ref{defn-pset-ops}, and we cancel the identity function
-         in the update chain.}
+      {By definition \ref{defn-pset-ops}, and we cancel the identity function
+      in the update chain.}
       \\ & $=$ &
-         $\{ (\{ (\varepsilon, p_2) \}, \updatexa) \}$
+      $\{ (\{ (x:\varepsilon, p_2) \}, \updatexa) \}$
       \\ \multicolumn{3}{l}
-         {Simplification $(\varepsilon, p) = p$:}
+      {Simplification $(x:\varepsilon, p) = p$:}
       \\ & $=$ &
-         $\{ (\{ p_2 \}, \updatexa) \}$
+      $\{ (\{ p_2 \}, \updatexa) \}$
    \end{tabular}
 
    The resulting set of pattern sets contains the partial derivative over the
@@ -472,29 +472,27 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
    \begin{tabular}{lll}
       $\dda(\neg c)$
       & $=_{\nr{8}}$ &
-         $\circledneg (\dda(c))$
+      $\circledneg (\dda(c))$
       \\ & $=_{\nr{1}}$ &
-         $\circledneg (\{\{\phi\}\})$
+      $\circledneg (\{\{\phi\}\})$
       \\ \multicolumn{3}{l}
-         {By definition \ref{defn-eset-ops}:}
+      {By definition \ref{defn-eset-ops}:}
       \\ & $=$ &
-         $\{\{\neg\phi\}\}$
+      $\{\{\neg\phi\}\}$
    \end{tabular}
-
-   \needspace{5cm}
 
    \begin{tabular}{lll}
       $\dda(((y:\neg c), p_3))$
       & $=_{\nr{5p}}$ &
-         $\dda(y:\neg c) \circledcdot_{\id} p_3 \cup \dda(p_3)$
+      $\dda(y:\neg c) \circledcdot_{\id} p_3 \cup \dda(p_3)$
       \\ & $=_{\nr{1p}}$ &
-         $\{ (\{ \eset\reOfEset \}, \update{y}{a}) \where \eset \in \dda(\neg c) \}
-            \circledcdot_{\id} p_3 \cup \dda(p_3)$
+      $\{ (\{ y:\eset\reOfEset \}, \update{y}{a}) \where \eset \in \dda(\neg c) \}
+      \circledcdot_{\id} p_3 \cup \dda(p_3)$
       \\ & $=$ &
-         $\{ (\{ \neg\phi \}, \update{y}{a}) \}
-            \circledcdot_{\id} p_3 \cup \dda(p_3)$
+      $\{ (\{ y:\neg\phi \}, \update{y}{a}) \}
+      \circledcdot_{\id} p_3 \cup \dda(p_3)$
       \\ & $=$ &
-         $\{ (\{ (\neg\phi, p_3) \}, \update{y}{a}) \} \cup \dda(p_3)$
+      $\{ (\{ (y:\neg\phi, p_3) \}, \update{y}{a}) \} \cup \dda(p_3)$
    \end{tabular}
 
    Since $\varepsilon \in L(\neg c)$, we also need to compute $\dda(p_3)$ and
@@ -503,39 +501,39 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
    \begin{tabular}{lll}
       $\dda(ab + ac)$
       & $=_{\nr{3}}$ &
-         $\dda(ab) \cup \dda(ac)$
+      $\dda(ab) \cup \dda(ac)$
       \\ & $=_{\nr{5}}$ &
-         $\dda(a) \circledcdot b \cup \dda(a) \circledcdot c$
+      $\dda(a) \circledcdot b \cup \dda(a) \circledcdot c$
       \\ & $=_{\nr{2}}$ &
-         $\{\{\varepsilon\}\} \circledcdot b \cup \{\{\varepsilon\}\} \circledcdot c$
+      $\{\{\varepsilon\}\} \circledcdot b \cup \{\{\varepsilon\}\} \circledcdot c$
       \\ & $=$ &
-         $\{\{\varepsilon b\}\} \cup \{\{\varepsilon c\}\}$
+      $\{\{\varepsilon b\}\} \cup \{\{\varepsilon c\}\}$
       \\ & $=$ &
-         $\{\{\varepsilon b\}, \{\varepsilon c\}\}$
+      $\{\{\varepsilon b\}, \{\varepsilon c\}\}$
    \end{tabular}
 
    \begin{tabular}{lll}
       $\dda(z:ab + ac)$
       & $=_{\nr{1p}}$ &
-         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) \where \eset \in \dda(ab + ac) \}$
+      $\{ (\{ z:\eset\reOfEset \}, \update{z}{a}) \where \eset \in \dda(ab + ac) \}$
       \\ & $=$ &
-         $\{ (\{ \eset\reOfEset \}, \update{z}{a}) \where \eset \in \{\{\varepsilon b\}, \{\varepsilon c\}\} \}$
+      $\{ (\{ z:\eset\reOfEset \}, \update{z}{a}) \where \eset \in \{\{\varepsilon b\}, \{\varepsilon c\}\} \}$
       \\ & $=$ &
-         $\{ (\{ \varepsilon b \}, \update{z}{a}), (\{ \varepsilon c \}, \update{z}{a}) \}$
+      $\{ (\{ z:\varepsilon b \}, \update{z}{a}), (\{ z:\varepsilon c \}, \update{z}{a}) \}$
       \\ \multicolumn{3}{l}
-         {Simplification $(\varepsilon, p) = p$:}
+      {Simplification $(\varepsilon, p) = p$:}
       \\ & $=$ &
-         $\{ (\{ b \}, \update{z}{a}), (\{ c \}, \update{z}{a}) \}$
+      $\{ (\{ z:b \}, \update{z}{a}), (\{ z:c \}, \update{z}{a}) \}$
    \end{tabular}
 
    The resulting set of pattern sets is
    \begin{align*}
-     \dda(\neg c) \cup \dda(z:ab + ac) =
-     \big\{
-     & (\{ (\neg\phi, p_3) \}, \update{y}{a}), \\
-     & (\{ b \}, \update{z}{a}), \\
-     & (\{ c \}, \update{z}{a})
-     \big\}
+      \dda(y:\neg c) \cup \dda(z:ab + ac) =
+      \big\{
+      & (\{ y:(\neg\phi, p_3) \}, \update{y}{a}), \\
+      & (\{ z:b \}, \update{z}{a}), \\
+      & (\{ z:c \}, \update{z}{a})
+      \big\}
    \end{align*}
 
    After using the same method to iteratively construct the entire automaton,
@@ -546,7 +544,167 @@ until no new terms appear or all terms yield the empty language, i.e. $L(p) =
 \end{eg}
 
 
+\begin{eg}
+   In order to demonstrate how $\iteratefvp$ affects the environments, we give a
+   simple example involving the Kleene star applied to patterns: $p^*$.
+
+   Given the alphabet $\Sigma = \{a, b, c\}$ and the pattern expression
+   $p = (x:a+b)^*$, we construct the automaton as follows:
+
+   \begin{tabular}{lll}
+      $\dda((x:a+b)^*)$
+      & $=_{\nr{4p}}$ &
+      $\dda(x:a+b) \circledcdot_{\iteratefv{x:a+b}} (x:a+b)^*$ \\
+   \end{tabular}
+
+   We construct the partial derivative for $(x:a+b)$ separately as not to
+   clutter the calculation with $\{ \dots \} \circledcdot_{\iteratefvp} p$.
+
+   \begin{tabular}{lll}
+      $\dda(x:a+b)$
+      & $=_{\nr{1p}}$ &
+      $\big\{ (\{ x:\eset\reOfEset \}, \updatexa) \where \eset \in \dda(a+b) \big\}$ \\
+      & $=_{\nr{3}}$ &
+      $\big\{ (\{ x:\eset\reOfEset \}, \updatexa) \where \eset \in \dda(a) \cup \dda(b) \big\}$ \\
+      & $=_{\nr{1,2}}$ &
+      $\big\{ (\{ x:\eset\reOfEset \}, \updatexa) \where \eset \in \{\{\varepsilon\}\} \cup \{\{\phi\}\} \big\}$ \\
+      & $=$ &
+      $\big\{ (\{ x:\eset\reOfEset \}, \updatexa) \where \eset \in \{\{\varepsilon\}, \{\phi\}\} \big\}$ \\
+      & $=_{\text{Defn. \ref{defn-esets2re}}}$ &
+      $\big\{ (\{ x:\varepsilon \}, \updatexa), (\{ x:\phi \}, \updatexa) \big\}$ \\
+   \end{tabular}
+
+   \newcommand\iteratex{\iterate{\{x\}}}
+
+   Next, we compute $\fv(p)$ where $p = (x:a+b)$. The $\fv$ function yields the
+   free variables from a pattern, resulting in $\fv((x:a+b)) = \{ x \}$. With
+   this information, we evaluate $\circledcdot$ with $\iteratex$ as modifier.
+
+   \begin{tabular}{lll}
+      $\dda(p)$
+      & $=$ &
+      $\big\{ (\{ x:\varepsilon \}, \updatexa), (\{ x:\phi \}, \updatexa) \big\} \circledcdot_{\iteratex} (x:a+b)^*$ \\
+      & $=$ &
+      $\big\{ (\{ (p_1, (x:a+b)^*) \where p_1 \in \pset \}, f \circ \iteratex)$ \\
+      & &
+      $\quad\where\: (\pset, f) \in \{ (\{ x:\varepsilon \}, \updatexa), (\{ x:\phi \}, \updatexa) \} \big\}$ \\
+      & $=$ &
+      $\big\{$ \\
+      & &
+      $\quad (\{ (p_1, (x:a+b)^*) \where p_1 \in \{ x:\varepsilon \} \}, \updatexa \circ \iteratex),$ \\
+      & &
+      $\quad (\{ (p_1, (x:a+b)^*) \where p_1 \in \{ x:\phi \} \}, \updatexa \circ \iteratex)$ \\
+      & &
+      $\big\}$ \\
+      & $=$ &
+      $\big\{$ \\
+      & &
+      $\quad (\{ (x:\varepsilon, (x:a+b)^*) \}, \updatexa \circ \iteratex),$ \\
+      & &
+      $\quad (\{ (x:\phi, (x:a+b)^*) \}, \updatexa \circ \iteratex)$ \\
+      & &
+      $\big\}$ \\
+   \end{tabular}
+
+   We can elide the error transition using the simplification rule $(p+\phi) =
+   p$, resulting in a final partial derivative of $p$ over $a$:
+
+   \[
+      \dda((x:a+b)^*) =
+      \big\{ (\{ (x:\varepsilon, (x:a+b)^*) \}, \updatexa \circ \iteratex) \big\}
+   \]
+
+   Performing the same computation over $b$ gives us the only other non-empty
+   partial derivative of $(x:a+b)$. Notice that the only difference is that the
+   transition function updates $x$ with $b$ rather than $a$.
+
+   \[
+      \ddb((x:a+b)^*) =
+      \big\{ (\{ (x:\varepsilon, (x:a+b)^*) \}, \updatexb \circ \iteratex) \big\}
+   \]
+
+   All other symbols $l \in \Sigma \setminus \{a, b\}$ will yield
+
+   \[
+      \ddl((x:a+b)^*) =
+      \big\{ (\{ (x:\phi, (x:a+b)^*) \}, \updatexl \circ \iteratex) \big\}
+   \]
+
+   Although this transition updates $x$ with input symbol $l$, the transition
+   goes into an error state, so that the associated environment $\Gamma$ will
+   never be considered as result.
+
+   Finally, we need to construct the partial derivative for $(x:\varepsilon)
+   (x:a+b)^*$, which will not be elaborated further. For symbols $l \in \{a,
+   b\}$, the partial derivative is
+
+   \[
+      \ddl((x:\varepsilon)(x:a+b)^*) =
+      \big\{ (\{ (x:\varepsilon, (x:a+b)^*) \}, \updatexl \circ \iteratex) \big\}
+   \]
+
+   For all others, the result is a term equivalent to $(x:\phi)$. Figure
+   \ref{img-nfa-iterate} shows the non-deterministic finite automaton
+   constructed as detailed above.
+
+   \img{nfa-iterate}{12cm}{Automaton for $(x:a+b)^*$}
+
+   For this example, we define $\iterate{V}$ with set of free variables $V$ as
+   \begin{align*}
+      \iterate{V}(\Gamma) = &\quad \{ (x':w) \where (x:w) \in \Gamma, x \in V \} \\
+      & \cup \{ (x:w) \where (x:w) \in \Gamma, x \not\in V \}
+   \end{align*}
+   This function renames all variable bindings in $\Gamma$ where the variable
+   name is in $V$ and retains the bindings whose names are not in $V$. Depending
+   on whether $\Gamma$ is a set or a multiset, only the last complete match or
+   all past matches are recorded.
+
+   Since we want to demonstrate the effect of $\iteratefvp$, we will simulate
+   execution of this NFA on input $ab$, starting with environment $\Gamma =
+   \{\}$, and using the $\iterate{V}$ function defined above with $V =
+   \fv((x:a+b)^*) = \{x\}$.
+
+   \begin{enumerate}
+      \item Iterate over initial state set $\{(x:a+b)^*, \{\}\}$:
+         \begin{enumerate}
+            \item State $(x:a+b)^*$, $\Gamma = \{\}$, transition on letter `a':
+            \begin{enumerate}
+               \item Set $\Gamma = \iteratex(\Gamma) = \iteratex(\{\}) = \{\}$
+               \item Set $\Gamma = \updatexa(\Gamma) = \updatexa(\{\}) = \{x:a\}$
+               \item Go to state $(x:\varepsilon)(x:a+b)^*$.
+            \end{enumerate}
+         \end{enumerate}
+      \item Iterate over new state set: $\{(x:\varepsilon)(x:a+b)^*, \{x:a\}\}$:
+         \begin{enumerate}
+            \item State $(x:\varepsilon)(x:a+b)^*$, $\Gamma = \{x:a\}$, transition on letter `b':
+            \begin{enumerate}
+               \item Set $\Gamma = \iteratex(\Gamma) = \iteratex(\{x:a\}) = \{x':a\}$
+               \item Set $\Gamma = \updatexb(\Gamma) = \updatexb(\{x':a\}) = \{x':a, x:b\}$
+               \item Go to state $(x:\varepsilon)(x:a+b)^*$.
+            \end{enumerate}
+         \end{enumerate}
+   \end{enumerate}
+
+   In this example, the state set always contains exactly one state, since the
+   automaton contains only deterministic transitions. If the next input
+   character is $a$ again and $\Gamma$ is defined as set rather than multiset,
+   we will be in state $(x:\varepsilon)(x:a+b)^*$ with environment $\Gamma =
+   \{x':b, x:a\}$. If $\Gamma$ were a multiset, it would be $\Gamma = \{x':a,
+   x':b, x:a\}$.
+
+\end{eg}
+
+
 \section{Language predicates}
+
+In operations on partial derivatives and during automata construction, we need
+to perform specific queries on $L(p)$, the set of words matched by a pattern
+$p$. Since computing this set is an expensive operation equivalent to actually
+computing the entire automaton, we require specialised functions for these
+queries.
+
+
+\subsection{Approximation: language is empty}
 
 As an optimisation, we detect whether it is worth computing the partial
 derivative of an expression by testing whether the expression accepts any
@@ -579,6 +737,7 @@ This function is an approximation in that if it yields \true, then $L(r) =
 \emptyset$, but if it yields \false, $L(r) \neq \emptyset$ may not follow. For
 instance, $\isempty(a \cap b) = 0$, but $L(a \cap b) = \emptyset$.
 
+\needspace{6cm}
 \begin{defn}[Approximation for $L(r) = \emptyset$]
    \label{defn-isempty}
    $\isempty(\phi)$ is true if and only if $L(r) = \emptyset$.
@@ -638,6 +797,7 @@ removing valid transitions from the resulting automaton.
    each part of the proof is that $L(r) = \emptyset$. If it is not, then
    $\isempty(r)$ is not \true.
 
+   \needspace{3cm}
    \begin{enumerate}[label=\textbf{(\arabic*)}]
       \item
          $L(\phi) = \emptyset \Leftarrow \isempty(\phi)$
@@ -650,7 +810,8 @@ removing valid transitions from the resulting automaton.
 
       \item
          If one of the intersecting languages is empty, then the intersection is
-         also empty. \\
+         also empty.
+
          $L(r_1 \cap r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) \cap L(r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
@@ -660,7 +821,8 @@ removing valid transitions from the resulting automaton.
       \item
          If one of the choices is not empty, then the expression is not empty,
          thus both choices must be empty for the expression to be considered
-         empty. \\
+         empty.
+
          $L(r_1 + r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) \cup L(r_2) = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \wedge L(r_2) = \emptyset$ \\
@@ -671,7 +833,8 @@ removing valid transitions from the resulting automaton.
          If the left expression does not recognise any language, then the
          complete expression does not. If it does, but the right expression does
          not, then after matching the left expression, the complete expression
-         runs into an error state, therefore not recognising any language. \\
+         runs into an error state, therefore not recognising any language.
+
          $L((r_1, r_2)) = \emptyset$ \\
          $\Leftrightarrow \{ w_1w_2 \where w_1 \in L(r_1), w_2 \in L(r_2) \} = \emptyset$ \\
          $\Leftrightarrow L(r_1) = \emptyset \vee L(r_2) = \emptyset$ \\
@@ -681,7 +844,9 @@ removing valid transitions from the resulting automaton.
       \item
          If $r$ recognises a language, then any number of consecutive $r$ also
          does so. Conversely, if $L(r)$ is the empty language, then no number of
-         consecutive $r$ will fix that. \\
+         consecutive $r$ will fix that.
+
+         \needspace{3cm}
          $L(r^n) = \emptyset$ \\
          $\Leftrightarrow \{ w_1 \dots w_n \where w_i \in L(r) \} = \emptyset$ \\
          $\Leftrightarrow L(r) = \emptyset$ \\
@@ -727,6 +892,54 @@ removing valid transitions from the resulting automaton.
    \qed
 \end{lem}
 
+
+\needspace{3cm}
+\begin{eg}
+   The following sample evaluations of $\isempty$ demonstrate that this
+   predicate is an over-approximation and may yield false negatives in the
+   presence of negation or intersection\footnote{False negatives are never a
+   problem, but false positives would be incorrect.}. For the sake of
+   simplicity, we define $\Sigma = \{a,b,c\}$.
+   \begin{align*}
+      L((a+b) \cap c) &= L(a+b) \cap L(c) \\
+      &= (L(a) \cup L(b)) \cap L(c) \\
+      &= (\{a\} \cup \{b\}) \cap \{c\} \\
+      &= \{a,b\} \cap \{c\} = \emptyset
+   \end{align*}
+   Our predicate evaluates to \false, but in fact the intersection of disjunct
+   languages is empty. We cannot determine this in our linear time
+   approximation, giving a false negative.
+   \begin{align*}
+      \isempty((a+b) \cap c) &= \isempty(a+b) \vee \isempty(c) \\
+      &= (\isempty(a) \wedge \isempty(b)) \vee \isempty(c) \\
+      &= (\false \wedge \false) \vee \false \\
+      &= false
+   \end{align*}
+   Another example where the approximation fails to be precise is the negation
+   of the full language.
+   \begin{align*}
+      L(\neg((a+b+c)^*)) &= L(\Sigma^*) \setminus \{\varepsilon,a,b,c,aa,ab,ac,ba,bb,\dots\} \\
+      &= \{\varepsilon,a,b,c,aa,\dots\} \setminus \{\varepsilon,a,b,c,aa,\dots\} \\
+      &= \emptyset
+   \end{align*}
+   For $\neg(r^*)$, we define the result as false, since in all cases except for
+   expressions equivalent to $\Sigma^*$ the language under negation does not
+   describe all possible words made of the alphabet $\Sigma$.
+   \begin{align*}
+      \isemptyneg((a+b+c)^*) &= false
+   \end{align*}
+   The $\isempty$ predicate can only decide that the language of a negation is
+   empty if the negated language is itself a negation.
+   \begin{align*}
+      \isempty(\neg(\neg(\phi,a))) &= \isemptyneg(\neg(\phi,a)) \\
+      &= \isempty((\phi,a)) \\
+      &= \isempty(\phi) \vee \isempty(a) \\
+      &= \true \vee \false = \true
+   \end{align*}
+\end{eg}
+
+
+\subsection{Exact: language contains empty word}
 
 In the derivation of $(r,r)$, i.e. expression or pattern concatenation, we need
 to know whether the first expression may derive $\varepsilon$, the empty word.
@@ -809,7 +1022,6 @@ and the storage requirements for delayed actions would be linear in the input
 length. Therefore, the actions should only be delayed for as little time as
 possible.
 
-\needspace{5cm}
 \begin{defn}[Match completeness]
    This defines when a match is considered complete.
 
@@ -846,22 +1058,24 @@ possible.
 
 \end{defn}
 
-\subsubsection{Longest match strategy}
+
+\subsubsection{Order of subexpressions}
 
 A single pattern $p$ under the greedy left-most matching strategy will consume
 as much of the input as possible. However, when using the above-mentioned
-declarative lexer using $p' = p^*$, this is no longer true. Given, for instance,
-a language with lexemes $A$, $B$, and $AB$, the lexer pattern would be $p =
-(f_1:A) + (f_2:B) + (f_3:AB)$. Tokenising the input $AB$ would, under the greedy
-left-most strategy, invoke the semantic action $f_3$.
+declarative lexer under the Kleene star $p' = p^*$, this is no longer true.
+Given, for instance, a language with lexemes $A$, $B$, and $AB$, the lexer
+pattern would be $p = (f_1:A) + (f_2:B) + (f_3:AB)$. Tokenising the input $AB$
+would, under the greedy left-most strategy, invoke the semantic action $f_3$.
 
 With the pattern written as $p' = ((f_1:A) + (f_2:B) + (f_3:AB))^*$, the greedy
 left-most match would favour the shorter matches, and an input of $AB$ would
 first complete the match associated with $f_1$ with $A$ and then $f_2$ with $B$.
 
-In order to maintain the matching behaviour of lexers, the toplevel choice over
-all lexemes must follow a longest match policy rather than the greedy left-most
-match used inside lexeme expressions.
+In order to maintain the matching behaviour of lexers, the user must specify
+patterns that share a common prefix in decreasing length. This means that the
+above lexer specification must be written as $p' = ((f_1:AB) + (f_2:A) +
+(f_3:B))^*$.
 
 
 % vim:tw=80

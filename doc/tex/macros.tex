@@ -1,16 +1,18 @@
-\DeclareMathOperator\where{|}
-\DeclareMathOperator\circledcap{\text{\textcircled{\tiny$\cap$}}}
-\DeclareMathOperator\circledneg{\text{\textcircled{\tiny$\neg$}}}
-\DeclareMathOperator\circledcdot{\text{\textcircled{\raisebox{-0.4pt}{$\cdot$}}}}
 \newcommand\dd[1]{\frac{\partial}{\partial_{#1}}}
 \newcommand\dda{\dd{a}}
+\newcommand\ddb{\dd{b}}
+\newcommand\ddl{\dd{l}}
 
 \newcommand\update[2]{\mathit{update}(#1, #2)}
 \newcommand\updatexa{\update{x}{a}}
+\newcommand\updatexb{\update{x}{b}}
+\newcommand\updatexl{\update{x}{l}}
 
 \newcommand\id{\mathit{id}}
 \newcommand\fv{\mathit{fv}}
-\newcommand\iterate{\mathit{iterate}_{\fv(p)}}
+\newcommand\iterate[1]{\mathit{iterate_{#1}}}
+\newcommand\iteratefv[1]{\iterate{\fv(#1)}}
+\newcommand\iteratefvp{\iteratefv{p}}
 
 \newcommand\true{\textit{true}}
 \newcommand\false{\textit{false}}
@@ -24,8 +26,14 @@
 \newcommand\reOfEsets{\!\!\Downarrow}
 \newcommand\eset{\mathcal{E}}
 \newcommand\esets{\mathbb{E}}
+
+\newcommand\psetOfRe{\!\!\uparrow}
+\newcommand\psetsOfRe{\!\!\Uparrow}
+\newcommand\reOfPset{\!\!\downarrow}
+\newcommand\reOfPsets{\!\!\Downarrow}
 \newcommand\pset{\mathcal{P}}
 \newcommand\psets{\mathbb{P}}
+
 \newcommand\negnorm{\mathit{norm_\neg}}
 
 \newcommand\isempty{\mathit{isEmpty}}

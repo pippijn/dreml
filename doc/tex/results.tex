@@ -16,7 +16,8 @@ tool that does is \mlulex{}, however doing so with derivatives and not
 supporting submatching. All comparisons in the following were done with \dreml{}
 and \mlulex{}. Automata construction in Perl and PCRE are several orders of
 magnitude faster than in both \dreml{} and \mlulex{}, making a comparison on this
-level inexpressive.
+level inexpressive. We also provide a comparison to \ocamllex{}, for which our
+tool aims to be a drop-in replacement.
 
 
 \section{Automata construction}
@@ -52,6 +53,9 @@ noticeably faster at $n = 7$ than at $n = 6$. This effect has been observed in
 all test runs on various platforms. No reason for this behaviour could be
 determined.
 
+The Thompson NFA and powerset construction based \ocamllex{} is slower on every
+test at compile time.
+
 
 \subsection{Worst-case extended regular expression}
 
@@ -60,7 +64,10 @@ b))^*b(a+b)^n$ and $r = r_1 \cap r_2$, a natural partial derivative construction
 would reduce to a full derivative computation. Here we can see that \dreml{}, by
 adopting the sets of sets extension, produces only a polynomial number of
 states. Figure \ref{img-dfa-states} shows the exponential growth in the DFA case
-contrasted with the polynomial growth in the NFA construction.
+contrasted with the polynomial growth in the NFA construction. The graph for
+\ocamllex{} and \mlulex{} overlap, since they differ only marginally:
+\ocamllex{} produces exactly $2^{n+1}$ states, \mlulex{} produces $2^{n+1}+5$
+states.
 
 \img{dfa-states}{14cm}{Exponential DFA growth vs. polynomial NFA growth}
 
@@ -80,12 +87,14 @@ matching performance with \mlulex{}, despite the overhead of keeping track of
 multiple states. \dreml{} uses tables and a simulation loop while \mlulex{}
 generates efficient SML code with mutually recursive functions. \mlulex{} also
 implements a table based lexer engine, which is about three to four times slower
-than its code based engine.
+than its code based engine. The \ocamllex{} engine is written in C and greatly
+outperforms both ML-based tools.
 
 As figure \ref{img-astar} shows, results indicate that a solution based on
 partial derivatives can have competitive performance with one based on
-derivatives and can vastly outperform a derivative based automata construction
-in cases where the number of states between NFA and DFA differ substantially.
+derivatives and, as seen in the automata construction graphs, can vastly
+outperform a derivative based construction in cases where the number of states
+between NFA and DFA differ substantially.
 
 All timing was done with Standard ML of New Jersey v110.75 and OCaml version
 4.00.1. Using MLton instead of SML/NJ for the SML implementation would likely
