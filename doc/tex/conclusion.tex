@@ -49,6 +49,13 @@ Some ideas for future development:
       construct a statically typed heterogeneous matching environment. Initial
       attempts at this failed, so further research is required.
 
+   \item Make the generic lexer engine immediate, in that it does not defer
+      actions but immediately calls the semantic action, discarding its value if
+      the parent pattern does not match.
+
+      Further research is required here, as well, to decide whether this method
+      is feasible in terms of performance.
+
 \end{itemize}
 
 An OCaml implementation of the algorithms presented in chapter \ref{submatching}
