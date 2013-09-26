@@ -39,10 +39,22 @@ Some ideas for future development:
    \item Implement an ML code generator producing mutually recursive functions
       in addition to the current table-based backend.
 
+   \item Investigating the possibilities within a generic submatching based
+      lexer engine.
+
+      It would be interesting to include the semantic action functions in the
+      AST\footnote{Abstract Syntax Tree} data structure representing patterns.
+      These functions would replace the variable names and using
+      GADTs\footnote{Generalised Algebraic Data Types}, we might be able to
+      construct a statically typed heterogeneous matching environment. Initial
+      attempts at this failed, so further research is required.
+
 \end{itemize}
 
-An OCaml implementation of the algorithms presented in this thesis can be
-downloaded as source code from \url{https://github.com/pippijn/dreml}.
+An OCaml implementation of the algorithms presented in chapter \ref{submatching}
+and discussed in chapter \ref{implementation} can be downloaded as free and open
+source code under the GNU General Public License version 3 from
+\url{https://github.com/pippijn/dreml}.
 
 
 % vim:tw=80

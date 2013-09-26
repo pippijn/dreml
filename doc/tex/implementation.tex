@@ -11,7 +11,13 @@ In addition to the prototype, the algorithms implemented were integrated into a
 tool called \dreml, which accepts the full syntax supported by \ocamllex,
 including submatching.
 
-\img{modules}{10cm}{Module dependency graph}
+Figure \ref{img-modules} shows a module dependency graph of the \dreml{}
+implementation. The two filled box nodes \texttt{ExprSets} and \texttt{Nfa} are
+the core algorithms, while the rest are implementation details. The
+\texttt{Language} module implements the language predicates from definitions
+\ref{defn-isempty} and \ref{defn-nullable}.
+
+\img{modules}{12cm}{Module dependency graph}
 
 
 \section{Grammar}
@@ -23,21 +29,22 @@ but removes the need for escape sequences. The \dreml{} tool supports any
 character, as well as Unicode escape sequences, which are translated to a UTF-8
 encoded sequence.
 
+\needspace{4cm}
 \begin{defn}[Grammar of regular expression syntax]
    \label{defn-gram-reg}
    Regular grammar for tokens used in the context-free grammar below.
 
    \begin{tabular}{lrl}
-      Digit	& $::=$	& '0' \dots '9'				\\
+      Digit	& $::=$	& `0' \dots `9'				\\
       Number	& $::=$	& Digit Number				\\
-      Character	& $::=$	& 'a' \dots 'z' $|$ 'A' \dots 'Z'	\\
-      Namechar	& $::=$	& 'a' \dots 'z'				\\
+      Character	& $::=$	& `a' \dots `z' $|$ `A' \dots `Z'	\\
+      Namechar	& $::=$	& `a' \dots `z'				\\
       Namestr	& $::=$	& Namestr Name				\\
-      Name	& $::=$	& Namestr ':'				\\
+      Name	& $::=$	& Namestr `:'				\\
    \end{tabular}
 \end{defn}
 
-The \textit{name} terminal includes the trailing ':' so that it can be
+The \textit{name} terminal includes the trailing `:' so that it can be
 distinguished from a single character. Another way would be to allow
 \textit{namestr} both as name and as expression, and transforming the string
 into a character sequence at a later point.
@@ -50,25 +57,23 @@ into a character sequence at a later point.
    grammar, and identifiers starting with a minuscule\footnote{Lowercase letter}
    name other context-free grammar rules defined here.
 
-   \needspace{5cm}
-
    Patterns:
 
    \begin{tabular}{lrl}
       pattern		& $::=$	& pat\_and			\\
       pat\_and		& $::=$	& pat\_branch			\\
-      			& $|$	& pat\_and '$|$' pat\_branch	\\
+      			& $|$	& pat\_and `$|$' pat\_branch	\\
       pat\_branch	& $::=$	& pat\_concat			\\
-      			& $|$	& pat\_and '\&' pat\_concat	\\
+      			& $|$	& pat\_and `\&' pat\_concat	\\
       pat\_concat	& $::=$	& pat\_expr			\\
-			& $|$	& '$\sim$' pat\_expr		\\
+			& $|$	& `$\sim$' pat\_expr		\\
 			& $|$	& pat\_concat pat\_expr		\\
-      pat\_expr		& $::=$	& '(' Name regex ')'		\\
-			& $|$	& '(' Name pattern ')'		\\
-			& $|$	& '(' pattern ')'		\\
-			& $|$	& pat\_expr '*'			\\
-                        & $|$	& pat\_expr '\verb!^!' Number	\\
-                        & $|$	& pat\_expr '\{' Number '\}'	\\
+      pat\_expr		& $::=$	& `(' Name regex `)'		\\
+			& $|$	& `(' Name pattern `)'		\\
+			& $|$	& `(' pattern `)'		\\
+			& $|$	& pat\_expr `*'			\\
+                        & $|$	& pat\_expr `\verb!^!' Number	\\
+                        & $|$	& pat\_expr `\{' Number `\}'	\\
    \end{tabular}
 
    \needspace{5cm}
@@ -77,24 +82,24 @@ into a character sequence at a later point.
    \begin{tabular}{lrl}
       regex		& $::=$	& re\_and			\\
       re\_and		& $::=$	& re\_branch			\\
-      			& $|$	& re\_and '$|$' re\_branch	\\
+      			& $|$	& re\_and `$|$' re\_branch	\\
       re\_branch	& $::=$	& re\_concat			\\
-      			& $|$	& re\_and '\&' re\_concat	\\
+      			& $|$	& re\_and `\&' re\_concat	\\
       re\_concat	& $::=$	& re\_expr			\\
-			& $|$	& '$\sim$' re\_expr		\\
+			& $|$	& `$\sim$' re\_expr		\\
 			& $|$	& re\_concat re\_expr		\\
-      re\_expr		& $::=$	& '(' regex ')'			\\
-			& $|$	& re\_expr '*'			\\
-			& $|$	& re\_expr '?'			\\
-                        & $|$	& re\_expr '\verb!^!' Number	\\
-                        & $|$	& re\_expr '\{' Number '\}'	\\
+      re\_expr		& $::=$	& `(' regex `)'			\\
+			& $|$	& re\_expr `*'			\\
+			& $|$	& re\_expr `?'			\\
+                        & $|$	& re\_expr `\verb!^!' Number	\\
+                        & $|$	& re\_expr `\{' Number `\}'	\\
                         & $|$	& Character			\\
    \end{tabular}
 \end{defn}
 
-The parser also allows for '$\cap$' (U+2229) to be used as intersection operator
-'\&', as well as '+' for the choice operator '$|$' and '$\neg$' (U+00AC) for
-negation '$\sim$'. The two syntaxes for counted repetition are equivalent.  The
+The parser also allows for `$\cap$' (U+2229) to be used as intersection operator
+`\&', as well as `+' for the choice operator `$|$' and `$\neg$' (U+00AC) for
+negation `$\sim$'. The two syntaxes for counted repetition are equivalent.  The
 repetition operator is not supported in \ocamllex, but \dreml{} allows
 it. It should be noted that since a finite state machine does not have any
 storage besides the states it consists of, the repetition operator yields the

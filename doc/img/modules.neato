@@ -1,0 +1,26 @@
+digraph G {
+        overlap = false;
+        spline = true;
+
+        "ExprSets" [ shape = "box", style = filled ];
+        "Nfa" [ shape = "box", style = filled ];
+
+        "ExprSets" -> "Tag";
+        "ExprSets" -> "Simplify" [ len = "0.6" ];
+        "ExprSets" -> "Language" [ len = "1.5" ];
+        "Instruction" -> "Transition";
+        "Instruction" -> "Pattern";
+        "Lexer" -> "Parser";
+        "Main" -> "Pattern";
+        "Main" -> "Parser";
+        "Main" -> "Lexer";
+        "Main" -> "Language" [ len = "0.4" ];
+        "Main" -> "Nfa";
+        "Nfa" -> "Tag";
+        "Nfa" -> "Language" [ len = "1.5" ];
+        "Tag" -> "Instruction";
+        "Transition" -> "Pattern" [ len = "1.4" ];
+
+        edge [ len = "1.9", style = bold ];
+        "Nfa" -> "ExprSets";
+}
