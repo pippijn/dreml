@@ -4,16 +4,23 @@ install Program ".DEFAULT" [
 
   (* Sources *)
   Modules [
+    "Ast";
+    "CharClass";
     "ExprSets";
     "Instruction";
     "Language";
     "Lexer";
     "Main";
     "Nfa";
+    "Olexer";
+    "Oparser";
+    "Parse";
     "Parser";
     "Pattern";
     "Print";
+    "Resolve";
     "Simplify";
+    "SimplifyLex";
     "Tag";
     "Transition";
     "Types";
@@ -22,6 +29,7 @@ install Program ".DEFAULT" [
 
   (* Library dependencies *)
   OCamlRequires [
+    "codegen";
     "corelib";
     "batteries";
     "sexplib.syntax";
@@ -29,6 +37,7 @@ install Program ".DEFAULT" [
 
   (* Camlp4 *)
   Flags [
+    "ast.ml",		"-syntax camlp4o";
     "types.ml",		"-syntax camlp4o";
   ];
 

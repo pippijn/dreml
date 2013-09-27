@@ -51,7 +51,7 @@ module Debug = struct
       print_endline (
         "  env:   [" ^
         String.concat ", " (
-          List.map (fun (x, (Pos (start_p, end_p))) ->
+          List.rev_map (fun (x, (Pos (start_p, end_p))) ->
             Printf.sprintf "(%s: \"%s\")"
               (string_of_label varmap x)
               (String.sub input start_p (end_p - start_p + 1))
@@ -231,14 +231,6 @@ let run inversion varmap nfa start input =
  * :: NFA Construction.
  **********************************************************)
 
-let filter_nonempty states =
-  List.filter (
-    not
-    % Language.is_empty_language_pat
-    % fst
-  ) states
-
-
 let filter_final states =
   List.filter (fun (p, _) ->
     Language.nullable_pat p = Yes
@@ -250,18 +242,15 @@ let transitions varmap p =
     Printf.printf "transitions for %s:\n"
       (Debug.string_of_pattern varmap p);
   );
-  let transitions1 n =
+  let transitions_for_char n =
     let chr = Char.chr n in
     (*
-    if chr <> 'a' then
+    if chr <> 'a' && chr <> 'b' && chr <> 'c' then
       []
     else
     *)
 
-    let pds =
-      ExprSets.derive_pat chr p
-      |> filter_nonempty
-    in
+    let pds = ExprSets.derive_pat chr p in
 
     if _trace_con && pds != [] then (
       Printf.printf "  on '%s':\n"
@@ -275,7 +264,7 @@ let transitions varmap p =
 
     pds
   in
-  Array.init 256 transitions1
+  Array.init 256 transitions_for_char
 
 
 let rec build_next varmap nfa = function

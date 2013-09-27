@@ -1,88 +1,5 @@
 open Types
 
-(*
-let rec regex_of_pattern = function
-  | VarBase (x, r) ->
-      r
-  | VarGroup (x, p) ->
-      regex_of_pattern p
-  | PatIntersect (p1, p2) ->
-      Intersect (regex_of_pattern p1, regex_of_pattern p2)
-  | PatChoice (p1, p2) ->
-      Choice (regex_of_pattern p1, regex_of_pattern p2)
-  | PatConcat (p1, p2) ->
-      Concat (regex_of_pattern p1, regex_of_pattern p2)
-  | PatStar (p) ->
-      Star (regex_of_pattern p)
-  | PatRepeat (p, n) ->
-      Repeat (regex_of_pattern p, n)
-  | PatNot (p) ->
-      Not (regex_of_pattern p)
-      *)
-
-
-let rec is_empty_language = function
-  | Phi -> true
-  | Epsilon
-  | Star _
-  | Letter _ -> false
-  | Repeat (_, r, n) -> assert (n > 0); is_empty_language r
-  | Choice (_, r1, r2) -> is_empty_language r1 && is_empty_language r2
-  | Concat (_, r1, r2) -> is_empty_language r1 || is_empty_language r2
-  | Intersect (_, r1, r2) -> is_empty_language r1 || is_empty_language r2
-  | Not (_, p) -> not_is_empty_language p
-
-and not_is_empty_language = function
-  | Epsilon
-  | Star _
-  | Letter _
-  | Phi -> false
-
-  (* De Morgan *)
-  | Intersect (_, r1, r2) -> not_is_empty_language r1 || not_is_empty_language r2
-  | Choice (_, r1, r2) -> not_is_empty_language r1 && not_is_empty_language r2
-
-  (* Double negation *)
-  | Not (_, r) -> is_empty_language r
-
-  | Repeat (_, r, n) -> assert (n > 0); not_is_empty_language r
-
-  | Concat (_, a, b) -> false
-
-
-let rec is_empty_language_pat = function
-  | VarBase (_, x, r) ->
-      is_empty_language r
-  | VarGroup (_, x, p) ->
-      is_empty_language_pat p
-
-  | PatStar _ -> false
-  | PatRepeat (_, r, n) -> assert (n > 0); is_empty_language_pat r
-  | PatChoice (_, r1, r2) -> is_empty_language_pat r1 && is_empty_language_pat r2
-  | PatConcat (_, r1, r2) -> is_empty_language_pat r1 || is_empty_language_pat r2
-  | PatIntersect (_, r1, r2) -> is_empty_language_pat r1 || is_empty_language_pat r2
-  | PatNot (_, p) -> not_is_empty_language_pat p
-
-and not_is_empty_language_pat = function
-  | VarBase (_, x, r) ->
-      not_is_empty_language r
-  | VarGroup (_, x, p) ->
-      not_is_empty_language_pat p
-
-  | PatStar _ -> false
-
-  (* De Morgan *)
-  | PatIntersect (_, r1, r2) -> not_is_empty_language_pat r1 || not_is_empty_language_pat r2
-  | PatChoice (_, r1, r2) -> not_is_empty_language_pat r1 && not_is_empty_language_pat r2
-
-  (* Double negation *)
-  | PatNot (_, r) -> is_empty_language_pat r
-
-  | PatRepeat (_, r, n) -> assert (n > 0); not_is_empty_language_pat r
-
-  (* XXX: correct? *)
-  | PatConcat (_, a, b) -> not_is_empty_language_pat a && not_is_empty_language_pat b
-
 
 let nullable = function
   | Not ((Yes | No as null), _)
@@ -98,7 +15,7 @@ let nullable = function
   | Phi
   | Letter _ -> No
 
-  | r -> failwith (Print.string_of_regex r)
+  | _ -> failwith "nullable not computed"
 
 
 let nullable_pat = function
@@ -113,7 +30,7 @@ let nullable_pat = function
   | PatNot ((Yes | No as null), _) ->
       null
 
-  | _ -> assert false
+  | _ -> failwith "nullable not computed"
 
 
 let rec compute_nullable = function

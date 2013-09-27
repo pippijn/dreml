@@ -1,0 +1,195 @@
+\subsection{Symbol resolution}
+\label{resolve}
+
+The [[Resolve]] module implements a simple kind of macro expansion. Macros are
+user-defined abbreviations or aliases for regular expressions. These aliases can
+reference other, previously defined aliases. It is possible to redefine an
+existing alias, hiding its definition. This only affects the expansion of
+aliases in subsequently defined aliases and in rules. In particular, previously
+defined aliases are not affected.
+<<ml>>=
+open Ast
+@
+
+Recursively resolve aliases in all sub-expressions. The map passed to this
+function is one from alias name to the regexp object of its definition. It also
+contains pre-defined abbreviations and character classes.
+<<ml>>=
+let rec resolve_regexp map = function
+@
+  References are replaced by their definition. If an alias cannot be resolved,
+  an error is emitted, but the program is not aborted. The expression tree does
+  not distinguish between built-in and user-defined aliases, but we know that
+  built-ins begin with [[']] or [['[']], so we can use this knowledge in error
+  messages.
+<<ml>>=
+  | Lexeme name ->
+      begin try
+        LocStringMap.find name map
+      with Not_found ->
+        let alias = Sloc.value name in
+        let what =
+          match alias.[0] with
+          | '\\' | '[' ->
+              "built-in regexp"
+          | _ ->
+              "regexp alias"
+        in
+        Diagnostics.error name "No such %s: '%s'" what alias;
+        (* We just return the empty sentence here, so
+         * we can catch more undefined alias errors. *)
+        epsilon
+      end
+@
+
+  All other expressions are structurally preserved, but aliases in
+  sub-expressions are recursively resolved.
+<<ml>>=
+  (* a b *)
+  | Sequence    list -> Sequence    (List.map (resolve_regexp map) list)
+  (* a | b *)
+  | Alternation list -> Alternation (List.map (resolve_regexp map) list)
+  (* a? *)
+  | Question re -> Question (resolve_regexp map re)
+  (* a{n,m} *)
+  | Quantified (re, lo, hi) -> Quantified (resolve_regexp map re, lo, hi)
+  (* a+ *)
+  | Plus re -> Plus (resolve_regexp map re)
+  (* a* *)
+  | Star re -> Star (resolve_regexp map re)
+  (* a as name *)
+  | Binding (re, name) -> Binding (resolve_regexp map re, name)
+@
+
+  These expressions are atomic and do not contain sub-expressions, so they
+  require no name resolution.
+<<ml>>=
+  | AnyChar | Eof | CharClass _ | CharProperty _
+  | String _ | Char _ as atom ->
+      atom
+@
+
+
+Resolve aliases in all rules of a scanner function definition. Semantic action
+code is not touched by symbol resolution.
+<<ml>>=
+let resolve_lexer map (Lexer (name, args, rules)) =
+  let rules =
+    List.map (fun (Rule (regexp, code)) ->
+      Rule (resolve_regexp map regexp, code)
+    ) rules
+  in
+
+  Lexer (name, args, rules)
+@
+
+
+The function [[add_builtins map list]] takes a list of name/code pairs and adds
+them to the passed map. The code is passed as string and is parsed into an
+expression tree by this function. It is mostly used to define built-in character
+classes, but any regular expression can be used.
+<<ml>>=
+let add_builtins =
+  List.fold_left (fun map (name, regexp) ->
+    LocStringMap.add
+      (Sloc.generated name)
+      (resolve_regexp map (Parse.regexp_of_string regexp))
+      map
+  )
+@
+
+
+POSIX defines some common character classes. Unlike POSIX, we handle these as
+regular expression atoms instead of character ranges. In particular, this means
+that they cannot be used inside character class literals.
+<<ml>>=
+let classes = add_builtins LocStringMap.empty [
+  (* Digits *)
+  "[:digit:]",	"['0'-'9']";
+  (* Hexadecimal digits *)
+  "[:xdigit:]",	"['A'-'F' 'a'-'f' '0'-'9']";
+  (* Lowercase letters *)
+  "[:lower:]",	"['a'-'z']";
+  (* Uppercase letters *)
+  "[:upper:]",	"['A'-'Z']";
+  (* Visible characters *)
+  "[:graph:]",	"['\\x21'-'\\x7e']";
+  (* Control characters *)
+  "[:cntrl:]",	"['\\x00'-'\\x1f' '\\x7f']";
+  (* Visible characters and the space character *)
+  "[:print:]",	"['\\x20'-'\\x7e']";
+  (* Alphanumeric characters plus "_" *)
+  "[:word:]",	"['a'-'z' 'A'-'Z' '0'-'9' '_']";
+  (* Whitespace characters *)
+  "[:space:]",	"[' ' '\\t' '\\r' '\\n' '\\v' '\\f']";
+  (* Punctuation characters *)
+  "[:punct:]",	"[']' '[' '!' '\"' '#' '$' '%' '&' '\\'' '(' ')' \
+  		 '*' '+' ',' '.' '/' ':' ';' '<' '=' '>' '?' '@' \
+                 '^' '_' '`' '{' '|' '}' '~' '-']";
+]
+@
+
+
+Apart from the above character classes, we also support some common short-cuts
+for a subset of the above in addition to some for which there is no class name.
+<<ml>>=
+let builtins = add_builtins classes [
+  (* Digits *)
+  "\\d",	"[:digit:]";
+  (* Non-digits *)
+  "\\D",	"[^'0'-'9']";
+  (* Hexadecimal digits *)
+  "\\x",	"[:xdigit:]";
+  (* Lowercase letters *)
+  "\\l",	"[:lower:]";
+  (* Uppercase letters *)
+  "\\u",	"[:upper:]";
+  (* Visible characters and the space character *)
+  "\\p",	"[:print:]";
+  (* Alphanumeric characters plus "_" *)
+  "\\w",	"[:word:]";
+  (* Non-word characters *)
+  "\\W",	"[^'a'-'z' 'A'-'Z' '0'-'9' '_']";
+  (* Whitespace characters *)
+  "\\s",	"[:space:]";
+  (* Non-whitespace characters *)
+  "\\S",	"[^' ' '\\t' '\\r' '\\n' '\\v' '\\f']";
+]
+@
+
+
+Collect regexp aliases and resolve them using the ones already seen.
+If an alias is defined twice, replace it in the map and emit a warning.
+User-defined aliases can use pre-defined ones and ones that appear lexically
+before the alias being defined.
+
+This function returns a map of built-in and user-defined aliases to
+their fully resolved regexp objects. In other words, the objects in the map are
+guaranteed not to contain unresolved aliases.
+<<ml>>=
+let resolve_aliases =
+  List.fold_left (fun map (Alias (name, regexp)) ->
+    let regexp = resolve_regexp map regexp in
+
+    (* We allow redefinition as in ML, but warn about it, since it is
+     * probably not what the user wants. *)
+    if LocStringMap.mem name map then
+      Diagnostics.warning name "regexp name %s already defined"
+        (Sloc.value name);
+    LocStringMap.add name regexp map
+  ) builtins
+@
+
+
+Produce a program with resolved aliases and an empty aliases list.
+<<ml>>=
+let resolve (Program (pre, aliases, lexers, post)) =
+  let map = resolve_aliases aliases in
+  let lexers = List.map (resolve_lexer map) lexers in
+
+  (* If there was an error resolving an alias, raise 
+   * the Diagnostics.Exit exception. *)
+  Diagnostics.exit_on_error ();
+
+  Program (pre, [], lexers, post)
+@

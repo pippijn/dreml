@@ -91,8 +91,8 @@ let set_union_pat a b =
   List.rev union
 
 
-let set_union = (@)
-let set_union_pat = (@)
+(*let set_union = (@)*)
+(*let set_union_pat = (@)*)
 
 
 let rec mapx1 f x1 = function
@@ -182,17 +182,20 @@ let intersect_exprsets_pat ess fss =
   Util.reduce set_union_pat union
 
 
+let sigma_star = [[Not (Yes, Phi)]]
 (* circled ¬ *)
-let not_exprsets sets =
-  let fun_2 e =
-    [Not (not3 (Language.nullable e), e)]
-  in
-  let fun_1 set =
-    List.map fun_2 set
-  in
-  Util.reduce intersect_exprsets (
-    List.map fun_1 sets
-  )
+let not_exprsets = function
+  | [] -> sigma_star
+  | sets ->
+      let fun_2 e =
+        [Not (not3 (Language.nullable e), e)]
+      in
+      let fun_1 set =
+        List.map fun_2 set
+      in
+      Util.reduce intersect_exprsets (
+        List.map fun_1 sets
+      )
 
 
 (*
@@ -204,17 +207,18 @@ let simplify =
 *)
 
 
+let epsilon = [[Epsilon]]
 (* Definition 2. Partial derivative as sets of expression sets. *)
 let rec derive l = function
   (* 2 *)
-  | Letter l2 when l = l2 -> [[Epsilon]]
+  | Letter l2 when l = l2 -> epsilon
   (* 1 *)
   (* the paper says ∅ (empty set) here, but we would have to special-case
      empty set in other functions, so we make it the set containing just
      the set with the empty language symbol *)
   | Phi
   | Epsilon
-  | Letter _ (* otherwise *) -> [[Phi]]
+  | Letter _ (* otherwise *) -> []
   (* 3 *)
   | Choice (_, r1, r2) ->
       let r1' = derive l r1 in

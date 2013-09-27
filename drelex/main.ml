@@ -109,7 +109,7 @@ let timing2 () =
     minor_heap_size = 4096 * 8;
   });
 
-  let fh = open_out "b.log" in
+  let fh = open_out "con-an.log" in
 
   for i = 1 to 30 do
     let pattern = "(x:a^" ^ string_of_int i ^ ")" in
@@ -121,7 +121,7 @@ let timing2 () =
 
     let min_time = ref 1000.0 in
 
-    for t = 1 to 2000 do
+    for t = 1 to 200 do
       Gc.compact ();
       let s = Unix.gettimeofday () in
       ignore (Nfa.build varmap lexer);
@@ -304,12 +304,216 @@ let timing7 () =
   close_out fh
 
 
+let timing8 () =
+  let pattern =
+    ""
+  in
+
+  let lexer = Parser.start Lexer.token (Lexing.from_string pattern) in
+  let lexer, varmap = Pattern.number_pattern lexer in
+
+  let lexer = Language.compute_nullable_pat lexer in
+
+  let min_time = ref 1000.0 in
+
+  for t = 1 to 200 do
+    Gc.compact ();
+    let s = Unix.gettimeofday () in
+    ignore (Nfa.build varmap lexer);
+    let e = Unix.gettimeofday () in
+
+    if !min_time > (e -. s) then (
+      min_time := e -. s;
+      Printf.printf "%06f\r" !min_time;
+      flush stdout;
+    );
+  done
+
+
+
+let timing () =
+  timing2 ();
+  timing4 ();
+  timing6 ();
+  (*timing8 ();*)
+;;
 
 (*let () = main ()*)
+(*let () = timing ()*)
+
 (*let () = timing1 ()*)
-(*let () = timing2 ()*)
 (*let () = timing3 ()*)
-(*let () = timing4 ()*)
 (*let () = timing5 ()*)
-(*let () = timing6 ()*)
-let () = timing7 ()
+(*let () = timing7 ()*)
+
+
+open Ast
+
+
+let rec contains_binding = function
+  | Eof  -> false
+  | Char _ -> false
+  | Sequence l -> List.exists contains_binding l
+  | Alternation l -> List.exists contains_binding l
+  | CharClass c -> false
+  | Star re -> contains_binding re
+  | Binding _ -> true
+  | _ -> assert false
+
+
+let rec extract_regexp = function
+  | Eof -> Epsilon
+  | Char chr -> Letter (Sloc.value chr)
+  | Sequence [] ->
+      Epsilon
+  | Sequence l ->
+      BatList.reduce
+        (fun l r -> Concat (Maybe, r, l))
+        (List.rev_map extract_regexp l)
+  | Alternation l ->
+      BatList.reduce
+        (fun l r -> Choice (Maybe, r, l))
+        (List.rev_map extract_regexp l)
+  | CharClass (Positive l) ->
+      BatList.reduce
+        (fun l r -> Choice (Maybe, r, l))
+        (List.sort (flip compare) (List.rev_map (function
+          | Single chr -> Letter (Sloc.value chr)
+          | _ -> assert false
+        ) l))
+  | Star re ->
+      Types.Star (extract_regexp re)
+
+  | _ -> assert false
+
+
+let rec extract_pattern = function
+  | Sequence [] -> failwith "Empty Sequence"
+  | Sequence l ->
+      BatList.reduce
+        (fun l r -> PatConcat (Maybe, r, l))
+        (List.rev_map extract_pattern l)
+  | Alternation [] -> failwith "Empty Alternation"
+  | Alternation l ->
+      BatList.reduce
+        (fun l r -> PatChoice (Maybe, r, l))
+        (List.rev_map extract_pattern l)
+  | Star re ->
+      PatStar (extract_pattern re)
+  | Binding (re, name) ->
+      (*Printf.printf "%s\ncontains binding: %s\n"*)
+        (*(Sexplib.Sexp.to_string_hum (sexp_of_regexp re))*)
+        (*(string_of_bool (contains_binding re));*)
+      if contains_binding re then
+        VarGroup (Maybe, Sloc.value name, extract_pattern re)
+      else
+        VarBase (Maybe, Sloc.value name, extract_regexp re)
+
+  | _ -> assert false
+
+
+let make_name =
+  let next = ref 0 in
+  fun () ->
+    incr next;
+    string_of_int !next
+
+
+let extract_rules = function
+  | Rule (re, code) ->
+      (*Printf.printf "%s\ncontains binding: %s\n"*)
+        (*(Sexplib.Sexp.to_string_hum (sexp_of_regexp re))*)
+        (*(string_of_bool (contains_binding re));*)
+      if contains_binding re then
+        (*VarGroup (Maybe, make_name (), extract_pattern re)*)
+        VarGroup (Maybe, Sloc.value code, extract_pattern re)
+      else
+        (*VarBase (Maybe, make_name (), extract_regexp re)*)
+        VarBase (Maybe, Sloc.value code, extract_regexp re)
+
+let extract_rules_lexers = function
+  | Lexer (_, _, rules) ->
+      BatList.map extract_rules rules
+
+let extract_rules_program = function
+  | Program (_, _, [lexers], _) ->
+      BatList.reduce
+        (fun l r -> PatChoice (Maybe, r, l))
+        (List.rev (extract_rules_lexers lexers))
+  | _ -> assert false
+
+
+let () =
+  Printexc.record_backtrace true;
+
+  let file = "src/lang/dreml/testsuite/t0008.mll" in
+  (*let input = "431ul" in*)
+  let input = "int main() { return 3.0fl; }" in
+
+  let program = Parse.program_from_file file in
+  let program = Resolve.resolve program in
+  let program = SimplifyLex.simplify program in
+
+  let lexer = extract_rules_program program in
+  let lexer = PatStar lexer in
+
+  Printf.printf "Lexer: %s\n"
+    (Print.string_of_pattern CorePervasives.identity lexer);
+
+  let lexer, varmap = Pattern.number_pattern lexer in
+
+  let lexer = Language.compute_nullable_pat lexer in
+
+  let do_timing = true in
+
+  if do_timing then begin
+    let min_time = ref 1000.0 in
+
+    for t = 1 to 20 do
+      Gc.compact ();
+      let s = Unix.gettimeofday () in
+      ignore (Nfa.build varmap lexer);
+      let e = Unix.gettimeofday () in
+
+      if !min_time > (e -. s) then (
+        min_time := e -. s;
+        Printf.printf "Construction: %06f\r" !min_time;
+        flush stdout;
+      );
+    done;
+
+    print_newline ();
+  end;
+
+  let (nfa, start) = Nfa.build varmap lexer in
+  Printf.printf "%d states\n" (Hashtbl.length nfa);
+  flush stdout;
+
+  if do_timing then begin
+    let min_time = ref 1000.0 in
+
+    for t = 1 to 200 do
+      Gc.compact ();
+      let s = Unix.gettimeofday () in
+      ignore (Nfa.run (nfa, start) varmap input);
+      let e = Unix.gettimeofday () in
+
+      if !min_time > (e -. s) then (
+        min_time := e -. s;
+        Printf.printf "Simulation: %06f\r" !min_time;
+        flush stdout;
+      );
+    done;
+
+    print_newline ();
+  end;
+
+  let states = Nfa.run (nfa, start) varmap input in
+  let states = Nfa.filter_final states in
+
+  print_endline ("after input: " ^ input);
+  match states with
+  | [] ->
+      print_endline "parse failed"
+  | state :: _ ->
+      Nfa.Debug.show varmap input [state]
