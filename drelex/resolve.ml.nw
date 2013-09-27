@@ -121,7 +121,7 @@ let classes = add_builtins LocStringMap.empty [
   (* Alphanumeric characters plus "_" *)
   "[:word:]",	"['a'-'z' 'A'-'Z' '0'-'9' '_']";
   (* Whitespace characters *)
-  "[:space:]",	"[' ' '\\t' '\\r' '\\n' '\\v' '\\f']";
+  "[:space:]",	"[' ' '\\t' '\\r' '\\n' '\\x0c' '\\x0b']";
   (* Punctuation characters *)
   "[:punct:]",	"[']' '[' '!' '\"' '#' '$' '%' '&' '\\'' '(' ')' \
   		 '*' '+' ',' '.' '/' ':' ';' '<' '=' '>' '?' '@' \
@@ -153,7 +153,7 @@ let builtins = add_builtins classes [
   (* Whitespace characters *)
   "\\s",	"[:space:]";
   (* Non-whitespace characters *)
-  "\\S",	"[^' ' '\\t' '\\r' '\\n' '\\v' '\\f']";
+  "\\S",	"[^' ' '\\t' '\\r' '\\n' '\\x0c' '\\x0b']";
 ]
 @
 

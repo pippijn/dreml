@@ -104,16 +104,10 @@
 
 
   let parse_string str =
-    Sloc.at str (Sloc.value str |> remove_quotes |> CoreString.unescaped)
+    Scanf.sscanf (Sloc.value str) "%S%!" (Sloc.at str)
 
   let parse_char str =
-    let unesaped = Sloc.value (parse_string str) in
-    if String.length unesaped != 1 then (
-      Diagnostics.error str "invalid character literal: %s (%s)"
-	(Sloc.value str)
-	(String.escaped unesaped)
-    );
-    Sloc.at str unesaped.[0]
+    Scanf.sscanf (Sloc.value str) "%C%!" (Sloc.at str)
 
 
   let output_position out p =

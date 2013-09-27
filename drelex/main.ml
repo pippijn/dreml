@@ -370,10 +370,12 @@ let rec extract_regexp = function
       BatList.reduce
         (fun l r -> Concat (Maybe, r, l))
         (List.rev_map extract_regexp l)
+  | Alternation [] -> failwith "Empty Alternation"
   | Alternation l ->
       BatList.reduce
         (fun l r -> Choice (Maybe, r, l))
         (List.rev_map extract_regexp l)
+  | CharClass (Positive []) -> failwith "Empty CharClass"
   | CharClass (Positive l) ->
       BatList.reduce
         (fun l r -> Choice (Maybe, r, l))
@@ -448,7 +450,11 @@ let () =
 
   let file = "src/lang/dreml/testsuite/t0008.mll" in
   (*let input = "431ul" in*)
-  let input = "int main() { return 3.0fl; }" in
+  let input =
+    match Sys.argv with
+    | [|_; input|] -> input
+    | _ -> "int main() { return 3.0fl; }"
+  in
 
   let program = Parse.program_from_file file in
   let program = Resolve.resolve program in
@@ -464,7 +470,7 @@ let () =
 
   let lexer = Language.compute_nullable_pat lexer in
 
-  let do_timing = true in
+  let do_timing = false in
 
   if do_timing then begin
     let min_time = ref 1000.0 in

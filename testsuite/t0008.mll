@@ -126,15 +126,25 @@ rule token = parse
 | '0'o+
 | d+ as i) (is? as s)			{ INT }
 
-(* identifier *)
-| identifier as id			{ NAME }
-
 (* strings *)
 | ('L'? as p)(sstring as c)		{ CHAR }
 | ('L'? as p)(dstring as s)		{ STRING }
 
+(* identifier *)
+| identifier as id			{ NAME }
+
+(* C++ comments *)
+| "//" [^ '\n']*			{ CPP_COMMENT }
+
+(* C comments *)
+| "/*" ([^ '*'] | "*" [^ '/'])* "*/"	{ C_COMMENT }
+
 (* whitespace *)
 | [' ' '\t' '\r' '\n']+			{ WHITESPACE }
+
+(* GNU *)
+| ">?"					{ MAX }
+| "<?"					{ MIN }
 
 (* operators *)
 | "("					{ LPAREN }
@@ -143,61 +153,57 @@ rule token = parse
 | "]" | ":>"				{ RBRACKET }
 | "{" | "<%"				{ LBRACE }
 | "}" | "%>"				{ RBRACE }
-| "->"					{ ARROW }
-| "::"					{ COLONCOLON }
-| "."					{ DOT }
-| "!"					{ BANG }
-| "~"					{ TILDE }
-| "+"					{ PLUS }
-| "-"					{ MINUS }
-| "++"					{ PLUSPLUS }
-| "--"					{ MINUSMINUS }
-| "&"					{ AND }
-| "*"					{ STAR }
-| ".*"					{ DOTSTAR }
-| "->*"					{ ARROWSTAR }
-| "/"					{ SLASH }
-| "%"					{ PERCENT }
-| "<<"					{ LEFTSHIFT }
-| ">>"					{ RIGHTSHIFT }
-| "<"					{ LESSTHAN }
-| "<="					{ LESSEQ }
-| ">"					{ GREATERTHAN }
-| ">="					{ GREATEREQ }
-| "=="					{ EQUALEQUAL }
-| "!="					{ NOTEQUAL }
-| "^"					{ XOR }
-| "|"					{ OR }
 | "&&"					{ ANDAND }
-| "||"					{ OROR }
-| "?"					{ QUESTION }
-| ":"					{ COLON }
-| "="					{ EQUAL }
-| "*="					{ STAREQUAL }
-| "/="					{ SLASHEQUAL }
-| "%="					{ PERCENTEQUAL }
-| "+="					{ PLUSEQUAL }
-| "-="					{ MINUSEQUAL }
 | "&="					{ ANDEQUAL }
-| "^="					{ XOREQUAL }
-| "|="					{ OREQUAL }
-| "<<="					{ LEFTSHIFTEQUAL }
-| ">>="					{ RIGHTSHIFTEQUAL }
+| "&"					{ AND }
+| "->*"					{ ARROWSTAR }
+| "->"					{ ARROW }
+| "!"					{ BANG }
+| "::"					{ COLONCOLON }
+| ":"					{ COLON }
 | ","					{ COMMA }
+| ".*"					{ DOTSTAR }
 | "..."					{ ELLIPSIS }
+| "."					{ DOT }
+| "=="					{ EQUALEQUAL }
+| "="					{ EQUAL }
+| ">>="					{ RIGHTSHIFTEQUAL }
+| ">>"					{ RIGHTSHIFT }
+| ">="					{ GREATEREQ }
+| ">"					{ GREATERTHAN }
+| "<<="					{ LEFTSHIFTEQUAL }
+| "<<"					{ LEFTSHIFT }
+| "<="					{ LESSEQ }
+| "<"					{ LESSTHAN }
+| "-="					{ MINUSEQUAL }
+| "--"					{ MINUSMINUS }
+| "-"					{ MINUS }
+| "!="					{ NOTEQUAL }
+| "|="					{ OREQUAL }
+| "||"					{ OROR }
+| "|"					{ OR }
+| "%="					{ PERCENTEQUAL }
+| "%"					{ PERCENT }
+| "+="					{ PLUSEQUAL }
+| "++"					{ PLUSPLUS }
+| "+"					{ PLUS }
+| "?"					{ QUESTION }
 | ";"					{ SEMICOLON }
-
-(* GNU *)
-| ">?"					{ MAX }
-| "<?"					{ MIN }
-
-(* C++ comments *)
-| "//" [^ '\n']*			{ CPP_COMMENT }
-
-(* C comments *)
-| "/*" ([^ '*'] | "*" [^ '/'])* "*/"	{ C_COMMENT }
+| "/="					{ SLASHEQUAL }
+| "/"					{ SLASH }
+| "*="					{ STAREQUAL }
+| "*"					{ STAR }
+| "~"					{ TILDE }
+| "^="					{ XOREQUAL }
+| "^"					{ XOR }
 
 | "#pragma" [^ '\n']+			{ PRAGMA }
 
-| [^ '\n']				{ INVALID }
+| ['\xc0'-'\xdf'] u
+| ['\xe0'-'\xef'] u u
+| ['\xf0'-'\xf7'] u u u
+| ['\xf8'-'\xfb'] u u u u
+| ['\xfc'-'\xfd'] u u u u u		{ INVALID }
+
+| _					{ INVALID }
 | eof					{ EOF }
