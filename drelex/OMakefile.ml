@@ -29,6 +29,7 @@ install Program ".DEFAULT" [
 
   (* Library dependencies *)
   OCamlRequires [
+    "camlp4.fulllib";
     "codegen";
     "corelib";
     "batteries";
