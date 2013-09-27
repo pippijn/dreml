@@ -54,7 +54,7 @@ module Debug = struct
           List.rev_map (fun (x, (Pos (start_p, end_p))) ->
             Printf.sprintf "(%s: \"%s\")"
               (string_of_label varmap x)
-              (String.sub input start_p (end_p - start_p + 1))
+              (String.escaped (String.sub input start_p (end_p - start_p + 1)))
           ) env
         ) ^
         "]"
