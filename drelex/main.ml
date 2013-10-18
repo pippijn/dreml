@@ -445,15 +445,28 @@ let extract_rules_program = function
   | _ -> assert false
 
 
-let () =
-  Printexc.record_backtrace true;
+let slurp ic =
+  let lst = ref [] in
+  try while true do lst := input_line ic :: !lst done; assert false
+  with End_of_file -> List.rev !lst
 
-  let file = "src/lang/dreml/testsuite/t0008.mll" in
+
+let () =
+  (*Printexc.record_backtrace true;*)
+
+  (*let file = "src/lang/dreml/testsuite/t0008.mll" in*)
+  (*let file = "src/lang/dreml/testsuite/c_lexer.mll" in*)
+  let file = "src/lang/dreml/testsuite/c_nosub.mll" in
   (*let input = "431ul" in*)
   let input =
     match Sys.argv with
     | [|_; input|] -> input
-    | _ -> "int main() { return 3.0fl; }"
+    | _ ->
+        (*"int main() { return 3.0fl; }";*)
+        let fh = open_in "wip/nsHTMLEditRules.i" in
+        let input = String.concat "\n" (slurp fh) in
+        close_in fh;
+        input
   in
 
   let program = Parse.program_from_file file in
@@ -461,7 +474,7 @@ let () =
   let program = SimplifyLex.simplify program in
 
   let lexer = extract_rules_program program in
-  let lexer = PatStar lexer in
+  (*let lexer = PatStar lexer in*)
 
   Printf.printf "Lexer: %s\n"
     (Print.string_of_pattern CorePervasives.identity lexer);
@@ -470,7 +483,7 @@ let () =
 
   let lexer = Language.compute_nullable_pat lexer in
 
-  let do_timing = false in
+  let do_timing = true in
 
   if do_timing then begin
     let min_time = ref 1000.0 in
@@ -496,30 +509,30 @@ let () =
   flush stdout;
 
   if do_timing then begin
-    let min_time = ref 1000.0 in
+    for i = 1 to 20 do
+      let min_time = ref 1000.0 in
 
-    for t = 1 to 200 do
-      Gc.compact ();
-      let s = Unix.gettimeofday () in
-      ignore (Nfa.run (nfa, start) varmap input);
-      let e = Unix.gettimeofday () in
+      let data = ref "" in
+      for j = 1 to i do
+        data := !data ^ input;
+      done;
+      let input = !data in
 
-      if !min_time > (e -. s) then (
-        min_time := e -. s;
-        Printf.printf "Simulation: %06f\r" !min_time;
-        flush stdout;
-      );
+      for t = 1 to 20 do
+        Gc.compact ();
+        let s = Unix.gettimeofday () in
+        ignore (Nfa.run_loop 0 (nfa, start) varmap input);
+        let e = Unix.gettimeofday () in
+
+        if !min_time > (e -. s) then (
+          min_time := e -. s;
+          Printf.printf "%d,%06f\r" (String.length input) !min_time;
+          flush stdout;
+        );
+      done;
+
+      print_newline ();
     done;
-
-    print_newline ();
   end;
 
-  let states = Nfa.run (nfa, start) varmap input in
-  let states = Nfa.filter_final states in
-
-  print_endline ("after input: " ^ input);
-  match states with
-  | [] ->
-      print_endline "parse failed"
-  | state :: _ ->
-      Nfa.Debug.show varmap input [state]
+  Nfa.run_loop 0 (nfa, start) varmap input

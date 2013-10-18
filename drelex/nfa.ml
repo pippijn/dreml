@@ -3,6 +3,7 @@ open Types
 
 let _trace_con = false
 let _trace_run = false
+let _trace_lex = false
 let _timing = false
 
 module Debug = struct
@@ -35,6 +36,34 @@ module Debug = struct
 
 
   let show ?(pre="") varmap input states =
+    match states with
+    | ((p, env), pos) ->
+        let is_final =
+          if Language.nullable_pat p = Yes then
+            "\t(FINAL)"
+          else
+            ""
+        in
+        print_endline (
+          "  state: " ^
+          pre ^
+          string_of_pattern varmap p ^
+          is_final
+        );
+        print_endline (
+          "  env:   [" ^
+          String.concat ", " (
+            List.rev_map (fun (x, (Pos (start_p, end_p))) ->
+              Printf.sprintf "(%s: \"%s\")"
+                (string_of_label varmap x)
+                (String.escaped (String.sub input start_p (end_p - start_p + 1)))
+            ) env
+          ) ^
+          "]"
+        )
+
+
+  let show_list ?(pre="") varmap input states =
     List.iter (fun (p, env) ->
       let is_final =
         if Language.nullable_pat p = Yes then
@@ -65,7 +94,7 @@ module Debug = struct
   let show_internal inversion varmap input states =
     List.iter (fun (p, env) ->
       let (p', env) = inversion (p, env) in
-      show ~pre:(string_of_int p ^ ": ") varmap input [p', env]
+      show_list ~pre:(string_of_int p ^ ": ") varmap input [p', env]
     ) states
 
 end
@@ -139,9 +168,12 @@ let bitset_unset seen x =
 
 type 'tag nfa = {
   seen : bitset;
+  nullable : bitset;
   nfa : (int * 'tag) list array;
   input : string;
   len : int;
+  mutable last_final : int * env;
+  mutable last_pos : int;
 }
 
 let update_envs seen pos env states next =
@@ -201,12 +233,24 @@ let iteration nfa pos states c =
   next
 
 
+let rec update_final nfa pos = function
+  | (p, _ as state) :: states ->
+      if bitset_mem nfa.nullable p then (
+        nfa.last_final <- state;
+        nfa.last_pos <- pos;
+      ) else (
+        update_final nfa pos states
+      )
+  | [] ->
+      ()
+
+
 let rec main_loop inversion varmap nfa pos states =
   if _trace_run then
     print_newline ();
 
-  if pos = nfa.len then
-    states
+  if pos = nfa.len || states = [] then
+    (nfa.last_final, nfa.last_pos)
   else
     let c = String.unsafe_get nfa.input pos in
     let states = iteration nfa pos states c in
@@ -216,14 +260,52 @@ let rec main_loop inversion varmap nfa pos states =
       Debug.show_internal inversion varmap nfa.input states;
     );
 
+    update_final nfa pos states;
+
     main_loop inversion varmap nfa (pos + 1) states
 
 
-let run inversion varmap nfa start input =
-  let seen = bitset_create (Array.length nfa / 256) in
-  let nfa = { nfa; seen; input; len = String.length input; } in
+let run seen inversion varmap nfa nullable start input pos =
+  let nfa = {
+    nfa;
+    nullable;
+    seen;
+    input;
+    len = String.length input;
+    last_final = (-1, []);
+    last_pos = -1;
+  } in
 
-  main_loop inversion varmap nfa 0 [start, empty_env]
+  main_loop inversion varmap nfa pos [start, empty_env]
+
+
+let run_optimised pos (nfa, start, inversion, nullable) seen varmap input =
+  let result =
+(*  Debug.time "run" (fun () -> *)
+    run seen inversion varmap nfa nullable start input pos
+(*  ) *)
+  in
+  result
+
+
+let inversion_of_nfa (nfa, start, inversion, nullable) =
+  inversion
+
+let nfa_of_nfa (nfa, start, inversion, nullable) =
+  nfa
+
+let rec run_optimised_loop pos nfa seen varmap input =
+  let state = run_optimised pos nfa seen varmap input in
+
+  match state with
+  | ((-1, []), -1) ->
+      ()
+  | (state, pos) ->
+      if _trace_lex then
+        (inversion_of_nfa nfa state, pos)
+        |> Debug.show varmap input;
+      run_optimised_loop (pos + 1) nfa seen varmap input
+
 
 
 
@@ -299,11 +381,16 @@ let cardinal (nfa, start) =
 let optimised (nfa, start) =
   let nstates = Hashtbl.length nfa in
 
-  (* first, build hashcons *)
+  let nullable = bitset_create nstates in
+
+  (* first, build hashcons and nullable bitset *)
   let hashcons = Hashtbl.create nstates in
   Hashtbl.iter (fun p xs ->
     assert (not (Hashtbl.mem hashcons p));
-    Hashtbl.add hashcons p (Hashtbl.length hashcons)
+    let id = Hashtbl.length hashcons in
+    Hashtbl.add hashcons p id;
+    if Language.nullable_pat p = Yes then
+      bitset_set nullable id;
   ) nfa;
 
   (* and the inversion *)
@@ -330,21 +417,33 @@ let optimised (nfa, start) =
     inversion.(state), env
   in
 
-  optimised, start, inversion
+  optimised, start, inversion, nullable
 
 
-let run (nfa, start) varmap input =
+let run ?(pos=0) nfa varmap input =
   Gc.(set { (Gc.get ()) with
     minor_heap_size = 4096 * 8;
   });
 
-  let (nfa, start, inversion) =
+  let nfa =
     Debug.time "hashcons" (fun () ->
-      optimised (nfa, start)
+      optimised nfa
     )
   in
 
-  Debug.time "run" (fun () ->
-    run inversion varmap nfa start input
-    |> BatList.map inversion
+  let seen = bitset_create (Array.length (nfa_of_nfa nfa) / 256) in
+  let (state, pos) = run_optimised pos nfa seen varmap input in
+  inversion_of_nfa nfa state, pos
+
+
+let run_loop pos nfa varmap input =
+  let nfa =
+    Debug.time "hashcons" (fun () ->
+      optimised nfa
+    )
+  in
+  
+  let seen = bitset_create (Array.length (nfa_of_nfa nfa) / 256) in
+  Debug.time "hashcons" (fun () ->
+    run_optimised_loop pos nfa seen varmap input
   )
