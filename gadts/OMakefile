@@ -1,0 +1,20 @@
+Name		= drelex-gadts
+
+OCaml-Sources[] =
+  ExprSets
+  Language
+  Main
+  Print
+  Types
+  Util
+
+OCaml-Requires[] =
+  baselib
+  batteries
+  sexplib.syntax
+
+Flags. +=
+  $|types.ml|		= -syntax camlp4o
+
+TARGET = $(program-install)
+#.DEFAULT: $(TARGET)

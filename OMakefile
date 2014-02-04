@@ -1,2 +1,3 @@
 #recurse-into ($(glob D, *))
-recurse-into (doc drelex)
+#recurse-into (doc drelex)
+recurse ()

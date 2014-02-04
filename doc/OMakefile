@@ -2,7 +2,7 @@
 Name		= dreml
 
 # Sub-documents
-Parts[] =
+LaTeX-Sources[] =
   tex/background
   tex/conclusion
   tex/discussion
