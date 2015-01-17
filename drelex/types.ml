@@ -1,11 +1,16 @@
+open Sexplib.Conv
+
 type letter = char
+  with sexp
 
 type position = Pos of int * int
+  with sexp
 
 type tribool =
   | No
   | Yes
   | Maybe
+  with sexp
 
 let not3 = function
   | No -> Yes
@@ -38,6 +43,7 @@ type regex =
   | Epsilon
   | Phi
   | Letter of letter
+  with sexp
 
 type 'label pattern =
   | VarBase      of tribool * 'label * regex
@@ -48,9 +54,10 @@ type 'label pattern =
   | PatStar      of 'label pattern
   | PatRepeat    of tribool * 'label pattern * int
   | PatNot       of tribool * 'label pattern
+  with sexp
 
 
-type env = (int * position) list
+type env = (int * position) list with sexp
 let empty_env : env = []
 
 type 'label exprset = 'label pattern list
@@ -60,6 +67,7 @@ type 'label instruction =
   | Update of 'label
   | Iterate of 'label list
   | Compose of 'label instruction * 'label instruction
+  with sexp
 
 
 module ExprsetTbl = Hashtbl.Make(struct

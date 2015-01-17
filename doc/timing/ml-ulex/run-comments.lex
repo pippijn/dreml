@@ -1,7 +1,10 @@
-type lexresult = string option
+%name CalcLex;
+
+%defs (
+type lex_result = string option
 val eof = fn () => NONE
 
-val s = "a"
+val s = "/* comment */"
 val s = s ^ s (* 2 *)
 val s = s ^ s (* 4 *)
 val s = s ^ s (* 8 *)
@@ -25,9 +28,7 @@ fun foo n = (
   else
     ""
 )
+);
 
-%%
-%structure CalcLex
-%%
-"a"*"b"	=> (SOME yytext);
-"a"	=> (SOME yytext);
+"/*"(~(.*"*/".*))"*/"	=> (SOME ("success: " ^ yytext ^ "\n"));
+.			=> (SOME ("fail: " ^ yytext ^ "\n"));

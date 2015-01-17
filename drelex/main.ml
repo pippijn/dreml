@@ -451,12 +451,12 @@ let slurp ic =
   with End_of_file -> List.rev !lst
 
 
-let () =
+let timing9 () =
   (*Printexc.record_backtrace true;*)
 
   (*let file = "src/lang/dreml/testsuite/t0008.mll" in*)
-  (*let file = "src/lang/dreml/testsuite/c_lexer.mll" in*)
-  let file = "src/lang/dreml/testsuite/c_nosub.mll" in
+  let file = "src/lang/dreml/testsuite/c_lexer.mll" in
+  (*let file = "src/lang/dreml/testsuite/c_nosub.mll" in*)
   (*let input = "431ul" in*)
   let input =
     match Sys.argv with
@@ -483,7 +483,7 @@ let () =
 
   let lexer = Language.compute_nullable_pat lexer in
 
-  let do_timing = true in
+  let do_timing = false in
 
   if do_timing then begin
     let min_time = ref 1000.0 in
@@ -535,4 +535,66 @@ let () =
     done;
   end;
 
+  let states = Nfa.run (nfa, start) varmap input in
+  if true then (
+    print_endline "after first step:";
+    Nfa.Debug.show varmap input states
+  );
+
+  let states = Nfa.run (nfa, start) varmap input in
+  if true then (
+    print_endline "after second step:";
+    Nfa.Debug.show varmap input states
+  );
+
+  let states = Nfa.run (nfa, start) varmap input in
+  if true then (
+    print_endline "after third step:";
+    Nfa.Debug.show varmap input states
+  );
+
   Nfa.run_loop 0 (nfa, start) varmap input
+
+
+let () =
+  (*Printexc.record_backtrace true;*)
+
+  (*let file = "src/lang/dreml/testsuite/t0008.mll" in*)
+  let file = "src/lang/dreml/testsuite/c_lexer.mll" in
+  (*let file = "src/lang/dreml/testsuite/c_nosub.mll" in*)
+  (*let input = "431ul" in*)
+  let input =
+    match Sys.argv with
+    | [|_; input|] -> input
+    | _ ->
+        (*"int main() { return 3.0fl; }";*)
+        let fh = open_in "wip/nsHTMLEditRules.i" in
+        let input = String.concat "\n" (slurp fh) in
+        close_in fh;
+        input
+  in
+
+  let program = Parse.program_from_file file in
+  let program = Resolve.resolve program in
+  let program = SimplifyLex.simplify program in
+
+  let lexer = extract_rules_program program in
+  (*let lexer = PatStar lexer in*)
+
+  Printf.printf "Lexer: %s\n"
+    (Print.string_of_pattern CorePervasives.identity lexer);
+
+  let lexer, varmap = Pattern.number_pattern lexer in
+
+  let lexer = Language.compute_nullable_pat lexer in
+
+  let (nfa, start) = Nfa.build varmap lexer in
+  Printf.printf "%d states\n" (Hashtbl.length nfa);
+  flush stdout;
+
+  let nfa = Nfa.optimised (nfa, start) in
+
+  Nfa.sexp_of_env_nfa nfa
+  |> Sexplib.Sexp.output_hum stdout;
+
+  Nfa.run_loop_opt 0 nfa varmap input

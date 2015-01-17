@@ -32,6 +32,7 @@ OCaml-Requires[] =
 
 Flags. +=
   $|ast.ml|		= -syntax camlp4o
+  $|nfa.ml|		= -syntax camlp4o
   $|types.ml|		= -syntax camlp4o
 
 OCAMLOPT_FLAGS += -inline 0

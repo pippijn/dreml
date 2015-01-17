@@ -1,8 +1,20 @@
+val rec finish = fn lexer =>
+let
+  val result = lexer ()
+in
+  case result of
+       NONE => ()
+     | SOME tok =>
+         (TextIO.output (TextIO.stdOut, tok);
+         finish lexer)
+end
+
 val go = fn n =>
 let
   val () = CalcLex.UserDeclarations.c := n
   val timer = Timer.startRealTimer ()
-  val _ = CalcLex.makeLexer (CalcLex.UserDeclarations.foo) ()
+  val lexer = CalcLex.makeLexer (CalcLex.UserDeclarations.foo)
+  val tokens = finish lexer
   val time = Timer.checkRealTimer timer
   val time = Time.toMicroseconds time
 in
@@ -20,7 +32,7 @@ let
 in
   if time < !min then (
     min := time;
-    TextIO.output (TextIO.stdOut, Int.toString (n * 4));
+    TextIO.output (TextIO.stdOut, Int.toString n);
     TextIO.output (TextIO.stdOut, ",");
     TextIO.output (TextIO.stdOut, LargeInt.toString time);
     TextIO.output (TextIO.stdOut, "\n");

@@ -1,3 +1,4 @@
+open Sexplib.Conv
 open CorePervasives
 open Types
 
@@ -37,7 +38,7 @@ module Debug = struct
 
   let show ?(pre="") varmap input states =
     match states with
-    | ((p, env), pos) ->
+    | (p, env, pos) ->
         let is_final =
           if Language.nullable_pat p = Yes then
             "\t(FINAL)"
@@ -93,7 +94,7 @@ module Debug = struct
 
   let show_internal inversion varmap input states =
     List.iter (fun (p, env) ->
-      let (p', env) = inversion (p, env) in
+      let p' = inversion.(p) in
       show_list ~pre:(string_of_int p ^ ": ") varmap input [p', env]
     ) states
 
@@ -151,7 +152,7 @@ module BitSet = struct
 
 end
 
-type bitset = bool array
+type bitset = bool array with sexp
 
 let bitset_create n =
   Array.create n false
@@ -175,6 +176,14 @@ type 'tag nfa = {
   mutable last_final : int * env;
   mutable last_pos : int;
 }
+
+type 'a optimised_nfa = {
+  o_nfa       : (int * int Types.instruction) list array;
+  o_start     : int;
+  o_inversion : 'a Types.pattern array;
+  o_nullable  : bitset;
+} with sexp
+
 
 let update_envs seen pos env states next =
   let rec update_envs0 seen pos env states = function
@@ -279,20 +288,14 @@ let run seen inversion varmap nfa nullable start input pos =
   main_loop inversion varmap nfa pos [start, empty_env]
 
 
-let run_optimised pos (nfa, start, inversion, nullable) seen varmap input =
+let run_optimised pos { o_nfa; o_start; o_inversion; o_nullable; } seen varmap input =
   let result =
 (*  Debug.time "run" (fun () -> *)
-    run seen inversion varmap nfa nullable start input pos
+    run seen o_inversion varmap o_nfa o_nullable o_start input pos
 (*  ) *)
   in
   result
 
-
-let inversion_of_nfa (nfa, start, inversion, nullable) =
-  inversion
-
-let nfa_of_nfa (nfa, start, inversion, nullable) =
-  nfa
 
 let rec run_optimised_loop pos nfa seen varmap input =
   let state = run_optimised pos nfa seen varmap input in
@@ -300,9 +303,9 @@ let rec run_optimised_loop pos nfa seen varmap input =
   match state with
   | ((-1, []), -1) ->
       ()
-  | (state, pos) ->
+  | ((state, env), pos) ->
       if _trace_lex then
-        (inversion_of_nfa nfa state, pos)
+        (nfa.o_inversion.(state), env, pos)
         |> Debug.show varmap input;
       run_optimised_loop (pos + 1) nfa seen varmap input
 
@@ -381,7 +384,7 @@ let cardinal (nfa, start) =
 let optimised (nfa, start) =
   let nstates = Hashtbl.length nfa in
 
-  let nullable = bitset_create nstates in
+  let o_nullable = bitset_create nstates in
 
   (* first, build hashcons and nullable bitset *)
   let hashcons = Hashtbl.create nstates in
@@ -390,34 +393,30 @@ let optimised (nfa, start) =
     let id = Hashtbl.length hashcons in
     Hashtbl.add hashcons p id;
     if Language.nullable_pat p = Yes then
-      bitset_set nullable id;
+      bitset_set o_nullable id;
   ) nfa;
 
   (* and the inversion *)
-  let inversion = Array.make nstates start in
+  let o_inversion = Array.make nstates start in
   Hashtbl.iter (fun p id ->
-    inversion.(id) <- p
+    o_inversion.(id) <- p
   ) hashcons;
 
   (* next, map all patterns to their id *)
-  let optimised = Array.make (nstates * 256) [] in
+  let o_nfa = Array.make (nstates * 256) [] in
   Hashtbl.iter (fun p xs ->
     let p = Hashtbl.find hashcons p in
     Array.iteri (fun i x ->
-      optimised.(p * 256 + i) <-
+      o_nfa.(p * 256 + i) <-
         BatList.map (fun (pd, f) ->
           Hashtbl.find hashcons pd, f
         ) x;
     ) xs;
   ) nfa;
 
-  let start = Hashtbl.find hashcons start in
+  let o_start = Hashtbl.find hashcons start in
 
-  let inversion (state, env) =
-    inversion.(state), env
-  in
-
-  optimised, start, inversion, nullable
+  { o_nfa; o_start; o_inversion; o_nullable; }
 
 
 let run ?(pos=0) nfa varmap input =
@@ -431,9 +430,20 @@ let run ?(pos=0) nfa varmap input =
     )
   in
 
-  let seen = bitset_create (Array.length (nfa_of_nfa nfa) / 256) in
-  let (state, pos) = run_optimised pos nfa seen varmap input in
-  inversion_of_nfa nfa state, pos
+  let seen = bitset_create (Array.length nfa.o_nfa / 256) in
+  let ((state, env), pos) = run_optimised pos nfa seen varmap input in
+  nfa.o_inversion.(state), env, pos
+
+
+type env_nfa = int optimised_nfa
+  with sexp
+
+
+let run_loop_opt pos nfa varmap input =
+  let seen = bitset_create (Array.length nfa.o_nfa / 256) in
+  Debug.time "hashcons" (fun () ->
+    run_optimised_loop pos nfa seen varmap input
+  )
 
 
 let run_loop pos nfa varmap input =
@@ -442,8 +452,5 @@ let run_loop pos nfa varmap input =
       optimised nfa
     )
   in
-  
-  let seen = bitset_create (Array.length (nfa_of_nfa nfa) / 256) in
-  Debug.time "hashcons" (fun () ->
-    run_optimised_loop pos nfa seen varmap input
-  )
+
+  run_loop_opt pos nfa varmap input
